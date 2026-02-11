@@ -1,0 +1,8 @@
+{
+  "name": "AndamanBazaar",
+  "description": "Hyperlocal marketplace for Andaman & Nicobar Islands with geofencing, real-time chat, and location-verified listings.",
+  "requestFramePermissions": [
+    "geolocation",
+    "camera"
+  ]
+}
