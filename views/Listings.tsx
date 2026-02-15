@@ -50,7 +50,7 @@ export const Listings: React.FC = () => {
     const cat = searchParams.get('category');
 
     if (cat && cat !== 'all') {
-      query = query.ilike('category_id', `%${cat}%`);
+      query = query.eq('category_id', cat);
     }
 
     if (q) {
@@ -240,8 +240,8 @@ export const Listings: React.FC = () => {
                 key={cat}
                 onClick={() => handleCategorySelect(cat)}
                 className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all border-2 flex-shrink-0 ${(activeCategory?.toLowerCase() === cat.toLowerCase() || (cat === 'All' && !activeCategory))
-                    ? 'bg-slate-900 text-white border-slate-900 shadow-xl scale-105'
-                    : 'bg-white text-slate-500 border-slate-100 hover:border-slate-300 hover:text-slate-900'
+                  ? 'bg-slate-900 text-white border-slate-900 shadow-xl scale-105'
+                  : 'bg-white text-slate-500 border-slate-100 hover:border-slate-300 hover:text-slate-900'
                   }`}
               >
                 {cat}
@@ -281,8 +281,8 @@ export const Listings: React.FC = () => {
             <button
               onClick={() => setShowFilters(!showFilters)}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-xl border-2 text-xs font-black uppercase tracking-wider transition-all ${hasActiveFilters
-                  ? 'bg-ocean-50 border-ocean-300 text-ocean-700'
-                  : 'bg-white border-slate-200 text-slate-600 hover:border-slate-400'
+                ? 'bg-ocean-50 border-ocean-300 text-ocean-700'
+                : 'bg-white border-slate-200 text-slate-600 hover:border-slate-400'
                 }`}
             >
               <Filter size={14} />

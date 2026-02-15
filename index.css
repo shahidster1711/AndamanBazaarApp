@@ -5,10 +5,14 @@
 @layer base {
   body {
     @apply bg-neutral text-primary antialiased;
-    font-weight: 400; 
+    font-weight: 400;
   }
-  h1, h2, h3, h4 {
-    @apply font-bold;
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-heading;
   }
 }
 
@@ -16,19 +20,31 @@
   .glass {
     @apply bg-white/85 backdrop-blur-lg;
   }
-  
+
   .premium-card {
     @apply bg-base-100 rounded-[24px] transition-all duration-300 border border-primary/5 hover:-translate-y-1 hover:shadow-xl;
   }
 
   .safe-bottom {
-    padding-bottom: env(safe-area-inset-bottom);
+    padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+  }
+
+  /* Mobile touch active state override */
+  @media (max-width: 768px) {
+    .premium-card {
+      @apply active:scale-95;
+    }
   }
 }
 
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 .skeleton {

@@ -31,7 +31,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, user }) => {
         .from('chats')
         .select('buyer_id, seller_id, buyer_unread_count, seller_unread_count')
         .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`);
-      
+
       if (chats) {
         let count = 0;
         chats.forEach(chat => {
@@ -114,12 +114,12 @@ export const Layout: React.FC<LayoutProps> = ({ children, user }) => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-grow pt-28 pb-28 md:pb-12">
+      <main className="flex-grow pt-28 pb-32 md:pb-12">
         {children}
       </main>
 
       {/* Bottom Nav - Mobile Only - High Contrast & Explicit Labels */}
-      <nav className="md:hidden fixed bottom-0 left-0 w-full bg-white border-t-2 border-slate-200 flex items-center justify-around h-20 px-2 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] pb-safe">
+      <nav className="md:hidden fixed bottom-0 left-0 w-full bg-white border-t-2 border-slate-200 flex flex-row items-center justify-around h-20 px-2 z-[9999] shadow-[0_-4px_20px_rgba(0,0,0,0.05)] safe-bottom">
         <Link to="/" className={`flex flex-col items-center justify-center w-full h-full ${location.pathname === '/' ? activeTabClass : inactiveTabClass}`}>
           <Home size={24} strokeWidth={location.pathname === '/' ? 3 : 2} />
           <span className="text-[10px] mt-1 font-bold">Home</span>
@@ -128,10 +128,10 @@ export const Layout: React.FC<LayoutProps> = ({ children, user }) => {
           <Search size={24} strokeWidth={location.pathname === '/listings' ? 3 : 2} />
           <span className="text-[10px] mt-1 font-bold">Search</span>
         </Link>
-        
+
         <Link to="/post" className="relative -top-6">
           <div className="w-16 h-16 bg-ocean-700 text-white rounded-full flex items-center justify-center shadow-xl shadow-ocean-700/30 border-4 border-white active:scale-95 transition-transform">
-             <PlusCircle size={32} strokeWidth={3} />
+            <PlusCircle size={32} strokeWidth={3} />
           </div>
           <span className="absolute -bottom-5 w-full text-center text-[10px] font-black text-ocean-700 uppercase tracking-wide">Sell</span>
         </Link>
@@ -152,7 +152,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, user }) => {
           <span className="text-[10px] mt-1 font-bold">Profile</span>
         </Link>
       </nav>
-      
+
       {/* Desktop Footer */}
       <footer className="hidden md:block py-12 bg-slate-50 border-t border-slate-200 text-slate-900">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-4 gap-12">

@@ -4,7 +4,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Logo } from '../components/Logo';
 import { supabase } from '../lib/supabase';
 import { Listing } from '../types';
-import { Car, Smartphone, Home as HomeIcon, Sofa, Shirt, Briefcase, Sparkles, MapPin, Search, ArrowRight, Loader2 } from 'lucide-react';
+import { Car, Smartphone, Home as HomeIcon, Sofa, Shirt, Briefcase, Sparkles, MapPin, Search, ArrowRight, Loader2, Download, X } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
 
 const categories = [
   { name: 'Mobiles', slug: 'mobiles', icon: <Smartphone size={24} />, color: 'bg-ocean-100 text-ocean-700' },
@@ -35,6 +36,8 @@ export const Home: React.FC = () => {
     fetchFeatured();
     fetchRecent(0);
   }, []);
+
+  const [showAppBanner, setShowAppBanner] = useState(!Capacitor.isNativePlatform());
 
   const fetchFeatured = async () => {
     try {
@@ -112,6 +115,31 @@ export const Home: React.FC = () => {
 
   return (
     <div className="space-y-12 pb-24 md:pb-12 animate-slide-up bg-white">
+      {/* Web-Only App Download Banner */}
+      {showAppBanner && (
+        <div className="bg-slate-900 text-white px-4 py-3 relative overflow-hidden">
+          <div className="max-w-7xl mx-auto flex items-center justify-between relative z-10">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-ocean-500 rounded-xl flex items-center justify-center shrink-0">
+                <Smartphone size={20} className="text-white" />
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-ocean-300">Experience the best</p>
+                <p className="font-bold text-sm leading-tight">Download the AndamanBazaar App</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <button className="bg-white text-slate-900 px-4 py-2 rounded-lg font-black text-[10px] uppercase tracking-widest hover:bg-ocean-50 transition-colors">
+                Get App
+              </button>
+              <button onClick={() => setShowAppBanner(false)} className="p-1 hover:bg-white/10 rounded-full transition-colors">
+                <X size={16} className="text-slate-400" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Premium Hero Section */}
       <section className="relative px-4 py-12 md:py-24 text-center overflow-hidden">
         <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-96 h-96 bg-ocean-50 rounded-full blur-3xl opacity-50"></div>
@@ -139,9 +167,9 @@ export const Home: React.FC = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="What are you looking for?"
-              className="w-full py-6 pl-14 pr-32 rounded-3xl bg-white border-2 border-slate-300 focus:border-ocean-600 focus:ring-4 focus:ring-ocean-100 transition-all duration-200 outline-none text-lg font-bold text-slate-900 shadow-xl"
+              className="w-full py-4 md:py-6 pl-12 md:pl-14 pr-28 md:pr-32 rounded-2xl md:rounded-3xl bg-white border-2 border-slate-300 focus:border-ocean-600 focus:ring-4 focus:ring-ocean-100 transition-all duration-200 outline-none text-base md:text-lg font-bold text-slate-900 shadow-xl"
             />
-            <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 bg-ocean-700 text-white px-8 py-3 rounded-2xl font-black shadow-md hover:bg-ocean-800 active:scale-95 transition-all text-sm uppercase tracking-wider">
+            <button type="submit" className="absolute right-2 md:right-3 top-1/2 -translate-y-1/2 bg-ocean-700 text-white px-5 md:px-8 py-2 md:py-3 rounded-xl md:rounded-2xl font-black shadow-md hover:bg-ocean-800 active:scale-95 transition-all text-[10px] md:text-sm uppercase tracking-wider">
               Search
             </button>
           </form>
@@ -150,7 +178,7 @@ export const Home: React.FC = () => {
 
       {/* Categories Grid */}
       <section className="max-w-7xl mx-auto px-4">
-        <div className="grid grid-cols-4 md:grid-cols-7 gap-6 md:gap-10">
+        <div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-7 gap-4 md:gap-10">
           {categories.map((cat) => (
             <Link
               key={cat.slug}

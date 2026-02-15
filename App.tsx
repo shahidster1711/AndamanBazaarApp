@@ -16,6 +16,9 @@ import { supabase, isSupabaseConfigured } from './lib/supabase';
 import { User } from '@supabase/supabase-js';
 import { AlertTriangle, Terminal, ExternalLink } from 'lucide-react';
 import { ToastProvider } from './components/Toast';
+import { StatusBar, Style } from '@capacitor/status-bar';
+import { Keyboard } from '@capacitor/keyboard';
+import { Capacitor } from '@capacitor/core';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -35,12 +38,19 @@ const App: React.FC = () => {
 
     getSession();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+    // Native Polish - Status Bar & Keyboard
+    if (Capacitor.isNativePlatform()) {
+      StatusBar.setStyle({ style: Style.Light });
+      StatusBar.setBackgroundColor({ color: '#ffffff' });
+      Keyboard.setAccessoryBarVisible({ isVisible: true });
+    }
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
     });
 
     return () => {
-      authListener.subscription.unsubscribe();
+      subscription.unsubscribe();
     };
   }, []);
 
@@ -60,13 +70,13 @@ const App: React.FC = () => {
           </div>
           <p className="text-sm text-gray-500 mt-6">
             If you need help finding these, check the <a href="https://supabase.com/docs/guides/getting-started/quickstarts/reactjs#get-the-api-keys" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 underline transition-colors duration-200 flex items-center justify-center gap-1">
-              Supabase documentation <ExternalLink size={14}/>
+              Supabase documentation <ExternalLink size={14} />
             </a>.
           </p>
         </div>
-         <div className="mt-8 flex items-center text-gray-500">
-            <Terminal size={16} className="mr-2" />
-            <p>This is a mock terminal. Run commands in the real terminal below.</p>
+        <div className="mt-8 flex items-center text-gray-500">
+          <Terminal size={16} className="mr-2" />
+          <p>This is a mock terminal. Run commands in the real terminal below.</p>
         </div>
       </div>
     );
