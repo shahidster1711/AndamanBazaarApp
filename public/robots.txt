@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /chats
+Disallow: /profile
+Disallow: /dashboard
+
+Sitemap: https://andamanbazaar.com/sitemap.xml

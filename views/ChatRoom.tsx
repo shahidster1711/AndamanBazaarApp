@@ -4,6 +4,9 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Chat, Message, Profile } from '../types';
 import { Send, Camera, ChevronLeft, Phone, MoreVertical, ShieldCheck } from 'lucide-react';
+import { messageSchema, sanitizePlainText } from '../lib/validation';
+import { checkRateLimit, logAuditEvent, sanitizeErrorMessage } from '../lib/security';
+import { useToast } from '../components/Toast';
 
 export const ChatRoom: React.FC = () => {
   const { id } = useParams();
@@ -14,6 +17,7 @@ export const ChatRoom: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { showToast } = useToast();
 
   useEffect(() => {
     const initChat = async () => {
@@ -42,6 +46,13 @@ export const ChatRoom: React.FC = () => {
             .single();
 
           if (listing) {
+            // Guard: prevent chatting on own listing
+            if (listing.user_id === user.id) {
+              setLoading(false);
+              return;
+            }
+
+            // Guard: prevent new chats on sold/deleted listings (existing chats still accessible)
             const { data: existingChat } = await supabase
               .from('chats')
               .select(`
@@ -56,7 +67,11 @@ export const ChatRoom: React.FC = () => {
 
             if (existingChat) {
               chatData = existingChat;
-            } else if (listing.user_id !== user.id) {
+            } else if (listing.status === 'sold' || listing.status === 'deleted' || listing.status === 'expired') {
+              // Can't start new chat on sold/deleted/expired listings
+              navigate('/listings');
+              return;
+            } else {
               const { data: newChat } = await supabase
                 .from('chats')
                 .insert({
@@ -78,14 +93,14 @@ export const ChatRoom: React.FC = () => {
 
         if (chatData) {
           setChat(chatData);
-          
+
           // Initial Message Fetch
           const { data: messageData } = await supabase
             .from('messages')
             .select('*')
             .eq('chat_id', chatData.id)
             .order('created_at', { ascending: true });
-          
+
           if (messageData) setMessages(messageData);
 
           // Reset unread count for current user
@@ -138,7 +153,43 @@ export const ChatRoom: React.FC = () => {
 
   const handleSend = async () => {
     if (!inputText.trim() || !chat || !currentUser) return;
+
+    // Check rate limit (10 messages per minute)
+    const rateLimitCheck = checkRateLimit(`${currentUser.id}:send_message`, {
+      maxRequests: 10,
+      windowSeconds: 60
+    });
+
+    if (!rateLimitCheck.allowed) {
+      showToast(`Please wait ${rateLimitCheck.retryAfter}s before sending more messages.`, 'warning');
+      await logAuditEvent({
+        action: 'message_rate_limited',
+        status: 'blocked',
+        metadata: { chat_id: chat.id }
+      });
+      return;
+    }
+
     const messageText = inputText.trim();
+
+    // Sanitize and validate message
+    const sanitizedMessage = sanitizePlainText(messageText);
+
+    const validationResult = messageSchema.safeParse({
+      message_text: sanitizedMessage,
+      image_url: ''
+    });
+
+    if (!validationResult.success) {
+      showToast('Your message contains invalid content. Please revise.', 'error');
+      await logAuditEvent({
+        action: 'message_validation_failed',
+        status: 'blocked',
+        metadata: { error: validationResult.error.issues[0].message }
+      });
+      return;
+    }
+
     setInputText('');
 
     try {
@@ -147,12 +198,27 @@ export const ChatRoom: React.FC = () => {
         .insert({
           chat_id: chat.id,
           sender_id: currentUser.id,
-          message_text: messageText,
+          message_text: sanitizedMessage,
         });
 
       if (msgError) throw msgError;
+
+      // Log successful message send
+      await logAuditEvent({
+        action: 'message_sent',
+        resource_type: 'message',
+        status: 'success',
+        metadata: { chat_id: chat.id }
+      });
     } catch (err) {
       console.error('Error sending message:', err);
+      showToast('Message failed to send. Please try again.', 'error');
+      setInputText(messageText); // Restore message on error
+      await logAuditEvent({
+        action: 'message_send_failed',
+        status: 'failed',
+        metadata: { error: sanitizeErrorMessage(err) }
+      });
     }
   };
 
@@ -186,30 +252,33 @@ export const ChatRoom: React.FC = () => {
               <h3 className="font-black text-xs text-slate-900 leading-tight uppercase tracking-tight">{otherParty?.name || 'Seller'}</h3>
               {otherParty?.is_location_verified && <ShieldCheck size={12} className="text-ocean-600" />}
             </div>
-            <p className="text-[9px] font-black text-green-600 uppercase tracking-widest">Island Verified</p>
+            {otherParty?.is_location_verified ? (
+              <p className="text-[9px] font-black text-green-600 uppercase tracking-widest">Island Verified</p>
+            ) : (
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Active</p>
+            )}
           </div>
         </div>
         <div className="flex items-center space-x-2">
-           <button className="p-2 text-slate-400 hover:text-ocean-700 transition-colors"><Phone size={20} /></button>
-           <button className="p-2 text-slate-400 hover:text-ocean-700 transition-colors"><MoreVertical size={20} /></button>
+          <button className="p-2 text-slate-400 hover:text-ocean-700 transition-colors"><Phone size={20} /></button>
+          <button className="p-2 text-slate-400 hover:text-ocean-700 transition-colors"><MoreVertical size={20} /></button>
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         <div className="text-center py-6">
-           <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] bg-slate-100 inline-block px-4 py-1 rounded-full">Conversation Started</p>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] bg-slate-100 inline-block px-4 py-1 rounded-full">Conversation Started</p>
         </div>
-        
+
         {messages.map((msg) => {
           const isMe = msg.sender_id === currentUser?.id;
           return (
             <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 duration-300`}>
-              <div className={`max-w-[75%] px-4 py-3 rounded-2xl shadow-sm ${
-                isMe ? 'bg-ocean-700 text-white rounded-tr-none' : 'bg-white text-slate-800 rounded-tl-none border border-slate-200'
-              }`}>
+              <div className={`max-w-[75%] px-4 py-3 rounded-2xl shadow-sm ${isMe ? 'bg-ocean-700 text-white rounded-tr-none' : 'bg-white text-slate-800 rounded-tl-none border border-slate-200'
+                }`}>
                 <p className="text-sm font-medium leading-relaxed">{msg.message_text}</p>
                 <div className="flex items-center justify-end space-x-1 mt-1 opacity-60">
-                   <p className="text-[8px] font-black uppercase tracking-widest">
+                  <p className="text-[8px] font-black uppercase tracking-widest">
                     {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </div>
@@ -226,16 +295,16 @@ export const ChatRoom: React.FC = () => {
             <Camera size={20} />
           </button>
           <div className="flex-1 bg-slate-50 rounded-[24px] flex items-center px-5 py-3 border-2 border-slate-100 focus-within:border-ocean-600 focus-within:bg-white transition-all">
-            <input 
-              type="text" 
-              placeholder="Type your message..." 
+            <input
+              type="text"
+              placeholder="Type your message..."
               className="bg-transparent flex-1 outline-none text-sm font-bold placeholder:text-slate-400"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
             />
           </div>
-          <button 
+          <button
             onClick={handleSend}
             disabled={!inputText.trim()}
             className="p-4 bg-ocean-700 text-white rounded-[20px] shadow-xl shadow-ocean-700/20 active:scale-90 transition-all disabled:opacity-30 disabled:scale-95"

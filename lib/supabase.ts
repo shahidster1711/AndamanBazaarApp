@@ -1,13 +1,13 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// Environment variable resolution with provided defaults for AndamanBazaar
-const supabaseUrl = 'https://msxeqzceqjatoaluempo.supabase.co';
-const supabaseAnonKey = 'sb_publishable__qYA3APlwn1QqTPhpuS9Mw_P0v91JZZ';
+// Read Supabase configuration from environment variables
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Export a function to check if the app is configured
 export const isSupabaseConfigured = () => {
-  return supabaseUrl.startsWith('https://') && supabaseAnonKey.length > 20;
+  return supabaseUrl?.startsWith('https://') && supabaseAnonKey?.length > 20;
 };
 
 // Initialize the client

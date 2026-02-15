@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { useToast } from './Toast';
 
 interface ReportModalProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, listi
   const [details, setDetails] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const { showToast } = useToast();
 
   if (!isOpen) return null;
 
@@ -32,7 +34,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, listi
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       const { error } = await supabase
         .from('reports')
         .insert({
@@ -51,7 +53,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, listi
         setDetails('');
       }, 2000);
     } catch (err) {
-      alert("Error submitting report. Please try again.");
+      showToast("Error submitting report. Please try again.", "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -60,7 +62,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, listi
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={onClose}></div>
-      
+
       <div className="bg-white/95 backdrop-blur-xl p-8 md:p-10 rounded-[40px] shadow-2xl max-w-lg w-full relative overflow-hidden border border-white animate-in zoom-in-95 duration-300">
         {isSuccess ? (
           <div className="text-center py-10 space-y-6">
@@ -82,11 +84,10 @@ export const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, listi
                   <button
                     key={reason}
                     onClick={() => setSelectedReason(reason)}
-                    className={`text-left p-4 rounded-2xl border transition-all text-sm font-semibold ${
-                      selectedReason === reason 
-                      ? 'bg-slate-900 text-white border-slate-900 shadow-lg' 
-                      : 'bg-slate-50 text-slate-600 border-slate-100 hover:bg-slate-100'
-                    }`}
+                    className={`text-left p-4 rounded-2xl border transition-all text-sm font-semibold ${selectedReason === reason
+                        ? 'bg-slate-900 text-white border-slate-900 shadow-lg'
+                        : 'bg-slate-50 text-slate-600 border-slate-100 hover:bg-slate-100'
+                      }`}
                   >
                     {reason}
                   </button>
@@ -106,18 +107,17 @@ export const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, listi
             </div>
 
             <div className="flex gap-4 pt-4">
-              <button 
+              <button
                 onClick={onClose}
                 className="flex-1 py-4 rounded-2xl font-bold text-slate-400 hover:text-slate-900 transition-colors"
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={handleSubmit}
                 disabled={!selectedReason || isSubmitting}
-                className={`flex-[2] py-4 rounded-2xl font-bold text-white shadow-xl transition-all ${
-                  selectedReason && !isSubmitting ? 'bg-slate-900 hover:scale-[1.02] active:scale-95' : 'bg-slate-200 cursor-not-allowed'
-                }`}
+                className={`flex-[2] py-4 rounded-2xl font-bold text-white shadow-xl transition-all ${selectedReason && !isSubmitting ? 'bg-slate-900 hover:scale-[1.02] active:scale-95' : 'bg-slate-200 cursor-not-allowed'
+                  }`}
               >
                 {isSubmitting ? 'Submitting...' : 'Submit Report'}
               </button>

@@ -1,123 +1,44 @@
-
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AndamanBazaar - Local Marketplace</title>
-    <link rel="manifest" href="data:application/json;base64,CnsKICAic2hvcnRfbmFtZSI6ICJBbmRhbWFuQmF6YWFyIiwKICAibmFtZSI6ICJBbmRhbWFuQmF6YWFyIExvY2FsIE1hcmtldHBsYWNlIiwKICAiaWNvbnMiOiBbCiAgICB7CiAgICAgICJzcmMiOiAiZmF2aWNvbi5pY28iLAogICAgICAic2l6ZXMiOiAiNjR4NjQgMzJ4MzIgMjR4MjQgMTZ4MTYiLAogICAgICAidHlwZSI6ICJpbWFnZS94LWljb24iCiAgICB9LAogICAgewogICAgICAic3JjIjogImxvZ28xOTIucG5nIiwKICAgICAgInR5cGUiOiAiaW1hZ2UvcG5nIiwKICAgICAgInNpemVzIjogIjE5MngxOTIiCiAgICB9LAogICAgewogICAgICAic3JjIjogImxvZ281MTIucG5nIiwKICAgICAgInR5cGUiOiAiaW1hZ2UvcG5nIiwKICAgICAgInNpemVzIjogIjUxMng1MTIiCiAgICB9CiAgXSwKICAic3RhcnRfdXJsIjogIi4iLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJ0aGVtZV9jb2xvciI6ICIjMDM2OWExIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjZmZmZmZmIgp9Cg==">
-    <meta name="theme-color" content="#0369a1">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              ocean: {
-                50: '#f0f9ff',
-                100: '#e0f2fe',
-                200: '#bae6fd',
-                300: '#7dd3fc',
-                400: '#38bdf8',
-                500: '#0ea5e9',
-                600: '#0284c7',
-                700: '#0369a1',
-                800: '#075985',
-                900: '#0c4a6e',
-              },
-              coral: {
-                50: '#fff1f2',
-                100: '#ffe4e6',
-                200: '#fecdd3',
-                300: '#fda4af',
-                400: '#fb7185',
-                500: '#f43f5e',
-                600: '#e11d48',
-              }
-            },
-            fontFamily: {
-              sans: ['Inter', 'sans-serif'],
-              heading: ['Poppins', 'sans-serif'],
-            }
-          }
-        }
-      }
-    </script>
-    <style>
-        body { 
-          font-family: 'Inter', sans-serif; 
-          background-color: #f8fafc;
-          color: #0f172a;
-          -webkit-font-smoothing: antialiased;
-        }
-        h1, h2, h3, h4 { font-family: 'Poppins', sans-serif; }
-        
-        .glass {
-          background: rgba(255, 255, 255, 0.85);
-          backdrop-filter: blur(16px);
-          -webkit-backdrop-filter: blur(16px);
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>AndamanBazaar - Local Marketplace for Andaman & Nicobar Islands</title>
+  <meta name="description"
+    content="Buy and sell locally in the Andaman & Nicobar Islands. Join the community marketplace for mobiles, vehicles, home items, and more with verified neighbors.">
+  <meta name="keywords" content="Andaman, Nicobar, Port Blair, Marketplace, Buy, Sell, Classifieds, Islands">
 
-        .premium-card {
-          background: #ffffff;
-          border-radius: 24px;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          border: 1px solid rgba(0,0,0,0.04);
-        }
-        .premium-card:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 12px 24px -10px rgba(2, 132, 199, 0.15);
-        }
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://andamanbazaar.com/">
+  <meta property="og:title" content="AndamanBazaar - Local Marketplace for Andaman & Nicobar Islands">
+  <meta property="og:description"
+    content="Buy and sell locally in the Andaman & Nicobar Islands. Skip the shipping delays - trade with verified neighbors.">
+  <meta property="og:image" content="https://andamanbazaar.com/logo512.png">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" href="/logo192.png">
 
-        @keyframes shimmer {
-          0% { background-position: -200% 0; }
-          100% { background-position: 200% 0; }
-        }
-        .skeleton {
-          background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
-          background-size: 200% 100%;
-          animation: shimmer 1.5s infinite linear;
-          border-radius: 12px;
-        }
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://andamanbazaar.com/">
+  <meta property="twitter:title" content="AndamanBazaar - Local Marketplace for Andaman & Nicobar Islands">
+  <meta property="twitter:description"
+    content="Buy and sell locally in the Andaman & Nicobar Islands. Skip the shipping delays - trade with verified neighbors.">
+  <meta property="twitter:image" content="https://andamanbazaar.com/logo512.png">
 
-        .safe-bottom {
-          padding-bottom: env(safe-area-inset-bottom);
-        }
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0369a1">
 
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-
-        @keyframes slideUp {
-          from { transform: translateY(20px); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
-        }
-        .animate-slide-up { animation: slideUp 0.4s ease-out forwards; }
-    </style>
-<link rel="stylesheet" href="/index.css">
-    <script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@18.2.0",
-    "react/": "https://esm.sh/react@18.2.0/",
-    "react-dom": "https://esm.sh/react-dom@18.2.0",
-    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-    "react-router-dom": "https://esm.sh/react-router-dom@6.22.3?deps=react@18.2.0,react-dom@18.2.0",
-    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.45.4",
-    "recharts": "https://esm.sh/recharts@2.12.7?deps=react@18.2.0,react-dom@18.2.0",
-    "lucide-react": "https://esm.sh/lucide-react@0.292.0?deps=react@18.2.0,react-dom@18.2.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
-    "@google/genai": "https://esm.sh/@google/genai@^1.40.0"
-  }
-}
-</script>
-  <script type="module" crossorigin src="/assets/index-563948c7.js"></script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@600;700;800&display=swap"
+    rel="stylesheet">
+  <script type="module" crossorigin src="/assets/index-Dine4g2J.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-Cn4JRE2G.css">
 </head>
+
 <body>
-    <div id="root"></div>
-
-    
-
+  <div id="root"></div>
 </body>
+
 </html>

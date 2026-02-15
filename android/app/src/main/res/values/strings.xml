@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">AndamanBazaar</string>
+    <string name="title_activity_main">AndamanBazaar</string>
+    <string name="package_name">com.andamanbazaar.app</string>
+    <string name="custom_url_scheme">com.andamanbazaar.app</string>
+</resources>

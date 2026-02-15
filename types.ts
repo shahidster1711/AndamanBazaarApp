@@ -29,23 +29,71 @@ export interface Subcategory {
   slug: string;
 }
 
+export type ItemCondition = 'new' | 'like_new' | 'good' | 'fair';
+export type ItemAge = '<1m' | '1-6m' | '6-12m' | '1-2y' | '2-5y' | '5y+';
+export type ListingStatus = 'draft' | 'pending_review' | 'active' | 'sold' | 'expired' | 'deleted';
+export type ModerationStatus = 'auto_approved' | 'pending_review' | 'approved' | 'rejected';
+
+export interface ContactPreferences {
+  chat: boolean;
+  phone?: boolean;
+  whatsapp?: boolean;
+}
+
+export interface AiMetadata {
+  suggested_title?: string;
+  suggested_description?: string;
+  suggested_category?: string;
+  suggested_condition?: ItemCondition;
+  estimated_price_range?: { low: number; high: number };
+  title_accepted?: boolean;
+  description_accepted?: boolean;
+  price_accepted?: boolean;
+}
+
 export interface Listing {
   id: string;
   user_id: string;
   category_id: string;
-  subcategory_id: string;
+  subcategory_id?: string;
   title: string;
   description: string;
   price: number;
-  condition: 'new' | 'like_new' | 'good' | 'fair';
+  condition: ItemCondition;
   city: string;
-  area: string;
-  landmark?: string;
-  status: 'draft' | 'active' | 'sold' | 'expired' | 'deleted';
+  area?: string;
+
+  // Pricing
+  is_negotiable: boolean;
+  min_price?: number;
+
+  // Item details
+  item_age?: ItemAge;
+  has_warranty: boolean;
+  warranty_expiry?: string;
+  has_invoice: boolean;
+  accessories: string[];
+
+  // Contact
+  contact_preferences: ContactPreferences;
+
+  // Status & moderation
+  status: ListingStatus;
+  moderation_status: ModerationStatus;
+  moderation_notes?: string;
   is_featured: boolean;
   views_count: number;
-  favorites_count: number;
+
+  // Draft
+  draft_step?: number;
+  idempotency_key?: string;
+
+  // AI
+  ai_metadata?: AiMetadata;
+
+  // Relations
   created_at: string;
+  updated_at?: string;
   images?: ListingImage[];
   seller?: Profile;
 }
@@ -89,4 +137,48 @@ export interface Message {
   image_url?: string;
   is_read: boolean;
   created_at: string;
+}
+
+// ===== Draft Types =====
+
+export interface DraftListing {
+  step: number;
+  category?: string;
+  subcategory?: string;
+  title: string;
+  description: string;
+  price: string;
+  condition: ItemCondition;
+  is_negotiable: boolean;
+  min_price?: string;
+  item_age?: ItemAge;
+  has_warranty: boolean;
+  warranty_expiry?: string;
+  has_invoice: boolean;
+  accessories: string[];
+  city: string;
+  area: string;
+  contact_preferences: ContactPreferences;
+  image_previews: string[];
+  idempotency_key: string;
+  updated_at: number;
+}
+
+// ===== Price Suggestion Types =====
+
+export interface PriceSuggestion {
+  avg_price: number;
+  min_price: number;
+  max_price: number;
+  listing_count: number;
+}
+
+// ===== AI Suggestion Types =====
+
+export interface AiSuggestion {
+  suggested_title?: string;
+  suggested_description?: string;
+  suggested_category?: string;
+  suggested_condition?: ItemCondition;
+  estimated_price_range?: { low: number; high: number };
 }
