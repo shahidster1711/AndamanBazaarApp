@@ -5,3 +5,4 @@ dist
 .env*.local
 firebase-debug.log
 .firebase/
+.gemini/

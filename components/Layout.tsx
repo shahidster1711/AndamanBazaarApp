@@ -77,6 +77,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, user }) => {
           {/* Left Actions - Hidden on mobile, spaced for center branding on desktop */}
           <div className="hidden md:flex flex-1 items-center space-x-6">
             <Link to="/listings" className={`text-sm font-black uppercase tracking-widest transition-all ${location.pathname === '/listings' ? 'text-ocean-600 underline underline-offset-4' : 'text-slate-500 hover:text-slate-900'}`}>Explore</Link>
+            <Link to="/todos" className={`text-sm font-black uppercase tracking-widest transition-all ${location.pathname === '/todos' ? 'text-ocean-600 underline underline-offset-4' : 'text-slate-500 hover:text-slate-900'}`}>Tasks</Link>
           </div>
 
           {/* Centered Brand Identity - Upsized */}
@@ -149,9 +150,9 @@ export const Layout: React.FC<LayoutProps> = ({ children, user }) => {
           </div>
           <span className="text-[10px] mt-1 font-bold">Chats</span>
         </Link>
-        <Link to="/dashboard" className={`flex flex-col items-center justify-center w-full h-full active:scale-95 transition-transform ${location.pathname === '/dashboard' || location.pathname === '/profile' ? activeTabClass : inactiveTabClass}`}>
-          <UserIcon size={24} strokeWidth={location.pathname === '/dashboard' || location.pathname === '/profile' ? 2.5 : 2} />
-          <span className="text-[10px] mt-1 font-bold">Profile</span>
+        <Link to={user ? "/profile" : "/auth"} className={`flex flex-col items-center justify-center w-full h-full active:scale-95 transition-transform ${location.pathname === '/profile' || location.pathname === '/auth' ? activeTabClass : inactiveTabClass}`}>
+          <UserIcon size={24} strokeWidth={location.pathname === '/profile' || location.pathname === '/auth' ? 2.5 : 2} />
+          <span className="text-[10px] mt-1 font-bold">{user ? 'Profile' : 'Sign In'}</span>
         </Link>
       </nav>
 
@@ -172,6 +173,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, user }) => {
             <ul className="space-y-2 text-sm font-semibold text-slate-600">
               <li><Link to="/listings" className="hover:text-ocean-700 hover:underline">Browse Items</Link></li>
               <li><Link to="/post" className="hover:text-ocean-700 hover:underline">Start Selling</Link></li>
+              <li><Link to="/todos" className="hover:text-ocean-700 hover:underline">Dev Tasks</Link></li>
               <li><Link to="/auth" className="hover:text-ocean-700 hover:underline">Account Login</Link></li>
             </ul>
           </div>

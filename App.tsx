@@ -12,6 +12,7 @@ import { Dashboard } from './views/Dashboard';
 import { AuthView } from './views/AuthView';
 import { PrivacyPolicy } from './views/PrivacyPolicy';
 import { TermsOfService } from './views/TermsOfService';
+import { Todos } from './views/Todos';
 import { supabase, isSupabaseConfigured } from './lib/supabase';
 import { User } from '@supabase/supabase-js';
 import { AlertTriangle, Terminal, ExternalLink } from 'lucide-react';
@@ -25,7 +26,7 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isSupabaseConfigured) {
+    if (!isSupabaseConfigured()) {
       setLoading(false);
       return;
     }
@@ -54,7 +55,7 @@ const App: React.FC = () => {
     };
   }, []);
 
-  if (!isSupabaseConfigured) {
+  if (!isSupabaseConfigured()) {
     return (
       <div className="h-screen bg-gray-900 text-white flex flex-col items-center justify-center p-6 font-sans">
         <div className="text-center bg-gray-800 p-8 rounded-2xl shadow-2xl max-w-2xl w-full border border-yellow-500/30">
@@ -90,12 +91,13 @@ const App: React.FC = () => {
             <Route path="/" element={<Home />} />
             <Route path="/listings" element={<Listings />} />
             <Route path="/listings/:id" element={<ListingDetail />} />
-            <Route path="/create" element={user ? <CreateListing /> : <Navigate to="/auth" />} />
-            <Route path="/chat" element={user ? <ChatList /> : <Navigate to="/auth" />} />
-            <Route path="/chat/:chatId" element={user ? <ChatRoom /> : <Navigate to="/auth" />} />
+            <Route path="/post" element={user ? <CreateListing /> : <Navigate to="/auth" />} />
+            <Route path="/chats" element={user ? <ChatList /> : <Navigate to="/auth" />} />
+            <Route path="/chats/:chatId" element={user ? <ChatRoom /> : <Navigate to="/auth" />} />
             <Route path="/profile" element={user ? <Profile /> : <Navigate to="/auth" />} />
             <Route path="/dashboard" element={user ? <Dashboard /> : <Navigate to="/auth" />} />
             <Route path="/auth" element={<AuthView />} />
+            <Route path="/todos" element={<Todos />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<TermsOfService />} />
             <Route path="*" element={<Navigate to="/" />} />
