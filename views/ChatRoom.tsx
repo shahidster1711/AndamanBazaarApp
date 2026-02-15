@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Chat, Message, Profile } from '../types';
-import { Send, Camera, ChevronLeft, Phone, MoreVertical, ShieldCheck } from 'lucide-react';
+import { Send, Camera, ChevronLeft, Phone, MoreVertical, ShieldCheck, Check, CheckCheck } from 'lucide-react';
 import { messageSchema, sanitizePlainText } from '../lib/validation';
 import { checkRateLimit, logAuditEvent, sanitizeErrorMessage } from '../lib/security';
 import { useToast } from '../components/Toast';
@@ -127,17 +127,26 @@ export const ChatRoom: React.FC = () => {
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*',
           schema: 'public',
           table: 'messages',
           filter: `chat_id=eq.${chat.id}`,
         },
         (payload) => {
-          const newMessage = payload.new as Message;
-          setMessages((prev) => {
-            if (prev.find(m => m.id === newMessage.id)) return prev;
-            return [...prev, newMessage];
-          });
+          if (payload.eventType === 'INSERT') {
+            const newMessage = payload.new as Message;
+            setMessages((prev) => {
+              if (prev.find(m => m.id === newMessage.id)) return prev;
+              return [...prev, newMessage];
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            const updatedMessage = payload.new as Message;
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === updatedMessage.id ? updatedMessage : msg
+              )
+            );
+          }
         }
       )
       .subscribe();
@@ -151,10 +160,21 @@ export const ChatRoom: React.FC = () => {
     }
   }, [messages]);
 
+  const markMessagesAsRead = async (chatId: string, userId: string) => {
+    try {
+      await supabase
+        .from('messages')
+        .update({ is_read: true })
+        .eq('chat_id', chatId)
+        .neq('sender_id', userId);
+    } catch (error) {
+      console.error('Error marking messages as read:', error);
+    }
+  };
+
   const handleSend = async () => {
     if (!inputText.trim() || !chat || !currentUser) return;
 
-    // Check rate limit (10 messages per minute)
     const rateLimitCheck = checkRateLimit(`${currentUser.id}:send_message`, {
       maxRequests: 10,
       windowSeconds: 60
@@ -171,8 +191,6 @@ export const ChatRoom: React.FC = () => {
     }
 
     const messageText = inputText.trim();
-
-    // Sanitize and validate message
     const sanitizedMessage = sanitizePlainText(messageText);
 
     const validationResult = messageSchema.safeParse({
@@ -203,7 +221,8 @@ export const ChatRoom: React.FC = () => {
 
       if (msgError) throw msgError;
 
-      // Log successful message send
+      await markMessagesAsRead(chat.id, currentUser.id);
+
       await logAuditEvent({
         action: 'message_sent',
         resource_type: 'message',
@@ -213,7 +232,7 @@ export const ChatRoom: React.FC = () => {
     } catch (err) {
       console.error('Error sending message:', err);
       showToast('Message failed to send. Please try again.', 'error');
-      setInputText(messageText); // Restore message on error
+      setInputText(messageText);
       await logAuditEvent({
         action: 'message_send_failed',
         status: 'failed',
@@ -281,6 +300,13 @@ export const ChatRoom: React.FC = () => {
                   <p className="text-[8px] font-black uppercase tracking-widest">
                     {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </p>
+                  {isMe && (
+                    msg.is_read ? (
+                      <CheckCheck size={12} className="text-blue-500" />
+                    ) : (
+                      <Check size={12} />
+                    )
+                  )}
                 </div>
               </div>
             </div>

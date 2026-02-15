@@ -1,7 +1,5 @@
 {
   "projects": {
-    "prod": "andamanapp-in"
-  },
-  "targets": {},
-  "etags": {}
+    "default": "gen-lang-client-0408960446"
+  }
 }

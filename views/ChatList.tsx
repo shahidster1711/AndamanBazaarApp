@@ -2,10 +2,15 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { Chat } from '../types';
+import { Chat, Message } from '../types';
+import { Check, CheckCheck } from 'lucide-react';
+
+interface ChatWithLastMessage extends Chat {
+  messages: Pick<Message, 'sender_id' | 'is_read'>[];
+}
 
 export const ChatList: React.FC = () => {
-  const [chats, setChats] = useState<Chat[]>([]);
+  const [chats, setChats] = useState<ChatWithLastMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<any>(null);
 
@@ -21,13 +26,14 @@ export const ChatList: React.FC = () => {
           *,
           listing:listings(title),
           seller:profiles!chats_seller_id_fkey(name, profile_photo_url),
-          buyer:profiles!chats_buyer_id_fkey(name, profile_photo_url)
+          buyer:profiles!chats_buyer_id_fkey(name, profile_photo_url),
+          messages(sender_id, is_read)
         `)
         .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
         .order('last_message_at', { ascending: false });
 
       if (error) throw error;
-      setChats(data || []);
+      setChats(data as ChatWithLastMessage[] || []);
     } catch (err) {
       console.error('Error fetching chats:', err);
     } finally {
@@ -38,24 +44,19 @@ export const ChatList: React.FC = () => {
   useEffect(() => {
     fetchChats();
 
-    // Realtime update for the chat list
-    const channel = supabase
+    const chatsChannel = supabase
       .channel('chat_list_updates')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'chats',
-        },
-        () => {
-          fetchChats();
-        }
-      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'chats' }, () => fetchChats())
+      .subscribe();
+
+    const messagesChannel = supabase
+      .channel('chat_list_message_updates')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, () => fetchChats())
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(chatsChannel);
+      supabase.removeChannel(messagesChannel);
     };
   }, []);
 
@@ -101,6 +102,8 @@ export const ChatList: React.FC = () => {
               const isBuyer = currentUser?.id === chat.buyer_id;
               const otherParty = isBuyer ? chat.seller : chat.buyer;
               const unreadCount = isBuyer ? chat.buyer_unread_count : chat.seller_unread_count;
+              const lastMessage = chat.messages[chat.messages.length - 1];
+              const lastMessageSentByMe = lastMessage?.sender_id === currentUser?.id;
 
               return (
                 <Link 
@@ -108,7 +111,6 @@ export const ChatList: React.FC = () => {
                   to={`/chats/${chat.id}`} 
                   className={`relative flex items-center p-6 hover:bg-slate-50 transition-all group ${unreadCount > 0 ? 'bg-teal-50/60' : ''}`}
                 >
-                  {/* iOS Style Unread Dot */}
                   {unreadCount > 0 && (
                     <div className="absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 bg-teal-600 rounded-full shadow-[0_0_8px_rgba(13,148,136,0.4)]"></div>
                   )}
@@ -140,8 +142,13 @@ export const ChatList: React.FC = () => {
                     
                     <div className="flex items-center justify-between gap-4">
                       <p className={`text-sm truncate leading-tight ${unreadCount > 0 ? 'font-bold text-slate-900' : 'font-medium text-slate-400'}`}>
-                        {chat.last_message || 'No messages yet...'}
+                        {lastMessageSentByMe && 'You: '}{chat.last_message || 'No messages yet...'}
                       </p>
+                      {lastMessageSentByMe && (
+                        <div className="flex-shrink-0">
+                          {lastMessage.is_read ? <CheckCheck size={16} className="text-blue-500" /> : <Check size={16} className="text-slate-400" />}
+                        </div>
+                      )}
                     </div>
 
                     <div className="mt-3 flex items-center space-x-2">
@@ -151,7 +158,6 @@ export const ChatList: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Right Arrow Indicator */}
                   <div className="ml-4 opacity-0 group-hover:opacity-100 transition-opacity text-slate-300 text-xl font-light">
                     ›
                   </div>
