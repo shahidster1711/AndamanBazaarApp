@@ -43,16 +43,26 @@ export const ListingDetail: React.FC = () => {
       const { data: { user } } = await supabase.auth.getUser();
       setCurrentUserId(user?.id || null);
 
+      // Fetch basic listing and images
       const { data, error } = await supabase
         .from('listings')
-        .select('*, images:listing_images(*), seller:profiles(*)')
+        .select('*, images:listing_images(*)')
         .eq('id', id)
         .single();
 
       if (error) throw error;
 
       setListing(data);
-      if (data.seller) setSeller(data.seller);
+
+      // Fetch seller separately to avoid relationship resolution issues
+      if (data.user_id) {
+        const { data: sellerData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', data.user_id)
+          .single();
+        if (sellerData) setSeller(sellerData);
+      }
 
       if (data.images) {
         data.images.sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0));

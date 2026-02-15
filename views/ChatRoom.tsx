@@ -26,16 +26,28 @@ export const ChatRoom: React.FC = () => {
       setCurrentUser(user);
 
       try {
-        let { data: chatData, error: chatError } = await supabase
+        const resolveChatRelations = async (chat: any) => {
+          if (!chat) return null;
+          const [listingRes, sellerRes, buyerRes] = await Promise.all([
+            supabase.from('listings').select('id, title, price, city, user_id').eq('id', chat.listing_id).single(),
+            supabase.from('profiles').select('id, name, profile_photo_url').eq('id', chat.seller_id).single(),
+            supabase.from('profiles').select('id, name, profile_photo_url').eq('id', chat.buyer_id).single()
+          ]);
+          return {
+            ...chat,
+            listing: listingRes.data,
+            seller: sellerRes.data,
+            buyer: buyerRes.data
+          };
+        };
+
+        let { data: baseChatData, error: chatError } = await supabase
           .from('chats')
-          .select(`
-            *,
-            listing:listings(*),
-            seller:profiles!chats_seller_id_fkey(*),
-            buyer:profiles!chats_buyer_id_fkey(*)
-          `)
+          .select('*')
           .eq('id', id)
           .single();
+
+        let chatData = baseChatData ? await resolveChatRelations(baseChatData) : null;
 
         // If ID is actually a listing ID (from "Chat Now" button), resolve correctly
         if (chatError || !chatData) {
@@ -53,40 +65,30 @@ export const ChatRoom: React.FC = () => {
             }
 
             // Guard: prevent new chats on sold/deleted listings (existing chats still accessible)
-            const { data: existingChat } = await supabase
+            const { data: existingBaseChat } = await supabase
               .from('chats')
-              .select(`
-                *,
-                listing:listings(*),
-                seller:profiles!chats_seller_id_fkey(*),
-                buyer:profiles!chats_buyer_id_fkey(*)
-              `)
+              .select('*')
               .eq('listing_id', listing.id)
               .eq('buyer_id', user.id)
               .single();
 
-            if (existingChat) {
-              chatData = existingChat;
+            if (existingBaseChat) {
+              chatData = await resolveChatRelations(existingBaseChat);
             } else if (listing.status === 'sold' || listing.status === 'deleted' || listing.status === 'expired') {
               // Can't start new chat on sold/deleted/expired listings
               navigate('/listings');
               return;
             } else {
-              const { data: newChat } = await supabase
+              const { data: newBaseChat } = await supabase
                 .from('chats')
                 .insert({
                   listing_id: listing.id,
                   buyer_id: user.id,
                   seller_id: listing.user_id
                 })
-                .select(`
-                  *,
-                  listing:listings(*),
-                  seller:profiles!chats_seller_id_fkey(*),
-                  buyer:profiles!chats_buyer_id_fkey(*)
-                `)
+                .select('*')
                 .single();
-              if (newChat) chatData = newChat;
+              if (newBaseChat) chatData = await resolveChatRelations(newBaseChat);
             }
           }
         }

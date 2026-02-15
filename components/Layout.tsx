@@ -29,7 +29,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, user }) => {
     const fetchUnread = async () => {
       const { data: chats } = await supabase
         .from('chats')
-        .select('buyer_id, seller_id, buyer_unread_count, seller_unread_count')
+        .select('id, buyer_id, seller_id, buyer_unread_count, seller_unread_count')
         .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`);
 
       if (chats) {

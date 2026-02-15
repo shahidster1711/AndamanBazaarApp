@@ -1,11 +1,40 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { AuthView } from '../views/AuthView';
+import { MemoryRouter } from 'react-router-dom';
 
 describe('AuthView', () => {
+  const renderAuth = () => {
+    render(
+      <MemoryRouter>
+        <AuthView />
+      </MemoryRouter>
+    );
+  };
+
   it('renders the Google OAuth button', () => {
-    render(<AuthView />);
+    renderAuth();
     const googleButton = screen.getByText(/Continue with Google/i);
     expect(googleButton).toBeInTheDocument();
+  });
+
+  it('switches between Sign In and Sign Up modes', () => {
+    renderAuth();
+
+    // Initially in Sign In mode
+    expect(screen.getByText('Sign In')).toBeInTheDocument();
+
+    // Switch to Sign Up
+    const signUpTab = screen.getByText('Sign Up');
+    fireEvent.click(signUpTab);
+
+    expect(screen.getByPlaceholderText('Username')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Sign Up/i })).toBeInTheDocument();
+  });
+
+  it('renders login form inputs', () => {
+    renderAuth();
+    expect(screen.getByPlaceholderText('name@island.com')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('••••••••')).toBeInTheDocument();
   });
 });

@@ -1,0 +1,63 @@
+
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { CreateListing } from '../views/CreateListing';
+import { supabase } from '../lib/supabase';
+import { MemoryRouter } from 'react-router-dom';
+
+describe('CreateListing View', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+
+        // Default mock user
+        (supabase.auth.getUser as any).mockResolvedValue({
+            data: { user: { id: 'user-123' } },
+            error: null
+        });
+
+        // Mock profile for location verification
+        (supabase.from as any).mockImplementation((table: string) => {
+            if (table === 'profiles') {
+                return {
+                    select: vi.fn().mockReturnThis(),
+                    eq: vi.fn().mockReturnThis(),
+                    single: vi.fn().mockResolvedValue({ data: { is_location_verified: true }, error: null }),
+                };
+            }
+            return {
+                select: vi.fn().mockReturnThis(),
+                eq: vi.fn().mockReturnThis(),
+                single: vi.fn().mockResolvedValue({ data: null, error: null }),
+            };
+        });
+    });
+
+    const renderCreateListing = () => {
+        render(
+            <MemoryRouter>
+                <CreateListing />
+            </MemoryRouter>
+        );
+    };
+
+    it('renders Step 1 (Photos) initially', async () => {
+        renderCreateListing();
+
+        await waitFor(() => {
+            // Use exact match or more specific regex to avoid multiple matches
+            expect(screen.getByRole('heading', { name: /Add Photos/i })).toBeInTheDocument();
+            expect(screen.getByText(/Step 1 of 5/i)).toBeInTheDocument();
+        });
+    });
+
+    // Since Step 1 requires images (which are hard to mock in happy-dom effortlessly without blob issues),
+    // we'll verify the component structure and initial loading state.
+    it('shows optimized image text when no photos added', async () => {
+        renderCreateListing();
+
+        await waitFor(() => {
+            expect(screen.getByText(/Tap to add photos/i)).toBeInTheDocument();
+            expect(screen.getByText(/High-contrast optimized/i)).toBeInTheDocument();
+        });
+    });
+});

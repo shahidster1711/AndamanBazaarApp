@@ -162,10 +162,30 @@ export const Profile: React.FC = () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     try {
-      const { data, error } = await supabase.from('favorites').select('*, listing:listings(*)').eq('user_id', user.id);
-      if (error) throw error;
-      setListings((data || []).map(f => f.listing).filter(Boolean) as Listing[]);
-    } catch (err) { console.error('Error fetching saved items:', err); }
+      // 1. Fetch favorites
+      const { data: favoritedData, error: favError } = await supabase
+        .from('favorites')
+        .select('listing_id, id')
+        .eq('user_id', user.id);
+
+      if (favError) throw favError;
+      if (!favoritedData || favoritedData.length === 0) {
+        setListings([]);
+        return;
+      }
+
+      // 2. Fetch corresponding listings
+      const listingIds = favoritedData.map(f => f.listing_id);
+      const { data: listingData, error: listError } = await supabase
+        .from('listings')
+        .select('*')
+        .in('id', listingIds);
+
+      if (listError) throw listError;
+      setListings(listingData || []);
+    } catch (err) {
+      console.error('Error fetching saved items:', err);
+    }
   };
 
   const handleUnfavorite = async (id: string, e: React.MouseEvent) => {
@@ -295,6 +315,14 @@ export const Profile: React.FC = () => {
                       <Calendar size={18} className="text-accent" />
                       <span className="text-sm font-black uppercase tracking-widest">Joined in {profile?.created_at ? new Date(profile.created_at).getFullYear() : '2024'}</span>
                     </div>
+                    {profile?.city && (
+                      <div className="flex items-center space-x-2 px-5 py-3 bg-secondary/10 text-secondary rounded-2xl border-2 border-secondary/20 shadow-sm">
+                        <MapPin size={18} className="text-accent" />
+                        <span className="text-sm font-black uppercase tracking-widest">
+                          {profile.area ? `${profile.area}, ` : ''}{profile.city}
+                        </span>
+                      </div>
+                    )}
                     {profile?.is_location_verified && (
                       <div className="flex items-center space-x-2 px-5 py-3 bg-green-500/10 text-green-700 rounded-2xl border-2 border-green-500/20 shadow-sm">
                         <ShieldCheck size={18} />

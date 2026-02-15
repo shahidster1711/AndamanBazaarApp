@@ -20,20 +20,53 @@ export const ChatList: React.FC = () => {
     setCurrentUser(user);
 
     try {
-      const { data, error } = await supabase
+      // 1. Fetch base chats (use explicit columns to avoid any relationship resonance)
+      const { data: chatData, error: chatError } = await supabase
         .from('chats')
-        .select(`
-          *,
-          listing:listings(title),
-          seller:profiles!chats_seller_id_fkey(name, profile_photo_url),
-          buyer:profiles!chats_buyer_id_fkey(name, profile_photo_url),
-          messages(sender_id, is_read)
-        `)
+        .select('id, listing_id, buyer_id, seller_id, last_message, last_message_at, buyer_unread_count, seller_unread_count, created_at')
         .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
         .order('last_message_at', { ascending: false });
 
-      if (error) throw error;
-      setChats(data as ChatWithLastMessage[] || []);
+      if (chatError) throw chatError;
+      if (!chatData || chatData.length === 0) {
+        setChats([]);
+        return;
+      }
+
+      // 2. Extract IDs for batch fetching
+      const listingIds = [...new Set(chatData.map(c => c.listing_id).filter(Boolean))];
+      const profileIds = [...new Set([
+        ...chatData.map(c => c.buyer_id),
+        ...chatData.map(c => c.seller_id)
+      ].filter(Boolean))];
+
+      // 3. Batch fetch related data
+      const [listingsRes, profilesRes, messagesRes] = await Promise.all([
+        supabase.from('listings').select('id, title').in('id', listingIds),
+        supabase.from('profiles').select('id, name, profile_photo_url').in('id', profileIds),
+        supabase.from('messages').select('chat_id, sender_id, is_read, created_at').in('chat_id', chatData.map(c => c.id)).order('created_at', { ascending: true })
+      ]);
+
+      // 4. Map data back to chats
+      const listingsMap = Object.fromEntries((listingsRes.data || []).map(l => [l.id, l]));
+      const profilesMap = Object.fromEntries((profilesRes.data || []).map(p => [p.id, p]));
+
+      // Group messages by chat_id
+      const messagesByChat: Record<string, any[]> = {};
+      (messagesRes.data || []).forEach(m => {
+        if (!messagesByChat[m.chat_id]) messagesByChat[m.chat_id] = [];
+        messagesByChat[m.chat_id].push(m);
+      });
+
+      const enrichedChats = chatData.map(chat => ({
+        ...chat,
+        listing: listingsMap[chat.listing_id],
+        seller: profilesMap[chat.seller_id],
+        buyer: profilesMap[chat.buyer_id],
+        messages: messagesByChat[chat.id] || []
+      }));
+
+      setChats(enrichedChats as ChatWithLastMessage[]);
     } catch (err) {
       console.error('Error fetching chats:', err);
     } finally {
@@ -78,12 +111,12 @@ export const ChatList: React.FC = () => {
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-4xl font-black uppercase tracking-tighter">Messages</h1>
         <div className="bg-teal-50 px-4 py-1.5 rounded-full">
-           <span className="text-[10px] font-black text-teal-800 uppercase tracking-widest">
+          <span className="text-[10px] font-black text-teal-800 uppercase tracking-widest">
             {chats.length} active threads
-           </span>
+          </span>
         </div>
       </div>
-      
+
       <div className="bg-white rounded-[40px] shadow-2xl border-4 border-slate-50 overflow-hidden">
         <div className="flex bg-slate-50 border-b-2 border-slate-100">
           <button className="flex-1 py-5 font-black text-teal-800 border-b-4 border-teal-800 uppercase text-[10px] tracking-[0.2em]">Primary</button>
@@ -102,13 +135,13 @@ export const ChatList: React.FC = () => {
               const isBuyer = currentUser?.id === chat.buyer_id;
               const otherParty = isBuyer ? chat.seller : chat.buyer;
               const unreadCount = isBuyer ? chat.buyer_unread_count : chat.seller_unread_count;
-              const lastMessage = chat.messages[chat.messages.length - 1];
+              const lastMessage = chat.messages && chat.messages.length > 0 ? chat.messages[chat.messages.length - 1] : undefined;
               const lastMessageSentByMe = lastMessage?.sender_id === currentUser?.id;
 
               return (
-                <Link 
-                  key={chat.id} 
-                  to={`/chats/${chat.id}`} 
+                <Link
+                  key={chat.id}
+                  to={`/chats/${chat.id}`}
                   className={`relative flex items-center p-6 hover:bg-slate-50 transition-all group ${unreadCount > 0 ? 'bg-teal-50/60' : ''}`}
                 >
                   {unreadCount > 0 && (
@@ -124,12 +157,12 @@ export const ChatList: React.FC = () => {
                       )}
                     </div>
                     {unreadCount > 0 && (
-                       <div className="absolute -top-1.5 -right-1.5 min-w-[24px] h-6 px-1.5 bg-teal-600 text-white border-2 border-white rounded-full flex items-center justify-center text-[11px] font-black shadow-lg">
+                      <div className="absolute -top-1.5 -right-1.5 min-w-[24px] h-6 px-1.5 bg-teal-600 text-white border-2 border-white rounded-full flex items-center justify-center text-[11px] font-black shadow-lg">
                         {unreadCount}
-                       </div>
+                      </div>
                     )}
                   </div>
-                  
+
                   <div className="ml-6 flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
                       <h3 className={`font-black truncate text-lg uppercase tracking-tight ${unreadCount > 0 ? 'text-slate-900' : 'text-slate-600'}`}>
@@ -139,14 +172,14 @@ export const ChatList: React.FC = () => {
                         {chat.last_message_at ? new Date(chat.last_message_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                       </span>
                     </div>
-                    
+
                     <div className="flex items-center justify-between gap-4">
                       <p className={`text-sm truncate leading-tight ${unreadCount > 0 ? 'font-bold text-slate-900' : 'font-medium text-slate-400'}`}>
                         {lastMessageSentByMe && 'You: '}{chat.last_message || 'No messages yet...'}
                       </p>
                       {lastMessageSentByMe && (
                         <div className="flex-shrink-0">
-                          {lastMessage.is_read ? <CheckCheck size={16} className="text-blue-500" /> : <Check size={16} className="text-slate-400" />}
+                          {lastMessage?.is_read ? <CheckCheck size={16} className="text-blue-500" /> : <Check size={16} className="text-slate-400" />}
                         </div>
                       )}
                     </div>

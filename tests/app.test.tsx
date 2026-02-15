@@ -1,11 +1,15 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import App from '../App';
+import { vi } from 'vitest';
 
 describe('App', () => {
-  it('renders headline', () => {
+  it('renders sign in link when unauthenticated', async () => {
     render(<App />);
-    const headline = screen.getByText(/Sign In/i);
-    expect(headline).toBeInTheDocument();
+
+    // Use waitFor to account for the initial loading state in App.tsx
+    await waitFor(() => {
+      expect(screen.getByText(/Sign In/i)).toBeInTheDocument();
+    });
   });
 });

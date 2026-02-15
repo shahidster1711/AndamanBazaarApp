@@ -288,17 +288,7 @@ export const AuthView: React.FC = () => {
               <span className="font-black text-slate-700 text-xs uppercase tracking-widest">Continue with Google</span>
             </button>
           </div>
-
           <div className="mt-12 pt-8 border-t-2 border-dashed border-slate-100 space-y-4">
-            <div className="bg-blue-50 p-6 rounded-[32px] space-y-3">
-              <p className="text-[10px] font-black text-blue-700 uppercase tracking-widest flex items-center">
-                <Info size={12} className="mr-2" /> Localhost Link Fix
-              </p>
-              <p className="text-[11px] text-blue-800 leading-relaxed font-semibold">
-                If the email link starts with <code className="bg-white px-1">localhost:3000</code>, you MUST update your <b>Site URL</b> in the Supabase Dashboard to point to your current URL.
-              </p>
-            </div>
-
             <button
               onClick={() => setShowHelp(!showHelp)}
               className="w-full flex items-center justify-between text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] hover:text-ocean-700 transition-colors py-2"
@@ -347,6 +337,6 @@ export const AuthView: React.FC = () => {
         </div>
       </div>
       <p className="mt-12 text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Island Verified Technology &copy; 2024</p>
-    </div>
+    </div >
   );
 };
