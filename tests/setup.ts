@@ -10,6 +10,7 @@ export const createMockChain = (data: any = [], error: any = null) => {
         delete: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
         or: vi.fn().mockReturnThis(),
+        in: vi.fn().mockReturnThis(),
         order: vi.fn().mockReturnThis(),
         single: vi.fn().mockReturnThis(),
         range: vi.fn().mockReturnThis(),

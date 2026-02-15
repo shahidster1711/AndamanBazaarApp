@@ -9,7 +9,8 @@ describe('App', () => {
 
     // Use waitFor to account for the initial loading state in App.tsx
     await waitFor(() => {
-      expect(screen.getByText(/Sign In/i)).toBeInTheDocument();
+      const links = screen.getAllByText(/Sign In/i);
+      expect(links.length).toBeGreaterThan(0);
     });
   });
 });

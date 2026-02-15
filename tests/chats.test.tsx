@@ -39,22 +39,26 @@ describe('ChatList View', () => {
         const mockChats = [
             {
                 id: 'chat-1',
+                listing_id: 'listing-1',
                 buyer_id: 'user-123',
                 seller_id: 'seller-456',
-                listing: { title: 'Beach House' },
-                seller: { name: 'John Doe', profile_photo_url: null },
-                buyer: { name: 'Buyer', profile_photo_url: null },
                 last_message: 'Is it available?',
                 last_message_at: new Date().toISOString(),
                 buyer_unread_count: 1,
-                seller_unread_count: 0,
-                messages: [
-                    { sender_id: 'seller-456', is_read: false }
-                ]
+                seller_unread_count: 0
             }
         ];
 
-        (supabase.from as any).mockImplementation(() => createMockChain(mockChats));
+        const mockListings = [{ id: 'listing-1', title: 'Beach House' }];
+        const mockProfiles = [{ id: 'seller-456', name: 'John Doe', profile_photo_url: null }];
+
+        (supabase.from as any).mockImplementation((table: string) => {
+            if (table === 'chats') return createMockChain(mockChats);
+            if (table === 'listings') return createMockChain(mockListings);
+            if (table === 'profiles') return createMockChain(mockProfiles);
+            if (table === 'messages') return createMockChain([]);
+            return createMockChain([]);
+        });
 
         renderChatList();
 

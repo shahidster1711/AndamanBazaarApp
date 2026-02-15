@@ -22,19 +22,19 @@ describe('AuthView', () => {
     renderAuth();
 
     // Initially in Sign In mode
-    expect(screen.getByText('Sign In')).toBeInTheDocument();
+    expect(screen.getByText('Sign In Securely')).toBeInTheDocument();
 
     // Switch to Sign Up
-    const signUpTab = screen.getByText('Sign Up');
+    const signUpTab = screen.getByText('signup');
     fireEvent.click(signUpTab);
 
-    expect(screen.getByPlaceholderText('Username')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Sign Up/i })).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('e.g. Rahul Sharma')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Create Island Account/i })).toBeInTheDocument();
   });
 
   it('renders login form inputs', () => {
     renderAuth();
-    expect(screen.getByPlaceholderText('name@island.com')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('name@domain.com')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('••••••••')).toBeInTheDocument();
   });
 });
