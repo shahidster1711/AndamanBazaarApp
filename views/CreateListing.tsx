@@ -63,7 +63,11 @@ export const CreateListing: React.FC = () => {
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [isNegotiable, setIsNegotiable] = useState(true);
+  const [minPrice, setMinPrice] = useState('');
   const [condition, setCondition] = useState<ItemCondition>('good');
+  const [itemAge, setItemAge] = useState<ItemAge | null>(null);
+  const [accessories, setAccessories] = useState<string[]>([]);
+  const [accessoryInput, setAccessoryInput] = useState('');
   const [city, setCity] = useState('Port Blair');
   const [area, setArea] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
@@ -76,8 +80,11 @@ export const CreateListing: React.FC = () => {
   const debouncedSave = useCallback(
     debounce((uid: string) => {
       saveDraft(uid, {
-        step, category: category || undefined, title, description, price, condition, is_negotiable: isNegotiable, city, area, contact_preferences: contactPrefs,
-        image_previews: photos.map(p => p.preview).slice(0, 3), idempotency_key: idempotencyKey, accessories: [],
+        step, category: category || undefined, title, description, price, condition,
+        is_negotiable: isNegotiable, min_price: minPrice, item_age: itemAge || undefined,
+        city, area, contact_preferences: contactPrefs,
+        image_previews: photos.map(p => p.preview).slice(0, 3),
+        idempotency_key: idempotencyKey, accessories,
       });
     }, 3000),
     [step, category, title, description, price, condition, isNegotiable, city, area, contactPrefs, photos, idempotencyKey]
@@ -108,7 +115,10 @@ export const CreateListing: React.FC = () => {
             setCity(listing.city);
             setArea(listing.area || '');
             setCondition(listing.condition || 'good');
+            setItemAge(listing.item_age || null);
+            setAccessories(listing.accessories || []);
             setIsNegotiable(listing.is_negotiable ?? true);
+            setMinPrice(listing.min_price?.toString() || '');
             setContactPrefs(listing.contact_preferences || DEFAULT_CONTACT_PREFERENCES);
             if (listing.category_id) {
               const cat = CATEGORIES.find(c => c.id === listing.category_id);
@@ -145,7 +155,10 @@ export const CreateListing: React.FC = () => {
     setPrice(draft.price || '');
     setCategory(draft.category || null);
     setCondition(draft.condition || 'good');
+    setItemAge(draft.item_age || null);
+    setAccessories(draft.accessories || []);
     setIsNegotiable(draft.is_negotiable ?? true);
+    setMinPrice(draft.min_price || '');
     setCity(draft.city || 'Port Blair');
     setArea(draft.area || '');
     setContactPrefs(draft.contact_preferences || DEFAULT_CONTACT_PREFERENCES);
@@ -229,11 +242,24 @@ export const CreateListing: React.FC = () => {
       const base64 = await new Promise<string>(res => { reader.onload = () => res((reader.result as string).split(',')[1]); reader.readAsDataURL(imageFile); });
       const result = await model.generateContent([
         { inlineData: { mimeType: 'image/webp', data: base64 } },
-        'Analyze this product image for a local marketplace listing in the Andaman Islands, India. Return ONLY valid JSON: {"suggested_title":"concise title max 80 chars","suggested_description":"2-3 sentences","suggested_category":"one of: mobiles,vehicles,home,fashion,property,services,other"}'
+        `Analyze this product image for a local marketplace listing in the Andaman Islands, India. 
+        Return ONLY valid JSON with these fields:
+        {
+          "suggested_title": "concise title max 80 chars",
+          "suggested_description": "2-3 compelling sentences",
+          "suggested_category": "one of: mobiles,vehicles,home,fashion,property,services,other",
+          "suggested_condition": "one of: new,like_new,good,fair",
+          "estimated_price_range": {"low": number, "high": number}
+        }`
       ]);
       const text = result.response.text();
       const json = JSON.parse(text.replace(/```json\n?|```/g, '').trim()) as AiSuggestion;
       setAiSuggestion(json);
+      if (json.suggested_condition) setCondition(json.suggested_condition);
+      if (json.suggested_category) {
+        const cat = CATEGORIES.find(c => c.id === json.suggested_category);
+        if (cat) setCategory(cat.name);
+      }
     } catch (e) { console.warn('AI suggestion failed:', e); }
     finally { setAiLoading(false); }
   };
@@ -273,7 +299,20 @@ export const CreateListing: React.FC = () => {
       }
 
       const catId = category ? CATEGORIES.find(c => c.name === category)?.id || category.toLowerCase() : '';
-      const validationResult = listingSchema.safeParse({ title: sanitizedTitle, description: sanitizedDescription, price: parseFloat(price), category_id: catId, condition, city, area: sanitizedArea, is_negotiable: isNegotiable, contact_preferences: contactPrefs });
+      const validationResult = listingSchema.safeParse({
+        title: sanitizedTitle,
+        description: sanitizedDescription,
+        price: parseFloat(price),
+        category_id: catId,
+        condition,
+        item_age: itemAge,
+        accessories,
+        city,
+        area: sanitizedArea,
+        is_negotiable: isNegotiable,
+        min_price: minPrice ? parseFloat(minPrice) : null,
+        contact_preferences: contactPrefs
+      });
 
       if (!validationResult.success) {
         showToast(validationResult.error.issues[0].message, 'error');
@@ -281,7 +320,23 @@ export const CreateListing: React.FC = () => {
         return;
       }
 
-      const payload: Record<string, any> = { user_id: user.id, title: sanitizedTitle, price: parseFloat(price), description: sanitizedDescription, city, area: sanitizedArea, category_id: catId, condition, status: 'active', is_negotiable: isNegotiable, contact_preferences: contactPrefs, idempotency_key: editId ? undefined : idempotencyKey };
+      const payload: Record<string, any> = {
+        user_id: user.id,
+        title: sanitizedTitle,
+        price: parseFloat(price),
+        description: sanitizedDescription,
+        city,
+        area: sanitizedArea,
+        category_id: catId,
+        condition,
+        item_age: itemAge,
+        accessories,
+        status: 'active',
+        is_negotiable: isNegotiable,
+        min_price: minPrice ? parseFloat(minPrice) : null,
+        contact_preferences: contactPrefs,
+        idempotency_key: editId ? undefined : idempotencyKey
+      };
       Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k]);
 
       let listingId = editId;
@@ -304,15 +359,15 @@ export const CreateListing: React.FC = () => {
         const fileName = `${user.id}/${crypto.randomUUID()}.webp`;
         const { error: uploadError } = await supabase.storage.from('listings').upload(fileName, photo.file!, { contentType: 'image/webp' });
         if (uploadError) {
-            console.warn('Image upload failed, skipping:', uploadError.message);
-            continue;
+          console.warn('Image upload failed, skipping:', uploadError.message);
+          continue;
         }
-        
+
         const { data: urlData } = supabase.storage.from('listings').getPublicUrl(fileName);
         if (listingId && urlData.publicUrl) {
-            await supabase.from('listing_images').insert({ listing_id: listingId, image_url: urlData.publicUrl, display_order: photos.indexOf(photo) });
+          await supabase.from('listing_images').insert({ listing_id: listingId, image_url: urlData.publicUrl, display_order: photos.indexOf(photo) });
         } else {
-            console.warn('Could not get public URL for uploaded image.');
+          console.warn('Could not get public URL for uploaded image.');
         }
       }
       for (const photo of photos.filter(p => p.id)) {
@@ -433,7 +488,7 @@ export const CreateListing: React.FC = () => {
                 <input type="text" placeholder="e.g. Royal Enfield Classic 350" value={title} onChange={e => setTitle(e.target.value)} maxLength={100} className="w-full p-4 bg-secondary/5 rounded-2xl border-2 border-secondary/10 focus:border-accent outline-none font-bold text-lg" />
                 {aiSuggestion?.suggested_title && title !== aiSuggestion.suggested_title && (
                   <button onClick={() => setTitle(aiSuggestion.suggested_title!)} className="flex items-center gap-2 px-4 py-2 bg-secondary/10 rounded-full text-primary text-sm font-bold border border-secondary/20 hover:bg-secondary/20 transition-colors">
-                    <Sparkles size={14} className="text-accent"/> Use AI Suggestion
+                    <Sparkles size={14} className="text-accent" /> Use AI Suggestion
                   </button>
                 )}
               </div>
@@ -445,7 +500,7 @@ export const CreateListing: React.FC = () => {
                 <textarea placeholder="Describe item details, condition, and inclusions..." rows={5} value={description} onChange={e => setDescription(e.target.value)} maxLength={2000} className="w-full p-4 bg-secondary/5 rounded-2xl border-2 border-secondary/10 focus:border-accent outline-none font-medium text-base leading-relaxed" />
                 {aiSuggestion?.suggested_description && description !== aiSuggestion.suggested_description && (
                   <button onClick={() => setDescription(aiSuggestion.suggested_description!)} className="flex items-center gap-2 px-4 py-2 bg-secondary/10 rounded-full text-primary text-sm font-bold border border-secondary/20 hover:bg-secondary/20 transition-colors">
-                    <Sparkles size={14} className="text-accent"/> Use AI Description
+                    <Sparkles size={14} className="text-accent" /> Use AI Description
                   </button>
                 )}
               </div>
@@ -456,32 +511,74 @@ export const CreateListing: React.FC = () => {
 
           {step === 3 && (
             <div className="space-y-6 animate-in fade-in slide-in-from-right-4">
-              <StepHeader title="Price & Condition" stepLabel={`Step 3 of ${TOTAL_STEPS}`} />
-              <div className="space-y-2">
-                <label className="text-sm font-black text-secondary uppercase tracking-widest ml-1">Price (₹)</label>
-                <input type="number" placeholder="Enter Amount" value={price} onChange={e => setPrice(e.target.value)} className="w-full p-4 bg-secondary/5 rounded-2xl border-2 border-secondary/10 focus:border-accent outline-none font-bold text-2xl" />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-black text-secondary uppercase tracking-widest ml-1">Price Type</label>
-                <div className="grid grid-cols-2 gap-3">
-                  {[{ v: true, l: 'Negotiable' }, { v: false, l: 'Fixed Price' }].map(opt => (
-                    <button key={String(opt.v)} onClick={() => setIsNegotiable(opt.v)} className={`p-4 rounded-2xl border-2 font-black uppercase text-sm tracking-widest transition-all ${isNegotiable === opt.v ? 'bg-accent/10 border-accent text-primary' : 'bg-secondary/5 border-secondary/10 text-secondary'}`}>
-                      {opt.l}
-                    </button>
-                  ))}
+              <StepHeader title="Price & Details" stepLabel={`Step 3 of ${TOTAL_STEPS}`} />
+
+              <div className="space-y-4 p-6 bg-secondary/5 rounded-3xl border-2 border-secondary/10">
+                <div className="space-y-2">
+                  <label className="text-sm font-black text-secondary uppercase tracking-widest ml-1">Expected Price (₹)</label>
+                  <input type="number" placeholder="Enter Amount" value={price} onChange={e => setPrice(e.target.value)} className="w-full p-4 bg-base-100 rounded-2xl border-2 border-secondary/10 focus:border-accent outline-none font-black text-2xl" />
+                  {aiSuggestion?.estimated_price_range && (
+                    <p className="text-xs font-bold text-accent px-1">
+                      💡 Market Range: ₹{aiSuggestion.estimated_price_range.low} - ₹{aiSuggestion.estimated_price_range.high}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between px-1">
+                    <label className="text-sm font-black text-secondary uppercase tracking-widest">Negotiable</label>
+                    <input type="checkbox" checked={isNegotiable} onChange={e => setIsNegotiable(e.target.checked)} className="toggle toggle-accent" />
+                  </div>
+                  {isNegotiable && (
+                    <div className="animate-in slide-in-from-top-2 space-y-2">
+                      <label className="text-[10px] font-black text-secondary/50 uppercase tracking-widest ml-1">Minimum Accepted Price (Optional)</label>
+                      <input type="number" placeholder="Hide from buyers" value={minPrice} onChange={e => setMinPrice(e.target.value)} className="w-full p-4 bg-base-100 rounded-2xl border-2 border-secondary/10 focus:border-accent outline-none font-bold text-lg" />
+                    </div>
+                  )}
                 </div>
               </div>
+
               <div className="space-y-2">
                 <label className="text-sm font-black text-secondary uppercase tracking-widest ml-1">Condition</label>
                 <div className="grid grid-cols-2 gap-3">
                   {CONDITION_OPTIONS.map(opt => (
                     <button key={opt.value} onClick={() => setCondition(opt.value as ItemCondition)} className={`p-4 rounded-2xl border-2 text-left transition-all ${condition === opt.value ? 'bg-accent/10 border-accent' : 'bg-secondary/5 border-secondary/10 hover:border-accent/50'}`}>
-                      <span className={`font-black text-base ${condition === opt.value ? 'text-primary' : 'text-secondary'}`}>{opt.label}</span>
-                      <p className="text-xs text-secondary/70 mt-1">{opt.description}</p>
+                      <span className={`font-black text-sm uppercase tracking-tight ${condition === opt.value ? 'text-primary' : 'text-secondary'}`}>{opt.label}</span>
+                      <p className="text-[10px] text-secondary/70 leading-tight mt-0.5">{opt.description}</p>
                     </button>
                   ))}
                 </div>
               </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-black text-secondary uppercase tracking-widest ml-1">Item Age</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {ITEM_AGE_OPTIONS.map(opt => (
+                    <button key={opt.value} onClick={() => setItemAge(opt.value as ItemAge)} className={`py-3 px-1 rounded-xl border-2 text-center transition-all ${itemAge === opt.value ? 'bg-accent/10 border-accent font-black text-primary' : 'bg-secondary/5 border-secondary/10 text-secondary font-bold'} text-[10px] uppercase tracking-tight`}>
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-sm font-black text-secondary uppercase tracking-widest ml-1">Included Accessories</label>
+                <div className="flex gap-2">
+                  <input type="text" placeholder="e.g. Charger, Original Box" value={accessoryInput} onChange={e => setAccessoryInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), accessoryInput.trim() && setAccessories(prev => [...prev.slice(-14), accessoryInput.trim()]), setAccessoryInput(''))} className="flex-1 p-4 bg-secondary/5 rounded-2xl border-2 border-secondary/10 focus:border-accent outline-none font-bold text-sm" />
+                  <button onClick={() => { if (accessoryInput.trim()) { setAccessories(prev => [...prev.slice(-14), accessoryInput.trim()]); setAccessoryInput(''); } }} className="px-6 bg-secondary/10 text-primary rounded-2xl border-2 border-secondary/10 hover:bg-secondary/20 transition-all font-black uppercase text-xs">Add</button>
+                </div>
+                {accessories.length > 0 && (
+                  <div className="flex flex-wrap gap-2 animate-in fade-in">
+                    {accessories.map((acc, i) => (
+                      <span key={i} className="flex items-center gap-1.5 px-3 py-1.5 bg-accent/10 text-primary border border-accent/20 rounded-full text-[11px] font-black uppercase">
+                        {acc}
+                        <button onClick={() => setAccessories(prev => prev.filter((_, idx) => idx !== i))} className="hover:text-red-500"><X size={12} /></button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <ContinueButton onClick={nextStep} disabled={!price} />
               <BackButton onClick={prevStep} />
             </div>
@@ -535,13 +632,33 @@ export const CreateListing: React.FC = () => {
                   <p className="text-sm font-black text-accent uppercase tracking-widest mb-1">{category}</p>
                   <p className="font-heading font-black text-primary truncate text-2xl">{title}</p>
                   <p className="text-3xl font-heading font-black text-primary mt-1">₹ {parseFloat(price || '0').toLocaleString('en-IN')}</p>
-                  <div className="flex gap-2 mt-2">
-                    <span className="text-xs font-bold bg-secondary/20 text-primary px-3 py-1 rounded-full uppercase">{condition.replace('_', ' ')}</span>
-                    {isNegotiable && <span className="text-xs font-bold bg-green-500/20 text-green-800 px-3 py-1 rounded-full uppercase">Negotiable</span>}
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    <span className="text-[10px] font-black bg-secondary/20 text-primary px-3 py-1 rounded-full uppercase">{condition.replace('_', ' ')}</span>
+                    {isNegotiable && (
+                      <span className="text-[10px] font-black bg-green-500/20 text-green-800 px-3 py-1 rounded-full uppercase">
+                        Negotiable {minPrice && `(Min: ₹${parseInt(minPrice)})`}
+                      </span>
+                    )}
+                    {itemAge && (
+                      <span className="text-[10px] font-black bg-secondary/20 text-primary px-3 py-1 rounded-full uppercase">
+                        Age: {ITEM_AGE_OPTIONS.find(o => o.value === itemAge)?.label}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
+
               <div className="space-y-3 text-left">
+                {accessories.length > 0 && (
+                  <div className="p-4 bg-secondary/5 rounded-2xl border border-secondary/10">
+                    <p className="text-[10px] font-black text-secondary uppercase tracking-widest mb-2 px-1">Accessories Included</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {accessories.map((acc, i) => (
+                        <span key={i} className="px-2 py-0.5 bg-accent/5 text-primary border border-accent/10 rounded-md text-[10px] font-bold">{acc}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div className="flex justify-between items-center p-4 bg-secondary/5 rounded-xl">
                   <span className="text-sm font-bold text-secondary">Photos</span>
                   <button onClick={() => goToStep(1)} className="text-accent text-sm font-black flex items-center gap-1">{photos.length} photos ✏️</button>

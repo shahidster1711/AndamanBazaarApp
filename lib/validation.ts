@@ -89,7 +89,7 @@ export const listingSchema = z.object({
 
     min_price: z
         .number()
-        .positive('Minimum price must be positive')
+        .nonnegative('Minimum price cannot be negative')
         .max(10000000, 'Minimum price exceeds maximum')
         .optional()
         .nullable(),
@@ -103,16 +103,21 @@ export const listingSchema = z.object({
     has_invoice: z.boolean().default(false),
 
     accessories: z.array(
-        z.string().max(50, 'Accessory name too long')
-    ).max(10, 'Maximum 10 accessories').default([]),
+        z.string().min(1, 'Accessory name cannot be empty').max(50, 'Accessory name too long')
+    ).max(15, 'Maximum 15 accessories').default([]),
 
     contact_preferences: z.object({
         chat: z.boolean().default(true),
-        phone: z.boolean().optional(),
-        whatsapp: z.boolean().optional(),
-    }).default({ chat: true }),
+        phone: z.boolean().default(false),
+        whatsapp: z.boolean().default(false),
+    }).default({ chat: true, phone: false, whatsapp: false }),
 }).refine(
-    (data) => !data.min_price || data.min_price < data.price,
+    (data) => {
+        if (data.is_negotiable && data.min_price !== undefined && data.min_price !== null) {
+            return data.min_price < data.price;
+        }
+        return true;
+    },
     { message: 'Minimum price must be less than the listing price', path: ['min_price'] }
 );
 

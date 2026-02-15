@@ -4,17 +4,17 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Logo } from '../components/Logo';
 import { supabase } from '../lib/supabase';
 import { Listing } from '../types';
-import { Car, Smartphone, Home as HomeIcon, Sofa, Shirt, Briefcase, Sparkles, MapPin, Search, ArrowRight, Loader2, Download, X } from 'lucide-react';
+import { Car, Smartphone, Home as HomeIcon, Sofa, Shirt, Briefcase, Sparkles, MapPin, Search, ArrowRight, Loader2, Download, X, Zap } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 
 const categories = [
-  { name: 'Mobiles', slug: 'mobiles', icon: <Smartphone size={24} />, color: 'bg-ocean-100 text-ocean-700' },
-  { name: 'Vehicles', slug: 'vehicles', icon: <Car size={24} />, color: 'bg-blue-100 text-blue-700' },
-  { name: 'Home', slug: 'home', icon: <Sofa size={24} />, color: 'bg-purple-100 text-purple-700' },
-  { name: 'Fashion', slug: 'fashion', icon: <Shirt size={24} />, color: 'bg-pink-100 text-pink-700' },
-  { name: 'Property', slug: 'property', icon: <HomeIcon size={24} />, color: 'bg-emerald-100 text-emerald-700' },
-  { name: 'Services', slug: 'services', icon: <Briefcase size={24} />, color: 'bg-orange-100 text-orange-700' },
-  { name: 'Other', slug: 'other', icon: <Sparkles size={24} />, color: 'bg-slate-100 text-slate-700' },
+  { name: 'Mobiles', slug: 'mobiles', icon: <Smartphone size={28} />, gradient: 'from-blue-400 to-blue-600', shadow: 'shadow-blue-200' },
+  { name: 'Vehicles', slug: 'vehicles', icon: <Car size={28} />, gradient: 'from-cyan-400 to-cyan-600', shadow: 'shadow-cyan-200' },
+  { name: 'Home', slug: 'home', icon: <Sofa size={28} />, gradient: 'from-purple-400 to-purple-600', shadow: 'shadow-purple-200' },
+  { name: 'Fashion', slug: 'fashion', icon: <Shirt size={28} />, gradient: 'from-pink-400 to-pink-600', shadow: 'shadow-pink-200' },
+  { name: 'Property', slug: 'property', icon: <HomeIcon size={28} />, gradient: 'from-emerald-400 to-emerald-600', shadow: 'shadow-emerald-200' },
+  { name: 'Services', slug: 'services', icon: <Briefcase size={28} />, gradient: 'from-orange-400 to-orange-600', shadow: 'shadow-orange-200' },
+  { name: 'Other', slug: 'other', icon: <Sparkles size={28} />, gradient: 'from-slate-400 to-slate-600', shadow: 'shadow-slate-200' },
 ];
 
 const RECENT_PAGE_SIZE = 8;
@@ -114,23 +114,23 @@ export const Home: React.FC = () => {
   };
 
   return (
-    <div className="space-y-12 pb-24 md:pb-12 animate-slide-up bg-white">
+    <div className="space-y-12 pb-24 md:pb-12 bg-slate-50 min-h-screen">
       {/* Web-Only App Download Banner */}
       {showAppBanner && (
-        <div className="bg-slate-900 text-white px-4 py-3 relative overflow-hidden">
+        <div className="bg-slate-900 text-white px-4 py-3 relative overflow-hidden animate-fade-in-up">
           <div className="max-w-7xl mx-auto flex items-center justify-between relative z-10">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-ocean-500 rounded-xl flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 bg-gradient-to-br from-ocean-400 to-ocean-600 rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-ocean-500/20">
                 <Smartphone size={20} className="text-white" />
               </div>
               <div>
                 <p className="text-[10px] font-black uppercase tracking-widest text-ocean-300">Experience the best</p>
-                <p className="font-bold text-sm leading-tight">Download the AndamanBazaar App</p>
+                <p className="font-heading font-bold text-sm leading-tight">Download the App</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <button className="bg-white text-slate-900 px-4 py-2 rounded-lg font-black text-[10px] uppercase tracking-widest hover:bg-ocean-50 transition-colors">
-                Get App
+              <button className="bg-white text-slate-900 px-4 py-2 rounded-lg font-black text-[10px] uppercase tracking-widest hover:bg-ocean-50 transition-colors shadow-sm">
+                Get It
               </button>
               <button onClick={() => setShowAppBanner(false)} className="p-1 hover:bg-white/10 rounded-full transition-colors">
                 <X size={16} className="text-slate-400" />
@@ -140,102 +140,98 @@ export const Home: React.FC = () => {
         </div>
       )}
 
-      {/* Premium Hero Section */}
-      <section className="relative px-4 py-12 md:py-24 text-center overflow-hidden">
-        <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-96 h-96 bg-ocean-50 rounded-full blur-3xl opacity-50"></div>
-        <div className="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/2 w-96 h-96 bg-coral-50 rounded-full blur-3xl opacity-50"></div>
+      {/* Modern Hero Section */}
+      <section className="relative px-4 pt-8 pb-12 md:py-20 text-center overflow-hidden">
+        {/* Abstract Background Blobs - Refined */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-center bg-no-repeat opacity-60"
+          style={{ background: 'radial-gradient(circle, rgba(14,165,233,0.08) 0%, rgba(248,250,252,0) 70%)' }}></div>
 
-        <div className="max-w-4xl mx-auto space-y-8 relative z-10">
+        <div className="max-w-4xl mx-auto space-y-8 relative z-10 animate-fade-in-up">
           <div className="flex flex-col items-center space-y-4">
-            <div className="bg-ocean-100 text-ocean-700 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-2 border border-ocean-200">
-              Trusted Island Marketplace
+            <div className="inline-flex items-center gap-2 bg-white/50 backdrop-blur-sm border border-ocean-100 px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-[0.15em] text-ocean-700 shadow-sm animate-fade-in-up delay-100">
+              <Zap size={12} className="fill-ocean-500 text-ocean-500" />
+              <span>Andaman's Own Marketplace</span>
             </div>
-            <h1 className="text-5xl md:text-7xl font-heading font-black tracking-tighter text-slate-950 leading-tight">
-              Trade Locally in <br /><span className="text-ocean-700">The Andamans.</span>
+
+            <h1 className="text-5xl md:text-7xl font-heading font-black tracking-tight text-slate-900 leading-[0.9] animate-fade-in-up delay-200">
+              Buy & Sell <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-ocean-500 to-teal-500">in Paradise.</span>
             </h1>
-            <p className="text-lg md:text-xl font-bold text-slate-600 max-w-2xl mx-auto leading-relaxed">
-              Skip the shipping delays. Buy and sell with verified neighbors across the islands.
+
+            <p className="text-lg md:text-xl font-medium text-slate-500 max-w-lg mx-auto leading-relaxed animate-fade-in-up delay-300">
+              Join thousands of islanders trading safely. From Port Blair to Diglipur, we've got you covered.
             </p>
           </div>
 
-          <form onSubmit={handleSearch} className="max-w-2xl mx-auto w-full relative group">
-            <div className="absolute inset-y-0 left-6 flex items-center text-slate-400">
-              <Search size={24} />
+          <form onSubmit={handleSearch} className="max-w-xl mx-auto w-full relative group animate-fade-in-up delay-300">
+            <div className="absolute inset-y-0 left-5 flex items-center text-slate-400 pointer-events-none group-focus-within:text-ocean-500 transition-colors">
+              <Search size={22} />
             </div>
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="What are you looking for?"
-              className="w-full py-4 md:py-6 pl-12 md:pl-14 pr-28 md:pr-32 rounded-2xl md:rounded-3xl bg-white border-2 border-slate-300 focus:border-ocean-600 focus:ring-4 focus:ring-ocean-100 transition-all duration-200 outline-none text-base md:text-lg font-bold text-slate-900 shadow-xl"
+              placeholder="Search mobiles, scooters..."
+              className="w-full h-14 md:h-16 pl-14 pr-32 rounded-full bg-white border border-slate-200 focus:border-ocean-300 focus:ring-4 focus:ring-ocean-50 transition-all duration-300 outline-none text-base md:text-lg font-bold text-slate-900 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-lg placeholder:font-normal placeholder:text-slate-400"
             />
-            <button type="submit" className="absolute right-2 md:right-3 top-1/2 -translate-y-1/2 bg-ocean-700 text-white px-5 md:px-8 py-2 md:py-3 rounded-xl md:rounded-2xl font-black shadow-md hover:bg-ocean-800 active:scale-95 transition-all text-[10px] md:text-sm uppercase tracking-wider">
+            <button type="submit" className="absolute right-2 top-2 bottom-2 bg-slate-900 text-white px-6 rounded-full font-bold shadow-lg hover:bg-ocean-600 active:scale-95 transition-all text-xs md:text-sm tracking-wide">
               Search
             </button>
           </form>
         </div>
       </section>
 
-      {/* Categories Grid */}
-      <section className="max-w-7xl mx-auto px-4">
-        <div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-7 gap-4 md:gap-10">
-          {categories.map((cat) => (
+      {/* Modern Categories Grid */}
+      <section className="max-w-7xl mx-auto px-4 overflow-x-auto hide-scrollbar pb-4 -mt-4 animate-fade-in-up delay-200">
+        <div className="flex md:grid md:grid-cols-7 gap-4 min-w-max md:min-w-0 px-2">
+          {categories.map((cat, i) => (
             <Link
               key={cat.slug}
               to={`/listings?category=${cat.slug}`}
-              className="group flex flex-col items-center space-y-3"
+              className="group flex flex-col items-center gap-3 w-20 md:w-auto"
             >
-              <div className={`w-16 h-16 md:w-20 md:h-20 ${cat.color} rounded-[28px] flex items-center justify-center shadow-sm group-hover:scale-110 transition-all duration-300 border-4 border-white ring-1 ring-slate-100`}>
-                {cat.icon}
+              <div className={`w-16 h-16 md:w-20 md:h-20 rounded-[24px] bg-gradient-to-br ${cat.gradient} flex items-center justify-center shadow-lg ${cat.shadow} group-hover:-translate-y-2 group-hover:scale-105 group-active:scale-95 transition-all duration-300 ring-2 ring-white`}>
+                <div className="text-white drop-shadow-md">
+                  {cat.icon}
+                </div>
               </div>
-              <span className="font-black text-[10px] text-slate-700 uppercase tracking-widest text-center leading-tight">{cat.name}</span>
+              <span className="font-heading font-bold text-xs text-slate-600 group-hover:text-slate-900 transition-colors">{cat.name}</span>
             </Link>
           ))}
         </div>
       </section>
 
       {/* Featured Items */}
-      <section className="max-w-7xl mx-auto px-4 space-y-8">
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <h2 className="text-2xl md:text-3xl font-heading font-black text-slate-900 tracking-tight">Handpicked for You</h2>
+      <section className="max-w-7xl mx-auto px-4 space-y-6 animate-fade-in-up delay-300">
+        <div className="flex items-center justify-between px-2">
+          <div className="space-y-0.5">
+            <h2 className="text-2xl md:text-3xl font-heading font-bold text-slate-900 tracking-tight">Today's <span className="text-coral-500">Hot Picks</span></h2>
+            <p className="text-sm font-medium text-slate-400">Handpicked deals just for you</p>
           </div>
-          <Link to="/listings" className="group flex items-center space-x-2 text-[10px] font-black text-ocean-700 uppercase tracking-widest">
-            <span>Explore All</span>
-            <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+          <Link to="/listings" className="group flex items-center gap-1 text-xs font-bold text-ocean-600 bg-ocean-50 px-3 py-1.5 rounded-full hover:bg-ocean-100 transition-colors">
+            <span>View All</span>
+            <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
           </Link>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {loadingFeatured ? (
-            [1, 2, 3, 4].map(n => (
-              <div key={n} className="bg-white border-2 border-slate-100 rounded-[32px] overflow-hidden h-96 flex flex-col p-3 space-y-4">
-                <div className="aspect-[4/3] bg-slate-100 rounded-2xl animate-pulse"></div>
-                <div className="space-y-3 p-2">
-                  <div className="h-6 bg-slate-100 rounded w-3/4 animate-pulse"></div>
-                  <div className="h-4 bg-slate-100 rounded w-1/2 animate-pulse"></div>
-                </div>
-              </div>
-            ))
+            [1, 2, 3, 4].map(n => <ListingSkeleton key={n} />)
           ) : featuredListings.map((listing) => (
             <ListingCard key={listing.id} listing={listing} featured />
           ))}
         </div>
       </section>
 
-      {/* Recent Grid with Load More */}
-      <section className="max-w-7xl mx-auto px-4 space-y-8">
-        <div className="flex items-center space-x-4">
-          <h2 className="text-2xl font-heading font-black text-slate-900 tracking-tight">Just In</h2>
-          <div className="h-0.5 flex-1 bg-slate-100"></div>
+      {/* Recent Grid */}
+      <section className="max-w-7xl mx-auto px-4 space-y-6 pb-8 animate-fade-in-up delay-300">
+        <div className="flex items-center px-2">
+          <h2 className="text-2xl font-heading font-bold text-slate-900 tracking-tight">Fresh Arrivals</h2>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
           {loadingRecent ? (
-            [1, 2, 3, 4].map(n => (
-              <div key={n} className="bg-white border-2 border-slate-100 rounded-[32px] overflow-hidden h-64 flex flex-col p-3 space-y-4">
-                <div className="aspect-square bg-slate-100 rounded-2xl animate-pulse"></div>
-              </div>
-            ))
+            [1, 2, 3, 4].map(n => <ListingSkeleton key={n} small />)
           ) : recentListings.map((listing) => (
             <ListingCard key={listing.id} listing={listing} />
           ))}
@@ -246,10 +242,10 @@ export const Home: React.FC = () => {
             <button
               onClick={handleLoadMore}
               disabled={loadingMore}
-              className="bg-white border-2 border-slate-200 text-slate-900 px-8 py-3 rounded-2xl font-black uppercase text-xs tracking-widest hover:border-ocean-500 hover:text-ocean-700 transition-all flex items-center gap-2 disabled:opacity-50"
+              className="btn-secondary flex items-center gap-2 disabled:opacity-50"
             >
-              {loadingMore && <Loader2 size={16} className="animate-spin" />}
-              {loadingMore ? 'Loading...' : 'Load More Items'}
+              {loadingMore && <Loader2 size={18} className="animate-spin" />}
+              {loadingMore ? 'Loading Items...' : 'Load More Listing'}
             </button>
           </div>
         )}
@@ -258,31 +254,64 @@ export const Home: React.FC = () => {
   );
 };
 
-// Fix: Changed listing prop type to any to accommodate partial data from query
+// Extracted Components for cleaner code
+
+const ListingSkeleton = ({ small = false }: { small?: boolean }) => (
+  <div className={`bg-white border border-slate-100 rounded-3xl overflow-hidden ${small ? 'h-64' : 'h-80'} flex flex-col p-3 space-y-3`}>
+    <div className="aspect-square bg-slate-100 rounded-2xl skeleton"></div>
+    <div className="space-y-2 px-1">
+      <div className="h-4 bg-slate-100 rounded w-3/4 skeleton"></div>
+      <div className="h-3 bg-slate-100 rounded w-1/2 skeleton"></div>
+    </div>
+  </div>
+);
+
 const ListingCard: React.FC<{ listing: any, featured?: boolean }> = ({ listing, featured = false }) => {
   const imageUrl = listing.images && listing.images.length > 0
     ? listing.images[0].image_url
     : `https://picsum.photos/seed/item-${listing.id}/600/600`;
 
   return (
-    <Link to={`/listings/${listing.id}`} className="bg-white rounded-[32px] border-2 border-slate-100 flex flex-col h-full overflow-hidden group hover:border-ocean-300 hover:shadow-2xl transition-all duration-300">
-      <div className={`relative ${featured ? 'aspect-[4/3]' : 'aspect-square'} overflow-hidden bg-slate-50`}>
+    <Link to={`/listings/${listing.id}`} className="premium-card group flex flex-col h-full relative overflow-hidden">
+      {/* Image Container */}
+      <div className={`relative ${featured ? 'aspect-[4/3]' : 'aspect-square'} overflow-hidden bg-slate-100 m-2 rounded-2xl`}>
         <img
           src={imageUrl}
           alt={listing.title}
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
           loading="lazy"
         />
-        <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
-          <div className="bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-xl text-[9px] font-black text-slate-900 border border-slate-200 uppercase tracking-widest shadow-sm flex items-center">
-            <MapPin size={10} className="mr-1.5 text-ocean-600" /> {listing.city}
+
+        {/* City Badge - Top Left */}
+        <div className="absolute top-2 left-2 z-10">
+          <div className="bg-white/90 backdrop-blur-md px-2 py-1 rounded-lg text-[10px] font-bold text-slate-700 shadow-sm flex items-center gap-1">
+            <MapPin size={10} className="text-ocean-500" /> {listing.city}
           </div>
         </div>
+
+        {/* Featured Badge (if applicable) */}
+        {listing.is_featured && (
+          <div className="absolute top-2 right-2 z-10">
+            <div className="bg-gradient-to-r from-amber-400 to-orange-500 text-white px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1">
+              <Sparkles size={10} /> PRO
+            </div>
+          </div>
+        )}
       </div>
-      <div className="p-5 flex flex-col flex-1 space-y-3">
-        <h3 className="font-bold text-slate-900 text-sm line-clamp-2 leading-snug group-hover:text-ocean-700 transition-colors">{listing.title}</h3>
-        <div className="mt-auto flex items-end justify-between">
-          <span className="text-xl font-heading font-black text-slate-950 tracking-tight">₹ {listing.price?.toLocaleString('en-IN') || '0'}</span>
+
+      {/* Content */}
+      <div className="px-4 pb-4 pt-1 flex flex-col flex-1 gap-1">
+        <h3 className="font-medium text-slate-800 text-sm line-clamp-2 leading-snug group-hover:text-ocean-600 transition-colors">
+          {listing.title}
+        </h3>
+        <div className="mt-auto pt-2 flex items-center justify-between">
+          <span className="text-lg font-heading font-bold text-slate-900 tracking-tight">
+            ₹{listing.price?.toLocaleString('en-IN') || '0'}
+          </span>
+          {/* Action Button (Visual only) */}
+          <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-ocean-500 group-hover:text-white transition-all duration-300">
+            <ArrowRight size={14} />
+          </div>
         </div>
       </div>
     </Link>

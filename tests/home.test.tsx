@@ -10,8 +10,8 @@ describe('HomeView', () => {
         <Home />
       </MemoryRouter>
     );
-    const heading = screen.getByText(/Trade Locally in/i);
-    const subheading = screen.getByText(/The Andamans./i);
+    const heading = screen.getByText(/Buy & Sell/i);
+    const subheading = screen.getByText(/in Paradise\./i);
     expect(heading).toBeInTheDocument();
     expect(subheading).toBeInTheDocument();
   });

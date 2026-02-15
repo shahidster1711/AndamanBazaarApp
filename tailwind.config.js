@@ -9,39 +9,45 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: "#1a202c",
-        secondary: "#2d3748",
-        accent: "#ffb800",
-        neutral: "#f7fafc",
+        ocean: {
+          50: '#f0f9ff',
+          100: '#e0f2fe',
+          200: '#bae6fd',
+          300: '#7dd3fc',
+          400: '#38bdf8',
+          500: '#0ea5e9', // Primary Brand Color
+          600: '#0284c7',
+          700: '#0369a1',
+          800: '#075985',
+          900: '#0c4a6e',
+          950: '#082f49',
+        },
+        coral: {
+          50: '#fff1f2',
+          500: '#f43f5e', // Accent
+        },
+        teal: {
+          500: '#14b8a6', // Success/Safe
+        },
+        // Legacy support (mapping to new palette)
+        primary: "#0f172a",
+        secondary: "#334155",
+        accent: "#f43f5e",
+        neutral: "#f8fafc",
         "base-100": "#ffffff",
       },
-      fontSize: {
-        sm: '0.8rem',
-        base: '1rem',
-        xl: '1.25rem',
-        '2xl': '1.563rem',
-        '3xl': '1.953rem',
-        '4xl': '2.441rem',
-        '5xl': '3.052rem',
-      },
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
-        heading: ['Outfit', 'Inter', 'system-ui', 'sans-serif'],
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        heading: ['Outfit', 'sans-serif'],
       },
+      backgroundImage: {
+        'tropical-gradient': 'linear-gradient(135deg, #0ea5e9 0%, #0d9488 100%)',
+        'sunset-gradient': 'linear-gradient(135deg, #f43f5e 0%, #fb923c 100%)',
+      }
     },
   },
   plugins: [require("daisyui")],
   daisyui: {
-    themes: [
-      {
-        mytheme: {
-          primary: "#1a202c",
-          secondary: "#2d3748",
-          accent: "#ffb800",
-          neutral: "#f7fafc",
-          "base-100": "#ffffff",
-        },
-      },
-    ],
+    themes: ["light"], // Enforce light theme for now to ensure consistency
   },
 };

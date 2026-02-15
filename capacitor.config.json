@@ -5,9 +5,10 @@
   "bundledWebRuntime": false,
   "server": {
     "androidScheme": "https",
-    "hostname": "andamanapp-in.web.app",
+    "hostname": "andamanbazaar.in",
     "allowNavigation": [
-      "andamanapp-in.web.app"
+      "andamanbazaar.in",
+      "gen-lang-client-0408960446.web.app"
     ]
   }
 }

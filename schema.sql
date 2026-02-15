@@ -115,6 +115,9 @@ CREATE POLICY "Images are viewable by everyone" ON public.listing_images FOR SEL
 CREATE POLICY "Users can insert images for own listings" ON public.listing_images FOR INSERT WITH CHECK (
   EXISTS (SELECT 1 FROM public.listings WHERE id = listing_id AND user_id = auth.uid())
 );
+CREATE POLICY "Users can delete images from own listings" ON public.listing_images FOR DELETE USING (
+  EXISTS (SELECT 1 FROM public.listings WHERE id = listing_id AND user_id = auth.uid())
+);
 
 CREATE POLICY "Users can view own favorites" ON public.favorites FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Users can insert own favorites" ON public.favorites FOR INSERT WITH CHECK (auth.uid() = user_id);

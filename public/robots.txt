@@ -4,4 +4,4 @@ Disallow: /chats
 Disallow: /profile
 Disallow: /dashboard
 
-Sitemap: https://andamanbazaar.com/sitemap.xml
+Sitemap: https://andamanbazaar.in/sitemap.xml

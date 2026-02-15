@@ -1,4 +1,26 @@
 {
     "IDX.agenticWorkspace": true,
-    "IDX.aI.showChatInEditorTab": true
+    "IDX.aI.showChatInEditorTab": true,
+    "css.lint.unknownAtRules": "ignore",
+    "scss.lint.unknownAtRules": "ignore",
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": true,
+        "**/thumbs.db": true,
+        "**/node_modules": true
+    },
+    "files.watcherExclude": {
+        "**/node_modules/**": true,
+        "**/dist/**": true,
+        "**/.git/objects/**": true
+    },
+    "java.import.exclusions": [
+        "**/node_modules/**",
+        "**/.git/**",
+        "**/dist/**"
+    ]
 }

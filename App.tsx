@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { Home } from './views/Home';
 import { Listings } from './views/Listings';
@@ -84,7 +84,7 @@ const App: React.FC = () => {
 
   return (
     <ToastProvider>
-      <HashRouter future={{ v7_relativeSplatPath: true, v7_startTransition: true }}>
+      <BrowserRouter future={{ v7_relativeSplatPath: true, v7_startTransition: true }}>
         <Layout user={user}>
           <Routes>
             <Route path="/" element={<Home />} />
@@ -101,7 +101,7 @@ const App: React.FC = () => {
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </Layout>
-      </HashRouter>
+      </BrowserRouter>
     </ToastProvider>
   );
 };
