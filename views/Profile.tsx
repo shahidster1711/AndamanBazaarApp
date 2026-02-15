@@ -103,7 +103,7 @@ export const Profile: React.FC = () => {
       if (avatarFile) {
         const fileValidation = validateFileUpload(avatarFile, { maxSizeMB: 5, allowedTypes: ['image/jpeg', 'image/png', 'image/webp'] });
         if (!fileValidation.valid) {
-          showToast(fileValidation.error, 'error');
+          showToast(fileValidation.error || 'An unknown file validation error occurred.', 'error');
           setIsSaving(false);
           return;
         }

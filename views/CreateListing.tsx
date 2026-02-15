@@ -196,7 +196,7 @@ export const CreateListing: React.FC = () => {
     const newPhotos: typeof photos = [];
     for (const file of files) {
       const validation = validateFileUpload(file, { maxSizeMB: 10, allowedTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/heic'] });
-      if (!validation.valid) { showToast(validation.error, 'error'); continue; }
+      if (!validation.valid) { showToast(validation.error || 'An unknown file validation error occurred.', 'error'); continue; }
       const resized = await resizeImage(file);
       const preview = URL.createObjectURL(resized);
       newPhotos.push({ file: resized, preview });
@@ -294,7 +294,7 @@ export const CreateListing: React.FC = () => {
         }
       } else {
         const { data, error: insertError } = await supabase.from('listings').insert(payload).select('id').single();
-        if (insertError) throw insertError;
+        if (insertError || !data) throw insertError || new Error('Failed to create listing.');
         listingId = data.id;
         await logAuditEvent({ action: 'listing_created', resource_type: 'listing', resource_id: data.id, status: 'success', metadata: { category: catId, city } });
       }
@@ -303,15 +303,22 @@ export const CreateListing: React.FC = () => {
       for (const photo of newPhotos) {
         const fileName = `${user.id}/${crypto.randomUUID()}.webp`;
         const { error: uploadError } = await supabase.storage.from('listings').upload(fileName, photo.file!, { contentType: 'image/webp' });
-        if (!uploadError) {
-          const { data: urlData } = supabase.storage.from('listings').getPublicUrl(fileName);
-          if (listingId && urlData?.publicUrl) {
+        if (uploadError) {
+            console.warn('Image upload failed, skipping:', uploadError.message);
+            continue;
+        }
+        
+        const { data: urlData } = supabase.storage.from('listings').getPublicUrl(fileName);
+        if (listingId && urlData.publicUrl) {
             await supabase.from('listing_images').insert({ listing_id: listingId, image_url: urlData.publicUrl, display_order: photos.indexOf(photo) });
-          }
+        } else {
+            console.warn('Could not get public URL for uploaded image.');
         }
       }
       for (const photo of photos.filter(p => p.id)) {
-        await supabase.from('listing_images').update({ display_order: photos.indexOf(photo) }).eq('id', photo.id!);
+        if (photo.id) { // Guard against undefined id
+          await supabase.from('listing_images').update({ display_order: photos.indexOf(photo) }).eq('id', photo.id);
+        }
       }
 
       saveContactPreferences(contactPrefs);
