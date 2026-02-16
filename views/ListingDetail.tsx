@@ -43,29 +43,41 @@ export const ListingDetail: React.FC = () => {
       const { data: { user } } = await supabase.auth.getUser();
       setCurrentUserId(user?.id || null);
 
-      // Fetch basic listing and images
-      const { data, error } = await supabase
+      // 1. Fetch basic listing data without joins
+      const { data: listingData, error: listingError } = await supabase
         .from('listings')
-        .select('*, images:listing_images(*)')
+        .select('*')
         .eq('id', id)
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
+      if (listingError) throw listingError;
+      if (!listingData) {
+        setListing(null);
+        return;
+      }
 
-      setListing(data);
+      // 2. Fetch images separately
+      const { data: imagesData } = await supabase
+        .from('listing_images')
+        .select('*')
+        .eq('listing_id', id)
+        .order('display_order', { ascending: true });
 
-      // Fetch seller separately to avoid relationship resolution issues
-      if (data.user_id) {
+      const fullListing = {
+        ...listingData,
+        images: imagesData || []
+      };
+
+      setListing(fullListing);
+
+      // 3. Fetch seller separately
+      if (listingData.user_id) {
         const { data: sellerData } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', data.user_id)
+          .eq('id', listingData.user_id)
           .single();
         if (sellerData) setSeller(sellerData);
-      }
-
-      if (data.images) {
-        data.images.sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0));
       }
 
     } catch (err) {

@@ -335,6 +335,7 @@ export const ChatRoom: React.FC = () => {
           <button
             onClick={handleSend}
             disabled={!inputText.trim()}
+            data-testid="send-button"
             className="p-4 bg-ocean-700 text-white rounded-[20px] shadow-xl shadow-ocean-700/20 active:scale-90 transition-all disabled:opacity-30 disabled:scale-95"
           >
             <Send size={20} />

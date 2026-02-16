@@ -35,7 +35,7 @@ describe('ChatList View', () => {
         });
     });
 
-    it('renders a list of active chats', async () => {
+    it('renders a list of active chats and fetches related data sequentially', async () => {
         const mockChats = [
             {
                 id: 'chat-1',
@@ -50,7 +50,12 @@ describe('ChatList View', () => {
         ];
 
         const mockListings = [{ id: 'listing-1', title: 'Beach House' }];
-        const mockProfiles = [{ id: 'seller-456', name: 'John Doe', profile_photo_url: null }];
+        const mockProfiles = [
+            { id: 'seller-456', name: 'John Doe', profile_photo_url: null },
+            { id: 'user-123', name: 'Me', profile_photo_url: null }
+        ];
+
+        const fromSpy = vi.spyOn(supabase, 'from');
 
         (supabase.from as any).mockImplementation((table: string) => {
             if (table === 'chats') return createMockChain(mockChats);
@@ -67,5 +72,11 @@ describe('ChatList View', () => {
             expect(screen.getByText('John Doe')).toBeInTheDocument();
             expect(screen.getByText('Is it available?')).toBeInTheDocument();
         });
+
+        // Verify sequential calls
+        expect(fromSpy).toHaveBeenCalledWith('chats');
+        expect(fromSpy).toHaveBeenCalledWith('listings');
+        expect(fromSpy).toHaveBeenCalledWith('profiles');
+        expect(fromSpy).toHaveBeenCalledWith('messages');
     });
 });

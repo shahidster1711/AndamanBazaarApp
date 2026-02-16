@@ -9,6 +9,9 @@ export const createMockChain = (data: any = [], error: any = null) => {
         update: vi.fn().mockReturnThis(),
         delete: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
+        neq: vi.fn().mockReturnThis(),
+        gt: vi.fn().mockReturnThis(),
+        lt: vi.fn().mockReturnThis(),
         or: vi.fn().mockReturnThis(),
         in: vi.fn().mockReturnThis(),
         order: vi.fn().mockReturnThis(),
@@ -33,6 +36,7 @@ export const mockSupabase = {
         signOut: vi.fn(),
     },
     from: vi.fn(() => createMockChain()),
+    rpc: vi.fn(() => Promise.resolve({ data: null, error: null })),
     channel: vi.fn(() => ({
         on: vi.fn().mockReturnThis(),
         subscribe: vi.fn(),
@@ -58,3 +62,7 @@ vi.mock('../components/Toast', () => ({
         showToast: vi.fn(),
     }),
 }));
+
+// Suppress some React Router warnings by opting into futures globally if needed, 
+// though typically done at the Router component level.
+// Here we just ensure we are mocking what's needed for the tests.
