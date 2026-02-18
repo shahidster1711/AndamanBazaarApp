@@ -187,7 +187,7 @@ export const AuthView: React.FC = () => {
           <div className="absolute top-0 right-0 w-40 h-40 bg-white rounded-full opacity-10 blur-3xl translate-x-12 -translate-y-12"></div>
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-coral-500 rounded-full opacity-20 blur-2xl -translate-x-8 translate-y-8"></div>
           <h2 className="text-4xl font-heading font-black tracking-tight relative z-10">AndamanBazaar</h2>
-          <p className="mt-3 text-ocean-100 font-bold relative z-10 text-sm tracking-wide">Community Trade Platform</p>
+          <p className="mt-3 text-ocean-100 font-bold relative z-10 text-sm tracking-wide">The Islands' Trusted Marketplace</p>
         </div>
 
         <div className="p-8 md:p-10">
@@ -336,7 +336,7 @@ export const AuthView: React.FC = () => {
           </div>
         </div>
       </div>
-      <p className="mt-12 text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Island Verified Technology &copy; 2024</p>
+      <p className="mt-12 text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Island Verified Technology &copy; 2025</p>
     </div >
   );
 };
