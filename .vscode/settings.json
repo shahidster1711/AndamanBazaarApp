@@ -19,7 +19,6 @@
         "**/.git/objects/**": true
     },
     "java.import.exclusions": [
-        "**/node_modules/**",
         "**/.git/**",
         "**/dist/**"
     ]

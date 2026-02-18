@@ -1,9 +1,11 @@
 # Database Migrations Guide
 
 ## Overview
+
 This guide explains how to run the database migrations for AndamanBazaar's new features.
 
 ## Prerequisites
+
 - Access to your Supabase project dashboard
 - SQL Editor access in Supabase
 
@@ -12,14 +14,19 @@ This guide explains how to run the database migrations for AndamanBazaar's new f
 Run these migrations in the following order:
 
 ### 1. Recommendations Schema
+
 **File**: `migrations/001_recommendations_schema.sql`
+
 **Purpose**: Adds user interaction tracking and recommendations caching
+
 **Tables Created**:
+
 - `user_interactions` - Tracks views, favorites, chats, clicks
 - `recommendations_cache` - Pre-computed personalized recommendations
 - `trending_listings` - Trending listings by city/category
 
 **How to Run**:
+
 1. Open Supabase Dashboard → SQL Editor
 2. Click "New Query"
 3. Copy contents of `001_recommendations_schema.sql`
@@ -29,15 +36,20 @@ Run these migrations in the following order:
 ---
 
 ### 2. Chat Enhancements
+
 **File**: `migrations/002_chat_enhancements.sql`
+
 **Purpose**: Adds message status tracking, reactions, and chat metadata
+
 **Changes**:
+
 - Extends `messages` table with delivered_at, read_at, reactions, edited_at
 - Extends `chats` table with is_archived, last_active_at
 - Creates `chat_typing_events` table (fallback for Firebase)
 - Adds helper functions for read receipts, archiving
 
 **How to Run**:
+
 1. Open Supabase Dashboard → SQL Editor
 2. Click "New Query"
 3. Copy contents of `002_chat_enhancements.sql`
@@ -47,18 +59,25 @@ Run these migrations in the following order:
 ---
 
 ### 3. Security Enhancements
+
 **File**: `migrations/003_security_enhancements.sql`
+
 **Purpose**: Adds rate limiting, audit logs, and security event tracking
+
 **Tables Created**:
+
 - `rate_limits` - Rate limiting storage with automatic cleanup
 - `audit_logs` - Audit trail for all user actions
 - `security_events` - Security incidents tracking
+
 **Functions Created**:
+
 - `check_rate_limit()` - Check if request exceeds rate limit
 - `log_audit_event()` - Log user actions
 - `is_user_in_good_standing()` - Check user security status
 
 **How to Run**:
+
 1. Open Supabase Dashboard → SQL Editor
 2. Click "New Query"
 3. Copy contents of `003_security_enhancements.sql`
@@ -70,6 +89,7 @@ Run these migrations in the following order:
 ## Post-Migration Checks
 
 ### Verify Tables Created
+
 ```sql
 SELECT table_name 
 FROM information_schema.tables 
@@ -86,6 +106,7 @@ WHERE table_schema = 'public'
 ```
 
 ### Verify Functions Created
+
 ```sql
 SELECT routine_name 
 FROM information_schema.routines 
@@ -101,6 +122,7 @@ WHERE routine_schema = 'public'
 ```
 
 ### Test Rate Limiting
+
 ```sql
 -- Should return TRUE (allowed)
 SELECT check_rate_limit('test_user:action', 20, 60);
@@ -113,6 +135,7 @@ SELECT check_rate_limit('test_user:action', 20, 60);
 If you need to rollback, run in REVERSE order:
 
 ### Rollback Security (3)
+
 ```sql
 DROP TABLE IF EXISTS public.security_events CASCADE;
 DROP TABLE IF EXISTS public.audit_logs CASCADE;
@@ -130,6 +153,7 @@ DROP FUNCTION IF EXISTS audit_profile_changes;
 ```
 
 ### Rollback Chat (2)
+
 ```sql
 -- Remove new columns
 ALTER TABLE public.messages 
@@ -160,6 +184,7 @@ DROP FUNCTION IF EXISTS update_chat_activity;
 ```
 
 ### Rollback Recommendations (1)
+
 ```sql
 DROP TABLE IF EXISTS public.trending_listings CASCADE;
 DROP TABLE IF EXISTS public.recommendations_cache CASCADE;
@@ -172,41 +197,53 @@ DROP FUNCTION IF EXISTS update_trending_listings;
 ## Maintenance
 
 ### Schedule Trending Updates (Cron Job)
+
 Set up a Supabase Edge Function or external cron to run daily:
+
 ```sql
 SELECT update_trending_listings();
 ```
 
 ### Clean Expired Recommendations
+
 Run periodically (e.g., hourly):
+
 ```sql
 SELECT clean_expired_recommendations();
 ```
 
 ### Clean Old Typing Events
+
 Run daily:
+
 ```sql
 SELECT cleanup_old_typing_events();
 ```
 
 ## Troubleshooting
 
-**Error: relation already exists**
+### Error: relation already exists
+
 - Skip that migration or run rollback first
 
-**Error: permission denied**
+### Error: permission denied
+
 - Ensure you're using service role key in SQL Editor
 
-**Performance issues after migration**
+### Performance issues after migration
+
 - All necessary indexes are created automatically
 - If still slow, run `ANALYZE` on new tables
 
-**RLS policies blocking queries**
+### RLS policies blocking queries
+
 - Policies are configured for auth.uid()
 - Ensure frontend uses authenticated Supabase client
 
 ## Support
+
 If you encounter issues, check:
+
 1. Supabase logs in Dashboard → Logs
 2. Browser console for client errors
 3. Network tab for failed API calls
