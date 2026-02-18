@@ -2,7 +2,6 @@
   "appId": "com.andamanbazaar.app",
   "appName": "AndamanBazaar",
   "webDir": "dist",
-  "bundledWebRuntime": false,
   "server": {
     "androidScheme": "https",
     "hostname": "andamanbazaar.in",
