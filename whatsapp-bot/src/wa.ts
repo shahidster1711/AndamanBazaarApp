@@ -5,7 +5,7 @@ import makeWASocket, {
     FetchMessageHistoryQuery,
     proto,
     WAPresence
-} from '@wiskeysockets/baileys';
+} from '@whiskeysockets/baileys';
 import { Boom } from '@hapi/boom';
 import pino from 'pino';
 import fs from 'fs';

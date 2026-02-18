@@ -18,6 +18,9 @@
         "--access-token",
         "<personal-access-token>"
       ]
+    },
+    "glean_default": {
+      "httpUrl": "https://singlestore-be.glean.com/mcp/default"
     }
   }
 }
