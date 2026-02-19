@@ -17,6 +17,9 @@ export function initSentry() {
     Sentry.init({
         dsn,
         environment: import.meta.env.VITE_SENTRY_ENVIRONMENT || 'production',
+        // 'enableLogs' is a v8 feature. For v7, use 'debug' (though it might be more verbose).
+        // Since we cannot upgrade the SDK due to system permissions, we use v7 compatible options.
+        debug: true,
         integrations: [
             Sentry.browserTracingIntegration(),
             Sentry.replayIntegration({

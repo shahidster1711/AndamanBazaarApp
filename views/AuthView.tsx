@@ -3,23 +3,12 @@ import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import {
   Loader2,
-  Mail,
-  CheckCircle,
   AlertCircle,
-  AlertTriangle,
-  ChevronDown,
-  ChevronUp,
-  HelpCircle,
-  Copy,
-  ExternalLink,
-  ShieldCheck,
-  Settings,
-  RefreshCcw,
-  Info
+  CheckCircle,
+  RefreshCcw
 } from 'lucide-react';
 
-const SUPABASE_PROJECT_ID = import.meta.env.VITE_SUPABASE_PROJECT_ID ||
-  (import.meta.env.VITE_SUPABASE_URL?.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1] ?? '');
+
 
 export const AuthView: React.FC = () => {
   const [mode, setMode] = useState<'login' | 'signup' | 'phone' | 'verify'>('login');
@@ -32,8 +21,7 @@ export const AuthView: React.FC = () => {
   const [resending, setResending] = useState(false);
   const [error, setError] = useState<React.ReactNode | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
-  const [showHelp, setShowHelp] = useState(false);
-  const [copied, setCopied] = useState(false);
+
   const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
 
   // S7: Password strength validation
@@ -59,11 +47,7 @@ export const AuthView: React.FC = () => {
     setLoading(false);
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+
 
   const handleResendEmail = async () => {
     if (!email) {
@@ -338,52 +322,7 @@ export const AuthView: React.FC = () => {
               <span className="font-black text-slate-700 text-xs uppercase tracking-widest">Continue with Google</span>
             </button>
           </div>
-          <div className="mt-12 pt-8 border-t-2 border-dashed border-slate-100 space-y-4">
-            <button
-              onClick={() => setShowHelp(!showHelp)}
-              className="w-full flex items-center justify-between text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] hover:text-ocean-700 transition-colors py-2"
-            >
-              <div className="flex items-center space-x-3">
-                <HelpCircle size={14} className="text-ocean-500" />
-                <span>Fixing 403 / Redirects</span>
-              </div>
-              {showHelp ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-            </button>
 
-            {showHelp && (
-              <div className="mt-2 p-6 bg-slate-50 rounded-[32px] space-y-6 animate-in fade-in slide-in-from-top-4">
-                <div className="space-y-3">
-                  <p className="text-[10px] font-black text-ocean-700 uppercase tracking-widest flex items-center">
-                    <Settings size={12} className="mr-2" /> Site URL Configuration
-                  </p>
-                  <p className="text-[11px] text-slate-600 font-medium">Add this origin to your <b>Redirect URIs</b> in Supabase Auth settings:</p>
-                  <div className="group relative">
-                    <div className="bg-white border-2 border-slate-200 rounded-2xl p-4 pr-12 text-[10px] font-mono text-slate-500 break-all select-all">
-                      {window.location.origin}
-                    </div>
-                    <button
-                      onClick={() => copyToClipboard(window.location.origin)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-slate-50 hover:bg-ocean-100 rounded-xl transition-colors text-slate-400 hover:text-ocean-700"
-                    >
-                      {copied ? <CheckCircle size={14} className="text-green-600" /> : <Copy size={14} />}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="pt-2">
-                  <a
-                    href={`https://supabase.com/dashboard/project/${SUPABASE_PROJECT_ID}/auth/url-configuration`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center space-x-2 w-full py-3 bg-ocean-100 text-ocean-800 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-ocean-200 transition-colors"
-                  >
-                    <span>Supabase URL Settings</span>
-                    <ExternalLink size={12} />
-                  </a>
-                </div>
-              </div>
-            )}
-          </div>
         </div>
       </div>
       <p className="mt-12 text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Island Verified Technology &copy; 2025</p>
