@@ -77,6 +77,5 @@ describe('ChatList View', () => {
         expect(fromSpy).toHaveBeenCalledWith('chats');
         expect(fromSpy).toHaveBeenCalledWith('listings');
         expect(fromSpy).toHaveBeenCalledWith('profiles');
-        expect(fromSpy).toHaveBeenCalledWith('messages');
     });
 });

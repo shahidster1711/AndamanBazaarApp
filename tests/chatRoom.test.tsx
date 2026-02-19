@@ -35,8 +35,16 @@ describe('ChatRoom View', () => {
             seller_id: 'seller-456'
         };
         const mockListing = { id: 'listing-1', title: 'Beach House', price: 5000, user_id: 'seller-456' };
-        const mockSeller = { id: 'seller-456', name: 'John Doe' };
-        const mockBuyer = { id: 'user-123', name: 'Me' };
+        const mockSeller = { id: 'seller-456', name: 'John Doe', profile_photo_url: null };
+        const mockBuyer = { id: 'user-123', name: 'Me', profile_photo_url: null };
+
+        const mockChatWithRelations = {
+            ...mockChat,
+            listing: mockListing,
+            seller: mockSeller,
+            buyer: mockBuyer
+        };
+
         const mockMessages = [
             { id: 'msg-1', chat_id: 'chat-1', sender_id: 'seller-456', message_text: 'Hello!', created_at: new Date().toISOString() }
         ];
@@ -44,29 +52,13 @@ describe('ChatRoom View', () => {
         const fromSpy = vi.spyOn(supabase, 'from');
 
         (supabase.from as any).mockImplementation((table: string) => {
-            if (table === 'chats') return createMockChain(mockChat);
-            if (table === 'listings') return createMockChain(mockListing);
-            if (table === 'profiles') {
-                return {
-                    select: vi.fn().mockReturnThis(),
-                    eq: vi.fn((_col, val) => {
-                        if (val === 'seller-456') return createMockChain(mockSeller);
-                        if (val === 'user-123') return createMockChain(mockBuyer);
-                        return createMockChain(null);
-                    }),
-                    single: vi.fn().mockReturnThis(),
-                    then: (cb: any) => cb({ data: mockSeller, error: null }) // simplified for single
-                };
-            }
+            if (table === 'chats') return createMockChain(mockChatWithRelations);
             if (table === 'messages') return createMockChain(mockMessages);
             return createMockChain([]);
         });
 
-        // Override the specific profiles mock for single() calls
-        (supabase.from('profiles').select('*').eq('id', 'seller-456').single as any).mockResolvedValue({ data: mockSeller, error: null });
-        (supabase.from('profiles').select('*').eq('id', 'user-123').single as any).mockResolvedValue({ data: mockBuyer, error: null });
-        (supabase.from('listings').select('*').eq('id', 'listing-1').single as any).mockResolvedValue({ data: mockListing, error: null });
-        (supabase.from('chats').select('*').eq('id', 'chat-1').single as any).mockResolvedValue({ data: mockChat, error: null });
+        // specific single resolve
+        (supabase.from('chats').select('*').eq('id', 'chat-1').single as any).mockResolvedValue({ data: mockChatWithRelations, error: null });
 
         renderChatRoom('chat-1');
 
@@ -76,8 +68,7 @@ describe('ChatRoom View', () => {
         });
 
         expect(fromSpy).toHaveBeenCalledWith('chats');
-        expect(fromSpy).toHaveBeenCalledWith('listings');
-        expect(fromSpy).toHaveBeenCalledWith('profiles');
+        // listings and profiles are now joined, so no separate fetches expected
     });
 
     it('sends a message successfully', async () => {
