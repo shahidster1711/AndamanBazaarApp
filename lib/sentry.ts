@@ -30,7 +30,7 @@ export function initSentry() {
         replaysSessionSampleRate: 0.1,
         replaysOnErrorSampleRate: 1.0,
         // Filter noisy errors
-        beforeSend(event) {
+        beforeSend(event: Sentry.Event) {
             // Ignore network errors caused by user going offline
             if (event.exception?.values?.[0]?.value?.includes('Failed to fetch')) {
                 return null;
