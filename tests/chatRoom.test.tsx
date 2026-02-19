@@ -32,7 +32,10 @@ describe('ChatRoom View', () => {
             id: 'chat-1',
             listing_id: 'listing-1',
             buyer_id: 'user-123',
-            seller_id: 'seller-456'
+            seller_id: 'seller-456',
+            buyer_unread_count: 0,
+            seller_unread_count: 0,
+            last_message_at: new Date().toISOString()
         };
         const mockListing = { id: 'listing-1', title: 'Beach House', price: 5000, user_id: 'seller-456' };
         const mockSeller = { id: 'seller-456', name: 'John Doe', profile_photo_url: null };
@@ -56,9 +59,6 @@ describe('ChatRoom View', () => {
             if (table === 'messages') return createMockChain(mockMessages);
             return createMockChain([]);
         });
-
-        // specific single resolve
-        (supabase.from('chats').select('*').eq('id', 'chat-1').single as any).mockResolvedValue({ data: mockChatWithRelations, error: null });
 
         renderChatRoom('chat-1');
 

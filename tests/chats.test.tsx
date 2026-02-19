@@ -61,7 +61,6 @@ describe('ChatList View', () => {
             if (table === 'chats') return createMockChain(mockChats);
             if (table === 'listings') return createMockChain(mockListings);
             if (table === 'profiles') return createMockChain(mockProfiles);
-            if (table === 'messages') return createMockChain([]);
             return createMockChain([]);
         });
 
