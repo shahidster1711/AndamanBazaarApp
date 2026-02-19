@@ -1,5 +1,9 @@
-# Replace with your actual domain pointed to 82.29.160.68
-# If you don't have a domain yet, use :80 instead of the domain name
-andamanbazaar.com {
+# Handle domain (HTTPS)
+andamanbazaar.com, andamanbazaar.in {
+    reverse_proxy app:8080
+}
+
+# Handle IP access and fallback (HTTP only)
+:80 {
     reverse_proxy app:8080
 }
