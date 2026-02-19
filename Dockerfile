@@ -10,7 +10,7 @@ ARG VITE_GOOGLE_AI_API_KEY
 ARG VITE_SENTRY_DSN
 
 COPY package*.json ./
-RUN npm ci --production=false
+RUN npm install
 
 COPY . .
 RUN npm run build
