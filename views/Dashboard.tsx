@@ -36,25 +36,81 @@ export const Dashboard: React.FC = () => {
         if (listings) {
           const active = listings.filter(l => l.status === 'active').length;
           const totalViews = listings.reduce((sum, l) => sum + (l.views_count || 0), 0);
-          
+
+          // Calculate response time from actual chats
+          let responseTimeStr = '—';
+          try {
+            const { data: userChats } = await supabase
+              .from('chats')
+              .select('id, seller_id, created_at')
+              .eq('seller_id', user.id)
+              .limit(20);
+
+            if (userChats && userChats.length > 0) {
+              const chatIds = userChats.map(c => c.id);
+              const { data: firstReplies } = await supabase
+                .from('messages')
+                .select('chat_id, sender_id, created_at')
+                .in('chat_id', chatIds)
+                .eq('sender_id', user.id)
+                .order('created_at', { ascending: true });
+
+              if (firstReplies && firstReplies.length > 0) {
+                // Get first seller reply per chat
+                const firstReplyByChat = new Map<string, string>();
+                firstReplies.forEach(m => {
+                  if (!firstReplyByChat.has(m.chat_id)) firstReplyByChat.set(m.chat_id, m.created_at);
+                });
+
+                let totalMs = 0;
+                let count = 0;
+                userChats.forEach(chat => {
+                  const replyTime = firstReplyByChat.get(chat.id);
+                  if (replyTime) {
+                    const diff = new Date(replyTime).getTime() - new Date(chat.created_at).getTime();
+                    if (diff > 0) { totalMs += diff; count++; }
+                  }
+                });
+
+                if (count > 0) {
+                  const avgMins = Math.round(totalMs / count / 60000);
+                  responseTimeStr = avgMins < 60 ? `${avgMins} MIN${avgMins !== 1 ? 'S' : ''}` : `${Math.round(avgMins / 60)} HR${Math.round(avgMins / 60) !== 1 ? 'S' : ''}`;
+                }
+              }
+            }
+          } catch { /* non-critical */ }
+
           setStats({
             activeAds: active,
             totalViews: totalViews,
             successfulSales: profile?.successful_sales || 0,
-            responseTime: '15 MINS'
+            responseTime: responseTimeStr
           });
 
-          // Generate chart data based on last 7 days of creations
-          const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-          const countsByDay: Record<string, number> = {};
-          days.forEach(d => countsByDay[d] = 0);
+          // P5: Generate chart data from actual last 7 days
+          const now = new Date();
+          const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          const recentListings = listings.filter(l => new Date(l.created_at) >= sevenDaysAgo);
 
-          listings.forEach(l => {
-            const dayName = days[new Date(l.created_at).getDay()];
-            countsByDay[dayName] += l.views_count || 0;
+          const dayLabels: string[] = [];
+          const viewsByDate: Record<string, number> = {};
+          for (let i = 6; i >= 0; i--) {
+            const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+            const label = d.toLocaleDateString('en-US', { weekday: 'short' });
+            const dateKey = d.toISOString().split('T')[0];
+            dayLabels.push(label);
+            viewsByDate[dateKey] = 0;
+          }
+
+          recentListings.forEach(l => {
+            const dateKey = new Date(l.created_at).toISOString().split('T')[0];
+            if (dateKey in viewsByDate) {
+              viewsByDate[dateKey] += l.views_count || 0;
+            }
           });
 
-          setChartData(days.map(d => ({ name: d, views: countsByDay[d] })));
+          const dateKeys = Object.keys(viewsByDate);
+          setChartData(dayLabels.map((label, i) => ({ name: label, views: viewsByDate[dateKeys[i]] })));
         }
       } catch (err) {
         console.error("Dashboard error:", err);
@@ -84,13 +140,13 @@ export const Dashboard: React.FC = () => {
         </div>
         <div className="bg-white p-4 rounded-3xl border-2 border-slate-100 shadow-sm flex items-center space-x-6">
           <div className="text-right">
-             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Response Time</p>
-             <p className="text-xl font-black text-ocean-700">~ {stats.responseTime}</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Response Time</p>
+            <p className="text-xl font-black text-ocean-700">~ {stats.responseTime}</p>
           </div>
           <div className="w-px h-10 bg-slate-100"></div>
           <div className="text-right">
-             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Status</p>
-             <p className="text-xl font-black text-black">ACTIVE</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Status</p>
+            <p className="text-xl font-black text-black">ACTIVE</p>
           </div>
         </div>
       </div>
@@ -100,22 +156,22 @@ export const Dashboard: React.FC = () => {
         <div className="relative z-10 max-w-2xl">
           <h2 className="text-2xl font-black uppercase tracking-tight mb-2">Road to Island Legend</h2>
           <p className="text-slate-400 font-medium mb-8 leading-snug">
-            {stats.successfulSales >= targetSales 
+            {stats.successfulSales >= targetSales
               ? "Congratulations! You are an Island Legend. Your listings get maximum visibility."
               : `Complete ${targetSales - stats.successfulSales} more successful sales to unlock the Island Legend badge.`}
           </p>
-          
+
           <div className="space-y-3">
-             <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
-               <span>Progression</span>
-               <span>{stats.successfulSales} / {targetSales} Sales</span>
-             </div>
-             <div className="h-6 bg-white/10 rounded-full overflow-hidden border border-white/10 p-1">
-                <div 
-                  className="h-full bg-ocean-500 rounded-full transition-all duration-1000" 
-                  style={{ width: `${progressPercent}%` }}
-                ></div>
-             </div>
+            <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
+              <span>Progression</span>
+              <span>{stats.successfulSales} / {targetSales} Sales</span>
+            </div>
+            <div className="h-6 bg-white/10 rounded-full overflow-hidden border border-white/10 p-1">
+              <div
+                className="h-full bg-ocean-500 rounded-full transition-all duration-1000"
+                style={{ width: `${progressPercent}%` }}
+              ></div>
+            </div>
           </div>
         </div>
       </section>
@@ -127,11 +183,11 @@ export const Dashboard: React.FC = () => {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 800}} />
-                <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 800}} />
-                <Tooltip 
-                  cursor={{fill: '#f8fafc'}}
-                  contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.1)'}}
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }} />
+                <Tooltip
+                  cursor={{ fill: '#f8fafc' }}
+                  contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}
                 />
                 <Bar dataKey="views" radius={[6, 6, 0, 0]}>
                   {chartData.map((entry, index) => (
@@ -144,33 +200,33 @@ export const Dashboard: React.FC = () => {
         </div>
 
         <div className="space-y-8">
-           <div className="bg-ocean-50 p-8 rounded-[40px] border-4 border-ocean-100">
-              <h3 className="font-black uppercase tracking-tight text-ocean-900 mb-4">Account Health</h3>
-              <ul className="space-y-4">
-                {[
-                  `${stats.activeAds} active listings now live`,
-                  `${stats.totalViews} total item views`,
-                  "Verified location increases trust"
-                ].map((tip, i) => (
-                  <li key={i} className="flex items-start text-xs font-bold text-ocean-800">
-                    <span className="mr-2">⚡</span> {tip}
-                  </li>
-                ))}
-              </ul>
-           </div>
-           
-           <div className="bg-white p-8 rounded-[40px] border-4 border-slate-50 shadow-sm">
-              <h3 className="font-black uppercase tracking-tight mb-6">Real-Time Pulse</h3>
-              <div className="space-y-4">
-                 <div className="flex items-center space-x-4">
-                    <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">👤</div>
-                    <div className="flex-1">
-                      <p className="text-[10px] font-black uppercase">Recent Activity</p>
-                      <p className="text-xs font-bold text-slate-400">Total Views: {stats.totalViews}</p>
-                    </div>
-                 </div>
+          <div className="bg-ocean-50 p-8 rounded-[40px] border-4 border-ocean-100">
+            <h3 className="font-black uppercase tracking-tight text-ocean-900 mb-4">Account Health</h3>
+            <ul className="space-y-4">
+              {[
+                `${stats.activeAds} active listings now live`,
+                `${stats.totalViews} total item views`,
+                "Verified location increases trust"
+              ].map((tip, i) => (
+                <li key={i} className="flex items-start text-xs font-bold text-ocean-800">
+                  <span className="mr-2">⚡</span> {tip}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="bg-white p-8 rounded-[40px] border-4 border-slate-50 shadow-sm">
+            <h3 className="font-black uppercase tracking-tight mb-6">Real-Time Pulse</h3>
+            <div className="space-y-4">
+              <div className="flex items-center space-x-4">
+                <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">👤</div>
+                <div className="flex-1">
+                  <p className="text-[10px] font-black uppercase">Recent Activity</p>
+                  <p className="text-xs font-bold text-slate-400">Total Views: {stats.totalViews}</p>
+                </div>
               </div>
-           </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

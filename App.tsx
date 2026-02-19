@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { Layout } from './components/Layout';
 import { Home } from './views/Home';
 import { Listings } from './views/Listings';
@@ -17,9 +18,6 @@ import { supabase, isSupabaseConfigured } from './lib/supabase';
 import { User } from '@supabase/supabase-js';
 import { AlertTriangle, Terminal, ExternalLink } from 'lucide-react';
 import { ToastProvider } from './components/Toast';
-import { StatusBar, Style } from '@capacitor/status-bar';
-import { Keyboard } from '@capacitor/keyboard';
-import { Capacitor } from '@capacitor/core';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -31,23 +29,45 @@ const App: React.FC = () => {
       return;
     }
 
+    const ensureProfileExists = async (user: User) => {
+      try {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', user.id)
+          .single();
+
+        if (error && error.code === 'PGRST116') {
+          // Profile doesn't exist — trigger likely failed. Create fallback.
+          await supabase.from('profiles').insert({
+            id: user.id,
+            email: user.email,
+            name: user.user_metadata?.name || 'Island User',
+            profile_photo_url: user.user_metadata?.avatar_url || '',
+            phone_number: user.phone || null,
+          });
+        }
+      } catch (err) {
+        console.error('Profile fallback error:', err);
+      }
+    };
+
     const getSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      if (currentUser) await ensureProfileExists(currentUser);
       setLoading(false);
     };
 
     getSession();
 
-    // Native Polish - Status Bar & Keyboard
-    if (Capacitor.isNativePlatform()) {
-      StatusBar.setStyle({ style: Style.Light });
-      StatusBar.setBackgroundColor({ color: '#ffffff' });
-      Keyboard.setAccessoryBarVisible({ isVisible: true });
-    }
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      if (currentUser && _event === 'SIGNED_IN') {
+        await ensureProfileExists(currentUser);
+      }
     });
 
     return () => {
@@ -84,27 +104,29 @@ const App: React.FC = () => {
   }
 
   return (
-    <ToastProvider>
-      <BrowserRouter future={{ v7_relativeSplatPath: true, v7_startTransition: true }}>
-        <Layout user={user}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/listings" element={<Listings />} />
-            <Route path="/listings/:id" element={<ListingDetail />} />
-            <Route path="/post" element={user ? <CreateListing /> : <Navigate to="/auth" />} />
-            <Route path="/chats" element={user ? <ChatList /> : <Navigate to="/auth" />} />
-            <Route path="/chats/:chatId" element={user ? <ChatRoom /> : <Navigate to="/auth" />} />
-            <Route path="/profile" element={user ? <Profile /> : <Navigate to="/auth" />} />
-            <Route path="/dashboard" element={user ? <Dashboard /> : <Navigate to="/auth" />} />
-            <Route path="/auth" element={<AuthView />} />
-            <Route path="/todos" element={<Todos />} />
-            <Route path="/privacy" element={<PrivacyPolicy />} />
-            <Route path="/terms" element={<TermsOfService />} />
-            <Route path="*" element={<Navigate to="/" />} />
-          </Routes>
-        </Layout>
-      </BrowserRouter>
-    </ToastProvider>
+    <ErrorBoundary>
+      <ToastProvider>
+        <BrowserRouter future={{ v7_relativeSplatPath: true, v7_startTransition: true }}>
+          <Layout user={user}>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/listings" element={<Listings />} />
+              <Route path="/listings/:id" element={<ListingDetail />} />
+              <Route path="/post" element={user ? <CreateListing /> : <Navigate to="/auth" />} />
+              <Route path="/chats" element={user ? <ChatList /> : <Navigate to="/auth" />} />
+              <Route path="/chats/:chatId" element={user ? <ChatRoom /> : <Navigate to="/auth" />} />
+              <Route path="/profile" element={user ? <Profile /> : <Navigate to="/auth" />} />
+              <Route path="/dashboard" element={user ? <Dashboard /> : <Navigate to="/auth" />} />
+              <Route path="/auth" element={<AuthView />} />
+              <Route path="/todos" element={<Todos />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/terms" element={<TermsOfService />} />
+              <Route path="*" element={<Navigate to="/" />} />
+            </Routes>
+          </Layout>
+        </BrowserRouter>
+      </ToastProvider>
+    </ErrorBoundary>
   );
 };
 

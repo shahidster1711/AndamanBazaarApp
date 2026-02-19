@@ -18,8 +18,8 @@ import {
   Info
 } from 'lucide-react';
 
-const SUPABASE_PROJECT_ID = "msxeqzceqjatoaluempo";
-const REDIRECT_URI = `https://${SUPABASE_PROJECT_ID}.supabase.co/auth/v1/callback`;
+const SUPABASE_PROJECT_ID = import.meta.env.VITE_SUPABASE_PROJECT_ID ||
+  (import.meta.env.VITE_SUPABASE_URL?.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1] ?? '');
 
 export const AuthView: React.FC = () => {
   const [mode, setMode] = useState<'login' | 'signup' | 'phone' | 'verify'>('login');
@@ -34,6 +34,24 @@ export const AuthView: React.FC = () => {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [showHelp, setShowHelp] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
+
+  // S7: Password strength validation
+  const validatePassword = (pwd: string): string[] => {
+    const errors: string[] = [];
+    if (pwd.length < 8) errors.push('At least 8 characters');
+    if (!/[A-Z]/.test(pwd)) errors.push('One uppercase letter');
+    if (!/[a-z]/.test(pwd)) errors.push('One lowercase letter');
+    if (!/[0-9]/.test(pwd)) errors.push('One number');
+    return errors;
+  };
+
+  const handlePasswordChange = (val: string) => {
+    setPassword(val);
+    if (mode === 'signup') {
+      setPasswordErrors(validatePassword(val));
+    }
+  };
 
   const clearState = () => {
     setError(null);
@@ -158,6 +176,21 @@ export const AuthView: React.FC = () => {
           }
         }
       } else {
+        // S7: Validate password strength before signup
+        const pwdErrors = validatePassword(password);
+        if (pwdErrors.length > 0) {
+          setError(
+            <div className="space-y-1">
+              <p className="font-bold">Password too weak:</p>
+              <ul className="list-disc list-inside text-xs">
+                {pwdErrors.map((e, i) => <li key={i}>{e}</li>)}
+              </ul>
+            </div>
+          );
+          setLoading(false);
+          return;
+        }
+
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -232,7 +265,24 @@ export const AuthView: React.FC = () => {
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Secret Password</label>
-                  <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" className="w-full p-4 bg-slate-50 border-2 border-transparent focus:border-ocean-500 focus:bg-white rounded-2xl outline-none font-bold transition-all" required />
+                  <input type="password" value={password} onChange={e => handlePasswordChange(e.target.value)} placeholder="••••••••" className="w-full p-4 bg-slate-50 border-2 border-transparent focus:border-ocean-500 focus:bg-white rounded-2xl outline-none font-bold transition-all" required minLength={8} />
+                  {mode === 'signup' && password.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-1 ml-1">
+                      {['8+ chars', 'Uppercase', 'Lowercase', 'Number'].map((req, i) => {
+                        const passed = [
+                          password.length >= 8,
+                          /[A-Z]/.test(password),
+                          /[a-z]/.test(password),
+                          /[0-9]/.test(password),
+                        ][i];
+                        return (
+                          <span key={req} className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${passed ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-400'}`}>
+                            {passed ? '✓' : '○'} {req}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </>
             )}

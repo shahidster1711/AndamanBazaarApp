@@ -354,7 +354,7 @@ export const Listings: React.FC = () => {
       )}
 
       {/* Listings Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-8">
         {loading ? (
           [1, 2, 3, 4, 5, 6, 7, 8].map(n => <ListingSkeleton key={n} />)
         ) : listings.length === 0 ? (
@@ -413,8 +413,8 @@ const ListingItem: React.FC<{ listing: any, isFavorited: boolean, onToggleFavori
     : `https://picsum.photos/seed/list-${listing.id}/600/600`;
 
   return (
-    <Link to={`/listings/${listing.id}`} className="bg-white rounded-[32px] border-2 border-slate-100 flex flex-col h-full overflow-hidden group hover:border-ocean-400 hover:shadow-2xl transition-all duration-500 p-2">
-      <div className="relative aspect-square bg-slate-50 rounded-[28px] overflow-hidden">
+    <Link to={`/listings/${listing.id}`} className="bg-white rounded-2xl md:rounded-[32px] border-2 border-slate-100 flex flex-col h-full overflow-hidden group hover:border-ocean-400 hover:shadow-2xl transition-all duration-500 p-1.5 md:p-2">
+      <div className="relative aspect-square bg-slate-50 rounded-xl md:rounded-[28px] overflow-hidden">
         <img
           src={imageUrl}
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
@@ -423,27 +423,27 @@ const ListingItem: React.FC<{ listing: any, isFavorited: boolean, onToggleFavori
         />
         <button
           onClick={onToggleFavorite}
-          className={`absolute top-4 right-4 w-11 h-11 bg-white/95 backdrop-blur-md rounded-2xl flex items-center justify-center border-2 border-white transition-all duration-300 shadow-lg z-10 ${isFavorited ? 'text-coral-500 scale-110 border-coral-50' : 'text-slate-400 hover:text-slate-600 hover:scale-110'}`}
+          className={`absolute top-2 right-2 md:top-4 md:right-4 w-9 h-9 md:w-11 md:h-11 bg-white/95 backdrop-blur-md rounded-xl md:rounded-2xl flex items-center justify-center border-2 border-white transition-all duration-300 shadow-lg z-10 ${isFavorited ? 'text-coral-500 scale-110 border-coral-50' : 'text-slate-400 hover:text-slate-600 hover:scale-110'}`}
         >
-          <Heart size={22} fill={isFavorited ? "currentColor" : "none"} strokeWidth={2.5} />
+          <Heart size={18} className="md:w-[22px] md:h-[22px]" fill={isFavorited ? "currentColor" : "none"} strokeWidth={2.5} />
         </button>
         {listing.is_featured && (
-          <div className="absolute top-4 left-4 bg-ocean-700 text-white px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg border border-ocean-800 flex items-center z-10">
-            <Sparkles size={10} className="mr-1.5" /> Featured
+          <div className="absolute top-2 left-2 md:top-4 md:left-4 bg-ocean-700 text-white px-2 md:px-3 py-1 md:py-1.5 rounded-lg md:rounded-xl text-[8px] md:text-[9px] font-black uppercase tracking-widest shadow-lg border border-ocean-800 flex items-center z-10">
+            <Sparkles size={10} className="mr-1 md:mr-1.5" /> Featured
           </div>
         )}
       </div>
-      <div className="p-4 flex flex-col flex-1">
-        <div className="flex justify-between items-start mb-1">
-          <span className="text-xl font-heading font-black text-slate-900 tracking-tight">₹ {listing.price.toLocaleString('en-IN')}</span>
+      <div className="p-2 md:p-4 flex flex-col flex-1">
+        <div className="flex justify-between items-start mb-0.5 md:mb-1">
+          <span className="text-sm md:text-xl font-heading font-black text-slate-900 tracking-tight">₹ {listing.price.toLocaleString('en-IN')}</span>
         </div>
-        <h3 className="font-bold text-slate-800 line-clamp-2 leading-snug mb-3 text-sm group-hover:text-ocean-700 transition-colors">{listing.title}</h3>
+        <h3 className="font-bold text-slate-800 line-clamp-2 leading-snug mb-2 md:mb-3 text-[11px] md:text-sm group-hover:text-ocean-700 transition-colors uppercase tracking-tight">{listing.title}</h3>
         <div className="mt-auto flex items-center justify-between">
-          <div className="flex items-center space-x-1.5 text-[9px] font-black text-slate-400 uppercase tracking-widest">
-            <MapPin size={10} className="text-ocean-500" />
-            <span>{listing.city}</span>
+          <div className="flex items-center space-x-1 text-[8px] md:text-[9px] font-black text-slate-400 uppercase tracking-widest">
+            <MapPin size={9} className="text-ocean-500 md:w-[10px]" />
+            <span className="truncate max-w-[60px] md:max-w-none">{listing.city}</span>
           </div>
-          <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest">{new Date(listing.created_at).toLocaleDateString()}</span>
+          <span className="text-[7px] md:text-[8px] font-black text-slate-300 uppercase tracking-widest hidden xs:block">{new Date(listing.created_at).toLocaleDateString()}</span>
         </div>
       </div>
     </Link>

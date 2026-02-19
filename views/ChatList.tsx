@@ -40,30 +40,22 @@ export const ChatList: React.FC = () => {
         ...chatData.map(c => c.seller_id)
       ].filter(Boolean))];
 
-      // 3. Batch fetch related data
-      const [listingsRes, profilesRes, messagesRes] = await Promise.all([
+      // 3. Batch fetch related data (NO full messages fetch — use last_message from chat row)
+      const [listingsRes, profilesRes] = await Promise.all([
         supabase.from('listings').select('id, title').in('id', listingIds),
-        supabase.from('profiles').select('id, name, profile_photo_url').in('id', profileIds),
-        supabase.from('messages').select('chat_id, sender_id, is_read, created_at').in('chat_id', chatData.map(c => c.id)).order('created_at', { ascending: true })
+        supabase.from('profiles').select('id, name, profile_photo_url').in('id', profileIds)
       ]);
 
       // 4. Map data back to chats
       const listingsMap = Object.fromEntries((listingsRes.data || []).map(l => [l.id, l]));
       const profilesMap = Object.fromEntries((profilesRes.data || []).map(p => [p.id, p]));
 
-      // Group messages by chat_id
-      const messagesByChat: Record<string, any[]> = {};
-      (messagesRes.data || []).forEach(m => {
-        if (!messagesByChat[m.chat_id]) messagesByChat[m.chat_id] = [];
-        messagesByChat[m.chat_id].push(m);
-      });
-
       const enrichedChats = chatData.map(chat => ({
         ...chat,
         listing: listingsMap[chat.listing_id],
         seller: profilesMap[chat.seller_id],
         buyer: profilesMap[chat.buyer_id],
-        messages: messagesByChat[chat.id] || []
+        messages: [] // Messages loaded on demand in ChatRoom
       }));
 
       setChats(enrichedChats as ChatWithLastMessage[]);
@@ -77,19 +69,25 @@ export const ChatList: React.FC = () => {
   useEffect(() => {
     fetchChats();
 
+    // Filter realtime to chats involving current user
     const chatsChannel = supabase
       .channel('chat_list_updates')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'chats' }, () => fetchChats())
-      .subscribe();
-
-    const messagesChannel = supabase
-      .channel('chat_list_message_updates')
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, () => fetchChats())
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'chats',
+        filter: `buyer_id=eq.${currentUser?.id}`
+      }, () => fetchChats())
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'chats',
+        filter: `seller_id=eq.${currentUser?.id}`
+      }, () => fetchChats())
       .subscribe();
 
     return () => {
       supabase.removeChannel(chatsChannel);
-      supabase.removeChannel(messagesChannel);
     };
   }, []);
 
@@ -118,9 +116,8 @@ export const ChatList: React.FC = () => {
       </div>
 
       <div className="bg-white rounded-[40px] shadow-2xl border-4 border-slate-50 overflow-hidden">
-        <div className="flex bg-slate-50 border-b-2 border-slate-100">
-          <button className="flex-1 py-5 font-black text-teal-800 border-b-4 border-teal-800 uppercase text-[10px] tracking-[0.2em]">Primary</button>
-          <button className="flex-1 py-5 font-black text-slate-400 uppercase text-[10px] tracking-[0.2em] opacity-40">System</button>
+        <div className="bg-slate-50 border-b-2 border-slate-100 px-6 py-5">
+          <span className="font-black text-teal-800 uppercase text-[10px] tracking-[0.2em]">All Conversations</span>
         </div>
 
         <div className="divide-y divide-slate-50">

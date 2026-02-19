@@ -6,8 +6,6 @@ import { ReportModal } from '../components/ReportModal';
 import { Listing, Profile } from '../types';
 import { MapPin, Shield, Share2, MessageSquare, Heart, ChevronLeft, AlertCircle, Edit3, Loader2, Tag, Clock, ShieldCheck, Package, Phone, MessageCircle, BadgeCheck } from 'lucide-react';
 import { useToast } from '../components/Toast';
-import { Share } from '@capacitor/share';
-import { Capacitor } from '@capacitor/core';
 
 export const ListingDetail: React.FC = () => {
   const { id } = useParams();
@@ -136,14 +134,7 @@ export const ListingDetail: React.FC = () => {
 
   const handleShare = async () => {
     try {
-      if (Capacitor.isNativePlatform()) {
-        await Share.share({
-          title: listing?.title || 'AndamanBazaar Listing',
-          text: `Check out this ${listing?.title} on AndamanBazaar!`,
-          url: window.location.href,
-          dialogTitle: 'Share with friends'
-        });
-      } else if (navigator.share) {
+      if (navigator.share) {
         await navigator.share({
           title: listing?.title || 'AndamanBazaar Listing',
           text: `Check out this ${listing?.title} on AndamanBazaar!`,

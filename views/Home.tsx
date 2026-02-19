@@ -5,7 +5,6 @@ import { Logo } from '../components/Logo';
 import { supabase } from '../lib/supabase';
 import { Listing } from '../types';
 import { Car, Smartphone, Home as HomeIcon, Sofa, Shirt, Briefcase, Sparkles, MapPin, Search, ArrowRight, Loader2, Download, X, Zap } from 'lucide-react';
-import { Capacitor } from '@capacitor/core';
 
 const categories = [
   { name: 'Mobiles', slug: 'mobiles', icon: <Smartphone size={28} />, gradient: 'from-blue-400 to-blue-600', shadow: 'shadow-blue-200' },
@@ -37,7 +36,7 @@ export const Home: React.FC = () => {
     fetchRecent(0);
   }, []);
 
-  const [showAppBanner, setShowAppBanner] = useState(!Capacitor.isNativePlatform());
+  const [showAppBanner, setShowAppBanner] = useState(false);
 
   const fetchFeatured = async () => {
     try {
@@ -153,7 +152,7 @@ export const Home: React.FC = () => {
               <span>Andaman's Own Marketplace</span>
             </div>
 
-            <h1 className="text-5xl md:text-7xl font-heading font-black tracking-tight text-slate-900 leading-[0.9] animate-fade-in-up delay-200">
+            <h1 className="text-4xl md:text-7xl font-heading font-black tracking-tight text-slate-900 leading-[0.95] animate-fade-in-up delay-200">
               Buy & Sell <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-ocean-500 to-teal-500">in Paradise.</span>
             </h1>
@@ -300,17 +299,17 @@ const ListingCard: React.FC<{ listing: any, featured?: boolean }> = ({ listing, 
       </div>
 
       {/* Content */}
-      <div className="px-4 pb-4 pt-1 flex flex-col flex-1 gap-1">
-        <h3 className="font-medium text-slate-800 text-sm line-clamp-2 leading-snug group-hover:text-ocean-600 transition-colors">
+      <div className="px-3 md:px-4 pb-3 md:pb-4 pt-1 flex flex-col flex-1 gap-1">
+        <h3 className="font-bold text-slate-800 text-[11px] md:text-sm line-clamp-2 leading-tight group-hover:text-ocean-600 transition-colors uppercase tracking-tight">
           {listing.title}
         </h3>
-        <div className="mt-auto pt-2 flex items-center justify-between">
-          <span className="text-lg font-heading font-bold text-slate-900 tracking-tight">
+        <div className="mt-auto pt-1 md:pt-2 flex items-center justify-between">
+          <span className="text-sm md:text-lg font-heading font-black text-slate-900 tracking-tight">
             ₹{listing.price?.toLocaleString('en-IN') || '0'}
           </span>
           {/* Action Button (Visual only) */}
-          <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-ocean-500 group-hover:text-white transition-all duration-300">
-            <ArrowRight size={14} />
+          <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-ocean-500 group-hover:text-white transition-all duration-300">
+            <ArrowRight size={12} className="md:w-3.5 md:h-3.5" />
           </div>
         </div>
       </div>

@@ -143,7 +143,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, user }) => {
           <div className="relative">
             <MessageCircle size={24} strokeWidth={location.pathname.startsWith('/chats') ? 2.5 : 2} />
             {unreadCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-[16px] flex items-center justify-center bg-coral-500 text-white text-[9px] font-black rounded-full border-2 border-white shadow-sm">
+              <span className="absolute -top-1.5 -right-3 min-w-[18px] h-[18px] flex items-center justify-center bg-coral-500 text-white text-[9px] font-black rounded-full border-2 border-white shadow-md">
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}

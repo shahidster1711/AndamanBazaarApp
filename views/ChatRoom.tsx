@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Chat, Message, Profile } from '../types';
-import { Send, Camera, ChevronLeft, Phone, MoreVertical, ShieldCheck, Check, CheckCheck } from 'lucide-react';
+import { Send, ChevronLeft, ShieldCheck, Check, CheckCheck } from 'lucide-react';
 import { messageSchema, sanitizePlainText } from '../lib/validation';
 import { checkRateLimit, logAuditEvent, sanitizeErrorMessage } from '../lib/security';
 import { useToast } from '../components/Toast';
@@ -18,6 +18,8 @@ export const ChatRoom: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { showToast } = useToast();
+  const [hasMore, setHasMore] = useState(false);
+  const MESSAGES_PER_PAGE = 50;
 
   useEffect(() => {
     const initChat = async () => {
@@ -26,28 +28,14 @@ export const ChatRoom: React.FC = () => {
       setCurrentUser(user);
 
       try {
-        const resolveChatRelations = async (chat: any) => {
-          if (!chat) return null;
-          const [listingRes, sellerRes, buyerRes] = await Promise.all([
-            supabase.from('listings').select('id, title, price, city, user_id').eq('id', chat.listing_id).single(),
-            supabase.from('profiles').select('id, name, profile_photo_url').eq('id', chat.seller_id).single(),
-            supabase.from('profiles').select('id, name, profile_photo_url').eq('id', chat.buyer_id).single()
-          ]);
-          return {
-            ...chat,
-            listing: listingRes.data,
-            seller: sellerRes.data,
-            buyer: buyerRes.data
-          };
-        };
+        // P4: Single query with joins instead of N+1 separate queries
+        const CHAT_SELECT = `*, listing:listings!chats_listing_id_fkey(id, title, price, city, user_id), seller:profiles!chats_seller_id_fkey(id, name, profile_photo_url), buyer:profiles!chats_buyer_id_fkey(id, name, profile_photo_url)`;
 
-        let { data: baseChatData, error: chatError } = await supabase
+        let { data: chatData, error: chatError } = await supabase
           .from('chats')
-          .select('*')
+          .select(CHAT_SELECT)
           .eq('id', id)
           .single();
-
-        let chatData = baseChatData ? await resolveChatRelations(baseChatData) : null;
 
         // If ID is actually a listing ID (from "Chat Now" button), resolve correctly
         if (chatError || !chatData) {
@@ -65,15 +53,15 @@ export const ChatRoom: React.FC = () => {
             }
 
             // Guard: prevent new chats on sold/deleted listings (existing chats still accessible)
-            const { data: existingBaseChat } = await supabase
+            const { data: existingChat } = await supabase
               .from('chats')
-              .select('*')
+              .select(CHAT_SELECT)
               .eq('listing_id', listing.id)
               .eq('buyer_id', user.id)
               .single();
 
-            if (existingBaseChat) {
-              chatData = await resolveChatRelations(existingBaseChat);
+            if (existingChat) {
+              chatData = existingChat;
             } else if (listing.status === 'sold' || listing.status === 'deleted' || listing.status === 'expired') {
               // Can't start new chat on sold/deleted/expired listings
               navigate('/listings');
@@ -86,9 +74,9 @@ export const ChatRoom: React.FC = () => {
                   buyer_id: user.id,
                   seller_id: listing.user_id
                 })
-                .select('*')
+                .select(CHAT_SELECT)
                 .single();
-              if (newBaseChat) chatData = await resolveChatRelations(newBaseChat);
+              if (newBaseChat) chatData = newBaseChat;
             }
           }
         }
@@ -96,14 +84,18 @@ export const ChatRoom: React.FC = () => {
         if (chatData) {
           setChat(chatData);
 
-          // Initial Message Fetch
-          const { data: messageData } = await supabase
+          // Initial Message Fetch (paginated — last 50)
+          const { data: messageData, count } = await supabase
             .from('messages')
-            .select('*')
+            .select('*', { count: 'exact' })
             .eq('chat_id', chatData.id)
-            .order('created_at', { ascending: true });
+            .order('created_at', { ascending: false })
+            .limit(MESSAGES_PER_PAGE);
 
-          if (messageData) setMessages(messageData);
+          if (messageData) {
+            setMessages(messageData.reverse());
+            setHasMore((count || 0) > MESSAGES_PER_PAGE);
+          }
 
           // Reset unread count for current user
           const isBuyer = user.id === chatData.buyer_id;
@@ -171,6 +163,29 @@ export const ChatRoom: React.FC = () => {
         .neq('sender_id', userId);
     } catch (error) {
       console.error('Error marking messages as read:', error);
+    }
+  };
+
+  const loadMoreMessages = async () => {
+    if (!chat || !hasMore || messages.length === 0) return;
+    const oldestMessage = messages[0];
+    try {
+      const { data: olderMessages } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('chat_id', chat.id)
+        .lt('created_at', oldestMessage.created_at)
+        .order('created_at', { ascending: false })
+        .limit(MESSAGES_PER_PAGE);
+
+      if (olderMessages && olderMessages.length > 0) {
+        setMessages(prev => [...olderMessages.reverse(), ...prev]);
+        if (olderMessages.length < MESSAGES_PER_PAGE) setHasMore(false);
+      } else {
+        setHasMore(false);
+      }
+    } catch (err) {
+      console.error('Error loading more messages:', err);
     }
   };
 
@@ -280,13 +295,19 @@ export const ChatRoom: React.FC = () => {
             )}
           </div>
         </div>
-        <div className="flex items-center space-x-2">
-          <button className="p-2 text-slate-400 hover:text-ocean-700 transition-colors"><Phone size={20} /></button>
-          <button className="p-2 text-slate-400 hover:text-ocean-700 transition-colors"><MoreVertical size={20} /></button>
-        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {hasMore && (
+          <div className="text-center py-2">
+            <button
+              onClick={loadMoreMessages}
+              className="text-[10px] font-black text-ocean-600 uppercase tracking-widest bg-ocean-50 px-4 py-2 rounded-full hover:bg-ocean-100 transition-colors"
+            >
+              Load older messages
+            </button>
+          </div>
+        )}
         <div className="text-center py-6">
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] bg-slate-100 inline-block px-4 py-1 rounded-full">Conversation Started</p>
         </div>
@@ -319,9 +340,6 @@ export const ChatRoom: React.FC = () => {
 
       <div className="p-4 bg-white border-t safe-bottom">
         <div className="flex items-center space-x-3">
-          <button className="p-3 bg-slate-100 rounded-2xl text-slate-400 hover:bg-slate-200 transition-colors">
-            <Camera size={20} />
-          </button>
           <div className="flex-1 bg-slate-50 rounded-[24px] flex items-center px-5 py-3 border-2 border-slate-100 focus-within:border-ocean-600 focus-within:bg-white transition-all">
             <input
               type="text"

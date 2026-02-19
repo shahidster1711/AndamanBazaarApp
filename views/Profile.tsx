@@ -31,6 +31,10 @@ export const Profile: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [stats, setStats] = useState({ active: 0, sold: 0 });
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const PROFILE_PAGE_SIZE = 20;
+  const [listingPage, setListingPage] = useState(0);
+  const [hasMoreListings, setHasMoreListings] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
     fetchProfileAndStats();
@@ -44,7 +48,10 @@ export const Profile: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    activeTab === 'saved' ? fetchSavedItems() : fetchUserListings();
+    setListings([]);
+    setListingPage(0);
+    setHasMoreListings(true);
+    activeTab === 'saved' ? fetchSavedItems(0) : fetchUserListings(0);
     setActiveMenuId(null);
   }, [activeTab]);
 
@@ -107,10 +114,11 @@ export const Profile: React.FC = () => {
           setIsSaving(false);
           return;
         }
-        const fileName = `avatars/avatar_${user.id}_${Date.now()}.${avatarFile.name.split('.').pop()}`;
-        const { error: uploadError } = await supabase.storage.from('listings').upload(fileName, avatarFile);
+        const fileExt = avatarFile.name.split('.').pop();
+        const fileName = `${user.id}/avatar_${Date.now()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage.from('avatars').upload(fileName, avatarFile, { upsert: true });
         if (uploadError) throw uploadError;
-        const { data } = supabase.storage.from('listings').getPublicUrl(fileName);
+        const { data } = supabase.storage.from('avatars').getPublicUrl(fileName);
         if (data.publicUrl) {
           avatarUrl = data.publicUrl;
         }
@@ -148,29 +156,54 @@ export const Profile: React.FC = () => {
     else showToast(result.error || 'Logout failed. Please try again.', 'error');
   };
 
-  const fetchUserListings = async () => {
+  const fetchUserListings = async (pageIndex: number) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+    if (pageIndex > 0) setLoadingMore(true);
     try {
-      const { data, error } = await supabase.from('listings').select('*').eq('user_id', user.id).eq('status', activeTab).order('created_at', { ascending: false });
+      const from = pageIndex * PROFILE_PAGE_SIZE;
+      const to = from + PROFILE_PAGE_SIZE - 1;
+      const { data, error } = await supabase
+        .from('listings')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', activeTab)
+        .order('created_at', { ascending: false })
+        .range(from, to);
       if (error) throw error;
-      setListings(data || []);
-    } catch (err) { console.error('Error fetching user listings:', err); }
+      if (pageIndex === 0) {
+        setListings(data || []);
+      } else {
+        setListings(prev => [...prev, ...(data || [])]);
+      }
+      setHasMoreListings((data || []).length === PROFILE_PAGE_SIZE);
+      setListingPage(pageIndex);
+    } catch (err) {
+      console.error('Error fetching user listings:', err);
+    } finally {
+      setLoadingMore(false);
+    }
   };
 
-  const fetchSavedItems = async () => {
+  const fetchSavedItems = async (pageIndex: number) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+    if (pageIndex > 0) setLoadingMore(true);
     try {
-      // 1. Fetch favorites
+      const from = pageIndex * PROFILE_PAGE_SIZE;
+      const to = from + PROFILE_PAGE_SIZE - 1;
+
+      // 1. Fetch favorites (paginated)
       const { data: favoritedData, error: favError } = await supabase
         .from('favorites')
         .select('listing_id, id')
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .range(from, to);
 
       if (favError) throw favError;
       if (!favoritedData || favoritedData.length === 0) {
-        setListings([]);
+        if (pageIndex === 0) setListings([]);
+        setHasMoreListings(false);
         return;
       }
 
@@ -182,9 +215,17 @@ export const Profile: React.FC = () => {
         .in('id', listingIds);
 
       if (listError) throw listError;
-      setListings(listingData || []);
+      if (pageIndex === 0) {
+        setListings(listingData || []);
+      } else {
+        setListings(prev => [...prev, ...(listingData || [])]);
+      }
+      setHasMoreListings(favoritedData.length === PROFILE_PAGE_SIZE);
+      setListingPage(pageIndex);
     } catch (err) {
       console.error('Error fetching saved items:', err);
+    } finally {
+      setLoadingMore(false);
     }
   };
 
@@ -398,6 +439,23 @@ export const Profile: React.FC = () => {
           ))
         )}
       </div>
+
+      {hasMoreListings && listings.length > 0 && (
+        <div className="flex justify-center mt-10">
+          <button
+            onClick={() => {
+              const nextPage = listingPage + 1;
+              activeTab === 'saved' ? fetchSavedItems(nextPage) : fetchUserListings(nextPage);
+            }}
+            disabled={loadingMore}
+            className="flex items-center gap-2 bg-slate-100 text-slate-700 px-8 py-4 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-slate-200 transition-colors disabled:opacity-50"
+          >
+            {loadingMore ? <Loader2 size={16} className="animate-spin" /> : null}
+            {loadingMore ? 'Loading…' : 'Load More'}
+          </button>
+        </div>
+      )}
+
       <ReportModal isOpen={!!selectedForReport} onClose={() => setSelectedForReport(null)} listingId={selectedForReport?.id || ''} listingTitle={selectedForReport?.title || ''} />
     </div>
   );

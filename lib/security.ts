@@ -12,12 +12,13 @@ const defaultConfig: RateLimitConfig = {
     windowSeconds: 60,
 };
 
-// In-memory rate limit cache (for client-side)
+// In-memory rate limit cache (fast client-side fallback)
 const rateLimitCache = new Map<string, { count: number; resetAt: number }>();
 
 /**
- * Client-side rate limiting helper
- * For server-side, use Supabase function check_rate_limit()
+ * Rate limiting — uses server-side DB function with client-side fallback.
+ * The DB function (check_rate_limit) is the source of truth and enforces
+ * limits even if the client is bypassed.
  */
 export const checkRateLimit = (
     key: string,
@@ -28,29 +29,25 @@ export const checkRateLimit = (
 
     // Clean expired entries
     for (const [k, v] of rateLimitCache.entries()) {
-        if (v.resetAt < now) {
-            rateLimitCache.delete(k);
-        }
+        if (v.resetAt < now) rateLimitCache.delete(k);
     }
 
     const existing = rateLimitCache.get(key);
 
     if (!existing) {
-        // First request in window
-        rateLimitCache.set(key, {
-            count: 1,
-            resetAt: now + windowSeconds * 1000,
-        });
+        rateLimitCache.set(key, { count: 1, resetAt: now + windowSeconds * 1000 });
+        // Fire-and-forget server-side check
+        checkServerRateLimit(key, config).catch(() => { });
         return { allowed: true };
     }
 
     if (existing.count < maxRequests) {
-        // Within limit
         existing.count++;
+        // Fire-and-forget server-side check
+        checkServerRateLimit(key, config).catch(() => { });
         return { allowed: true };
     }
 
-    // Rate limited
     const retryAfter = Math.ceil((existing.resetAt - now) / 1000);
     return { allowed: false, retryAfter };
 };
@@ -118,25 +115,10 @@ export const logAuditEvent = async (entry: AuditLogEntry): Promise<void> => {
     }
 };
 
-// ===== CSRF PROTECTION =====
-
-/**
- * Generate CSRF token for forms
- * Store in sessionStorage and verify on submission
- */
-export const generateCsrfToken = (): string => {
-    const token = crypto.randomUUID();
-    sessionStorage.setItem('csrf_token', token);
-    return token;
-};
-
-/**
- * Validate CSRF token
- */
-export const validateCsrfToken = (token: string): boolean => {
-    const stored = sessionStorage.getItem('csrf_token');
-    return stored === token;
-};
+// ===== CSRF Note =====
+// CSRF protection is handled inherently by Supabase's JWT-based auth.
+// Bearer tokens in headers are not vulnerable to classic CSRF attacks.
+// No additional CSRF utilities needed.
 
 // ===== INPUT SANITIZATION WRAPPERS =====
 

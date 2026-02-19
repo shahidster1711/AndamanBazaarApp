@@ -8,9 +8,6 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "firebase-deploy": "npm run build && firebase deploy",
-    "cap-add-android": "npx cap add android",
-    "cap-sync": "npm run build && npx cap sync",
-    "android-open": "npm run cap-sync && npx cap open android",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
@@ -20,15 +17,6 @@
     "e2e:ui": "playwright test --ui"
   },
   "dependencies": {
-    "@capacitor/android": "^5.0.0",
-    "@capacitor/app": "^5.0.0",
-    "@capacitor/camera": "^5.0.0",
-    "@capacitor/core": "^5.0.0",
-    "@capacitor/geolocation": "^5.0.0",
-    "@capacitor/haptics": "^5.0.0",
-    "@capacitor/keyboard": "^5.0.0",
-    "@capacitor/share": "^5.0.0",
-    "@capacitor/status-bar": "^5.0.0",
     "@google/generative-ai": "^0.24.1",
     "@supabase/supabase-js": "^2.45.4",
     "@types/dompurify": "^3.0.5",
@@ -43,8 +31,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@capacitor/assets": "^3.0.5",
-    "@capacitor/cli": "^5.0.0",
     "@playwright/test": "^1.58.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
