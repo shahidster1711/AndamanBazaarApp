@@ -47,12 +47,11 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           VITE_SUPABASE_PROJECT_ID: ${{ secrets.VITE_SUPABASE_PROJECT_ID }}
           VITE_GOOGLE_AI_API_KEY: ${{ secrets.VITE_GOOGLE_AI_API_KEY }}
-          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: root
           key: ${{ secrets.VPS_SSH_KEY }}
-          envs: VITE_SUPABASE_URL,VITE_SUPABASE_ANON_KEY,VITE_SUPABASE_PROJECT_ID,VITE_GOOGLE_AI_API_KEY,VITE_SENTRY_DSN
+          envs: VITE_SUPABASE_URL,VITE_SUPABASE_ANON_KEY,VITE_SUPABASE_PROJECT_ID,VITE_GOOGLE_AI_API_KEY
           script: |
             cd /opt/andamanbazaar
             git fetch origin

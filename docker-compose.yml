@@ -7,7 +7,6 @@ services:
         VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY}
         VITE_SUPABASE_PROJECT_ID: ${VITE_SUPABASE_PROJECT_ID}
         VITE_GOOGLE_AI_API_KEY: ${VITE_GOOGLE_AI_API_KEY:-}
-        VITE_SENTRY_DSN: ${VITE_SENTRY_DSN:-}
     container_name: andamanbazaar-app
     restart: unless-stopped
     networks:
