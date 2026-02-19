@@ -2,15 +2,25 @@
 -- Description: Critical security and data integrity fixes from production readiness audit
 -- Author: AndamanBazaar Team
 -- Date: 2026-02-19
+-- 
+-- NOTE: This script is idempotent — safe to re-run if partially applied.
 
 -- =====================================================
--- S1: Add audit_logs INSERT policy
+-- S1: Add audit_logs INSERT policy (if not already present)
 -- The client-side logAuditEvent() needs this to actually write rows
 -- =====================================================
-CREATE POLICY "Authenticated users can insert audit logs"
-ON public.audit_logs
-FOR INSERT
-WITH CHECK (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE tablename = 'audit_logs' 
+    AND policyname = 'Authenticated users can insert audit logs'
+  ) THEN
+    CREATE POLICY "Authenticated users can insert audit logs"
+    ON public.audit_logs
+    FOR INSERT
+    WITH CHECK (auth.uid() = user_id);
+  END IF;
+END $$;
 
 -- =====================================================
 -- S2: Fix storage upload policy for listings bucket
@@ -18,17 +28,25 @@ WITH CHECK (auth.uid() = user_id);
 -- Restrict so uploads must go under the user's own folder.
 -- =====================================================
 
--- Drop the overly-permissive policy
+-- Drop the overly-permissive policy (safe if it doesn't exist)
 DROP POLICY IF EXISTS "Users can upload listing images" ON storage.objects;
 
 -- Re-create with path-based ownership
-CREATE POLICY "Users can upload listing images to own folder"
-ON storage.objects FOR INSERT
-WITH CHECK (
-  bucket_id = 'listings' AND
-  auth.role() = 'authenticated' AND
-  (storage.foldername(name))[1] = auth.uid()::text
-);
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE tablename = 'objects' AND schemaname = 'storage'
+    AND policyname = 'Users can upload listing images to own folder'
+  ) THEN
+    CREATE POLICY "Users can upload listing images to own folder"
+    ON storage.objects FOR INSERT
+    WITH CHECK (
+      bucket_id = 'listings' AND
+      auth.role() = 'authenticated' AND
+      (storage.foldername(name))[1] = auth.uid()::text
+    );
+  END IF;
+END $$;
 
 -- =====================================================
 -- D3: Remove physical DELETE policy on listings
@@ -57,7 +75,7 @@ FOR INSERT WITH CHECK (
 -- Track unique views per listing per user per day
 -- =====================================================
 CREATE TABLE IF NOT EXISTS public.listing_views (
-  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   listing_id UUID REFERENCES public.listings(id) ON DELETE CASCADE NOT NULL,
   viewer_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
   session_id TEXT,
@@ -78,11 +96,25 @@ CREATE INDEX IF NOT EXISTS idx_listing_views_viewer ON public.listing_views(view
 -- RLS
 ALTER TABLE public.listing_views ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Anyone can view listing view counts" ON public.listing_views
-  FOR SELECT USING (true);
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE tablename = 'listing_views' 
+    AND policyname = 'Anyone can view listing view counts'
+  ) THEN
+    CREATE POLICY "Anyone can view listing view counts" ON public.listing_views
+      FOR SELECT USING (true);
+  END IF;
 
-CREATE POLICY "Authenticated users can insert views" ON public.listing_views
-  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE tablename = 'listing_views' 
+    AND policyname = 'Authenticated users can insert views'
+  ) THEN
+    CREATE POLICY "Authenticated users can insert views" ON public.listing_views
+      FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+  END IF;
+END $$;
 
 -- Replace the old increment function with a deduplicated version
 CREATE OR REPLACE FUNCTION increment_listing_views(p_listing_id UUID)
@@ -105,14 +137,3 @@ BEGIN
   WHERE id = p_listing_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- =====================================================
--- AUDIT: Record migration application
--- =====================================================
-INSERT INTO public.audit_logs (user_id, action, status, metadata)
-VALUES (
-  '00000000-0000-0000-0000-000000000000',
-  'MIGRATION_008_APPLIED',
-  'success',
-  '{"description": "Production readiness fixes: audit_logs INSERT policy, storage restrictions, soft-delete enforcement, chat RLS, view deduplication"}'::jsonb
-);
