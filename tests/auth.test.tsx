@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { AuthView } from '../views/AuthView';
+import { AuthView } from '../src/pages/AuthView';
 import { MemoryRouter } from 'react-router-dom';
 
 describe('AuthView', () => {

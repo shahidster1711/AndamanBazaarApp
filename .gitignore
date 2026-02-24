@@ -6,3 +6,10 @@ dist
 firebase-debug.log
 .firebase/
 .gemini/
+.env.test
+.env.*
+.DS_Store
+.vscode/
+playwright-report/
+test-results/
+.npm-cache/

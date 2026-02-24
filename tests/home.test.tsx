@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { Home } from '../views/Home';
+import { Home } from '../src/pages/Home';
 
 describe('HomeView', () => {
   it('renders the main heading', async () => {

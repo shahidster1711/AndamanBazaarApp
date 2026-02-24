@@ -1,0 +1,7 @@
+project_id = "msxeqzceqjatoaluempo"
+
+[functions.create-boost-order]
+verify_jwt = false
+
+[functions.cashfree-webhook]
+verify_jwt = false

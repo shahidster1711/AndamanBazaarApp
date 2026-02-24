@@ -182,3 +182,25 @@ export interface AiSuggestion {
   suggested_condition?: ItemCondition;
   estimated_price_range?: { low: number; high: number };
 }
+
+// ===== Boost / Featured Ad Types =====
+
+export type BoostTierKey = 'spark' | 'boost' | 'power';
+export type BoostStatus = 'pending' | 'paid' | 'expired' | 'failed' | 'refunded';
+
+export interface ListingBoost {
+  id: string;
+  listing_id: string;
+  user_id: string;
+  tier: BoostTierKey;
+  amount_inr: number;
+  duration_days: number;
+  status: BoostStatus;
+  cashfree_order_id?: string;
+  cashfree_payment_id?: string;
+  payment_method: string;
+  featured_from?: string;
+  featured_until?: string;
+  created_at: string;
+  updated_at: string;
+}

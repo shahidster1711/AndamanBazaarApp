@@ -1,0 +1,720 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================
+   CSS CUSTOM PROPERTIES — ISLAND DESIGN TOKENS
+   Refined from Stitch designs: Ocean + Coral palette
+   ============================================ */
+:root {
+  /* Brand Colors */
+  --color-ocean: #006D77;
+  --color-teal: #83C5BE;
+  --color-coral: #FF6B6B;
+  --color-coral-deep: #E05A5A;
+  --color-sandy: #f5c842;
+
+  /* Surfaces */
+  --color-surface: #F8FAFC;
+  --color-surface-card: #FFFFFF;
+  --color-dark: #0F172A;
+  --color-dark-card: #1E293B;
+
+  /* Text */
+  --color-text-main: #1E293B;
+  --color-text-sub: #64748B;
+  --color-text-muted: #94A3B8;
+
+  /* Radii */
+  --radius-card: 16px;
+  --radius-card-lg: 24px;
+  --radius-input: 12px;
+  --radius-pill: 9999px;
+
+  /* Shadows */
+  --shadow-card: 0 2px 12px -2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-card-hover: 0 12px 40px rgba(0, 109, 119, 0.15);
+  --shadow-soft: 0 2px 8px -2px rgba(15, 23, 42, 0.08), 0 1px 4px -2px rgba(15, 23, 42, 0.04);
+  --shadow-floating: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+  --shadow-coral-glow: 0 8px 32px rgba(255, 107, 107, 0.25);
+  --shadow-ocean-glow: 0 8px 32px rgba(0, 109, 119, 0.25);
+  --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  --shadow-nav: 0 -4px 24px rgba(0, 0, 0, 0.06);
+}
+
+/* ============================================
+   BASE LAYER
+   ============================================ */
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
+    font-size: clamp(16px, 0.35vw + 12px, 18px);
+  }
+
+  body {
+    @apply bg-warm-50 text-midnight-700 antialiased font-sans overflow-x-hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    background-color: rgba(0, 109, 119, 0.2);
+    color: #0F172A;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-heading tracking-tight;
+  }
+
+  .dark body {
+    @apply bg-midnight-700 text-warm-50;
+  }
+}
+
+/* ============================================
+   COMPONENT LAYER — Stitch-Refined
+   ============================================ */
+@layer components {
+  .app-container {
+    @apply max-w-7xl mx-auto px-4 md:px-6;
+  }
+  @media (min-width: 1280px) {
+    .app-container {
+      max-width: 90rem;
+    }
+  }
+  @media (min-width: 1536px) {
+    .app-container {
+      max-width: 100rem;
+    }
+  }
+
+
+  /* --- Glass Morphism --- */
+  .glass {
+    @apply bg-white/70 backdrop-blur-xl border border-white/30;
+    box-shadow: var(--shadow-glass);
+  }
+
+  .glass-teal {
+    background: rgba(0, 109, 119, 0.12);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(0, 109, 119, 0.2);
+  }
+
+  .glass-dark {
+    @apply bg-midnight-700/85 backdrop-blur-xl border border-white/10 shadow-xl text-white;
+  }
+
+  .glass-panel {
+    @apply bg-white/60 backdrop-blur-md border border-white/40 shadow-sm;
+  }
+
+  /* --- Premium Cards (Stitch-Inspired) --- */
+  .premium-card {
+    @apply bg-white overflow-hidden transition-all duration-300;
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    border: 1px solid rgba(226, 232, 240, 0.6);
+  }
+
+  .premium-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-card-hover);
+    border-color: rgba(131, 197, 190, 0.4);
+  }
+
+  .premium-card:active {
+    @apply scale-[0.98];
+  }
+
+  .listing-card {
+    @apply premium-card flex flex-col cursor-pointer;
+  }
+
+  /* --- Location Badge (Stitch-inspired overlay) --- */
+  .location-badge {
+    @apply inline-flex items-center gap-1 bg-white/95 backdrop-blur-sm px-2 py-1 rounded-md shadow-sm;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-main);
+  }
+
+  .location-badge svg,
+  .location-badge .icon {
+    width: 12px;
+    height: 12px;
+    color: var(--color-ocean);
+  }
+
+  /* --- Verified Badge (Stitch refresh) --- */
+  .island-verified-badge {
+    @apply inline-flex items-center gap-1 text-white text-[10px] font-bold px-2.5 py-1 rounded-full;
+    background: var(--color-ocean);
+  }
+
+  /* --- Buttons (Stitch palette: coral as CTA, ocean as secondary) --- */
+  .btn-primary {
+    @apply text-white font-heading font-bold px-6 py-3 rounded-2xl transition-all duration-200 active:scale-95 hover:brightness-105 inline-flex items-center justify-center gap-2;
+    background: var(--color-coral);
+    box-shadow: var(--shadow-coral-glow);
+  }
+
+  .btn-primary:hover {
+    background: var(--color-coral-deep);
+  }
+
+  .btn-ocean {
+    @apply text-white font-heading font-bold px-6 py-3 rounded-2xl transition-all duration-200 active:scale-95 hover:brightness-105 inline-flex items-center justify-center gap-2;
+    background: var(--color-ocean);
+    box-shadow: var(--shadow-ocean-glow);
+  }
+
+  .btn-coral {
+    @apply bg-coral-gradient text-white font-heading font-bold px-6 py-3 rounded-2xl shadow-coral-glow transition-all duration-200 active:scale-95 hover:brightness-105 inline-flex items-center justify-center gap-2;
+  }
+
+  .btn-secondary {
+    @apply bg-white text-midnight-700 font-heading font-bold px-6 py-3 rounded-2xl border border-warm-200 shadow-card transition-all duration-200 active:scale-95 hover:bg-warm-50 hover:border-teal-200 inline-flex items-center justify-center gap-2;
+  }
+
+  .btn-ghost {
+    @apply text-teal-600 font-heading font-bold px-4 py-2 rounded-xl transition-all duration-200 hover:bg-teal-50 active:scale-95 inline-flex items-center gap-1.5;
+  }
+
+  /* --- Pill-shaped Search (Stitch Home Screen style) --- */
+  .search-pill {
+    @apply relative w-full;
+  }
+
+  .search-pill input {
+    @apply w-full pl-12 pr-24 py-3.5 bg-white border border-gray-200 rounded-full text-sm placeholder-gray-400 focus:outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100;
+    box-shadow: var(--shadow-soft);
+  }
+
+  .search-pill .search-icon {
+    @apply absolute left-4 top-1/2 -translate-y-1/2 text-gray-400;
+  }
+
+  .search-pill .search-btn {
+    @apply absolute right-1.5 top-1.5 bottom-1.5 px-5 rounded-full text-white text-sm font-semibold transition-colors;
+    background: var(--color-coral);
+  }
+
+  .search-pill .search-btn:hover {
+    background: var(--color-coral-deep);
+  }
+
+  /* --- Category Icons (Stitch rounded-[16px] style) --- */
+  .category-pill {
+    @apply flex flex-col items-center gap-2 cursor-pointer;
+  }
+
+  .category-icon-wrap {
+    @apply w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300;
+    background: var(--cat-bg, #eee);
+  }
+
+  .category-pill:hover .category-icon-wrap {
+    transform: translateY(-4px) scale(1.05);
+  }
+
+  .category-pill:active .category-icon-wrap {
+    transform: scale(0.95);
+  }
+
+  .category-label {
+    @apply text-[11px] font-medium text-midnight-700;
+  }
+
+  /* --- Input Fields --- */
+  .input-island {
+    @apply w-full px-4 py-3 rounded-xl bg-white border border-warm-200 focus:border-teal-500 focus:ring-4 focus:ring-teal-100 transition-all duration-200 outline-none text-midnight-700 font-medium placeholder:text-warm-400;
+  }
+
+  /* --- Section Headers --- */
+  .section-header {
+    @apply flex items-center justify-between mb-5;
+  }
+
+  .section-title {
+    @apply text-lg font-bold text-midnight-700 tracking-tight;
+  }
+
+  .section-link {
+    @apply text-xs font-semibold flex items-center gap-0.5 hover:underline transition-colors;
+    color: var(--color-ocean);
+  }
+
+  /* --- Chat bubbles (Stitch Chat Interface style) --- */
+  .chat-bubble-received {
+    @apply bg-white text-gray-800 px-4 py-3 rounded-2xl rounded-bl-none shadow-sm border border-gray-100;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  .chat-bubble-sent {
+    @apply text-white px-4 py-3 rounded-2xl rounded-br-none shadow-sm;
+    background: var(--color-teal);
+    font-size: 15px;
+    line-height: 1.6;
+    font-weight: 500;
+  }
+
+  .chat-timestamp {
+    @apply text-[10px] text-gray-400 font-medium;
+  }
+
+  .chat-quick-reply {
+    @apply whitespace-nowrap px-4 py-2 bg-white border border-gray-200 rounded-full text-xs font-medium text-gray-600 shadow-sm hover:bg-gray-50 transition-colors;
+  }
+
+  .chat-quick-reply.active {
+    @apply border-transparent text-white;
+    background: var(--color-coral);
+  }
+
+  /* --- Hero Tags (Stitch-inspired pill badge) --- */
+  .hero-tag {
+    @apply inline-flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-full shadow-sm border border-gray-100;
+  }
+
+  .hero-tag .icon {
+    color: var(--color-ocean);
+  }
+
+  .hero-tag .text {
+    @apply text-[10px] font-bold uppercase tracking-wide;
+    color: var(--color-ocean);
+  }
+
+  .bg-teal-gradient {
+    @apply bg-gradient-to-r from-teal-600 to-teal-400;
+    width: var(--progress, 0%);
+  }
+
+  /* --- Hero Carousel --- */
+  .hero-slide {
+    @apply relative rounded-3xl overflow-hidden flex-shrink-0;
+    height: 220px;
+  }
+
+  /* --- Flash Deal Timer --- */
+  .timer-block {
+    @apply bg-midnight-700 text-white text-center px-2.5 py-1.5 rounded-xl font-heading font-black;
+  }
+
+  /* --- Trust Score Bar --- */
+  .trust-bar {
+    @apply h-2 rounded-full bg-warm-200 overflow-hidden;
+  }
+
+  .trust-bar-fill {
+    @apply h-full bg-teal-gradient rounded-full transition-all duration-700;
+  }
+
+  /* --- Seller Card (Stitch Listing Detail style) --- */
+  .seller-card {
+    @apply bg-white p-4 rounded-xl border border-gray-100 flex items-center gap-4 transition-transform active:scale-[0.99];
+    box-shadow: var(--shadow-card);
+  }
+
+  .seller-card .avatar {
+    @apply w-14 h-14 rounded-full object-cover border-[3px] border-gray-50 shadow-sm;
+  }
+
+  .seller-card .verified {
+    color: #3B82F6;
+  }
+
+  /* --- Safety Tips Box (Stitch Listing Detail) --- */
+  .safety-tips {
+    @apply bg-gray-50 p-5 rounded-xl border border-gray-200;
+  }
+
+  .safety-tips h3 {
+    @apply text-base font-bold flex items-center gap-2.5 mb-3;
+    color: var(--color-ocean);
+  }
+
+  .safety-tips li {
+    @apply flex gap-2.5 items-start text-sm text-gray-500;
+  }
+
+  .safety-tips li::before {
+    content: '';
+    @apply w-1.5 h-1.5 rounded-full bg-gray-400 mt-2 flex-shrink-0;
+  }
+
+  /* --- Bottom Nav (Stitch-Inspired Floating FAB) --- */
+  .bottom-nav {
+    @apply bg-white/95 backdrop-blur-xl border-t border-gray-100 flex items-center justify-between h-[68px] px-6;
+    border-radius: 20px 20px 0 0;
+    box-shadow: var(--shadow-nav);
+  }
+
+  .nav-item {
+    @apply flex flex-col items-center gap-1 flex-1 py-2 px-1 transition-all duration-200 relative;
+  }
+
+  .nav-item-label {
+    @apply text-[10px] font-bold tracking-wide transition-colors duration-200;
+  }
+
+  .nav-item.active .nav-item-label {
+    color: var(--color-ocean);
+  }
+
+  .nav-item:not(.active) .nav-item-label {
+    @apply text-gray-400;
+  }
+
+  .nav-item.active svg {
+    color: var(--color-ocean);
+  }
+
+  .nav-item:not(.active) svg {
+    @apply text-gray-400;
+  }
+
+  /* Center FAB Button (Stitch Bottom Nav) */
+  .nav-fab {
+    @apply w-14 h-14 rounded-full flex items-center justify-center border-4 border-white transform transition-transform active:scale-95 hover:scale-105;
+    background: var(--color-coral);
+    box-shadow: 0 8px 16px rgba(255, 107, 107, 0.4);
+  }
+
+  /* --- Listing Detail Sticky CTA (Stitch style) --- */
+  .detail-cta-bar {
+    @apply fixed bottom-0 left-0 w-full bg-white border-t border-gray-100 p-4 pb-8 z-50;
+    box-shadow: var(--shadow-floating);
+  }
+
+  .detail-cta-bar .cta-grid {
+    @apply grid grid-cols-2 gap-3 max-w-lg mx-auto;
+  }
+
+  .detail-cta-bar .cta-btn {
+    @apply flex items-center justify-center gap-2 text-white font-semibold py-4 px-4 rounded-xl transition-all active:scale-[0.98];
+    background: var(--color-coral);
+    box-shadow: 0 4px 14px rgba(255, 107, 107, 0.2);
+  }
+
+  /* --- Dashboard Ad Card (Stitch Seller Dashboard) --- */
+  .ad-card {
+    @apply bg-white rounded-2xl p-3 border border-gray-100;
+    box-shadow: var(--shadow-soft);
+  }
+
+  .ad-card .thumbnail {
+    @apply relative w-28 h-28 flex-shrink-0 rounded-xl overflow-hidden bg-gray-200;
+  }
+
+  .ad-card .status-badge {
+    @apply absolute top-2 left-2 px-1.5 py-0.5 backdrop-blur-sm rounded text-[10px] font-bold text-white uppercase tracking-wide;
+  }
+
+  .ad-card .status-badge.active {
+    background: rgba(34, 197, 94, 0.9);
+  }
+
+  .ad-card .status-badge.pending {
+    background: rgba(245, 158, 11, 0.9);
+  }
+
+  .ad-card .status-badge.sold {
+    background: rgba(239, 68, 68, 0.9);
+  }
+
+  .ad-card .boost-btn {
+    @apply py-2 px-2 rounded-lg text-white font-semibold text-xs flex items-center justify-center gap-1 hover:opacity-90 transition-opacity;
+    background: var(--color-coral);
+    box-shadow: 0 4px 8px rgba(255, 107, 107, 0.2);
+  }
+
+  /* --- Stat Badge (Stitch Dashboard) --- */
+  .stat-badge {
+    @apply inline-flex items-center bg-gray-50 px-1.5 py-0.5 rounded text-xs text-gray-500 font-medium;
+  }
+
+  .stat-badge svg,
+  .stat-badge .icon {
+    @apply mr-1;
+    width: 14px;
+    height: 14px;
+    color: var(--color-ocean);
+  }
+
+  /* --- Safe Area Utilities --- */
+  .safe-bottom {
+    padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+  }
+
+  .safe-top {
+    padding-top: max(1rem, env(safe-area-inset-top));
+  }
+
+  /* --- Scrollbar Hide --- */
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  @supports (scrollbar-width: none) {
+    .hide-scrollbar {
+      scrollbar-width: none;
+    }
+  }
+
+  /* --- Skeleton Shimmer --- */
+  .skeleton {
+    background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite linear;
+    border-radius: 12px;
+  }
+
+  /* --- Notification Dot (Coral) --- */
+  .notif-dot {
+    @apply absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white;
+    background: var(--color-coral);
+    box-shadow: 0 0 0 1px rgba(255, 107, 107, 0.3);
+  }
+
+  /* --- Page Transition --- */
+  .page-enter {
+    animation: fadeInUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  /* --- Onboarding (Stitch Welcome Screen) --- */
+  .onboarding-overlay {
+    @apply absolute inset-0;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.2), transparent, rgba(0, 0, 0, 0.6));
+  }
+
+  .onboarding-teal-wash {
+    @apply absolute inset-0 mix-blend-multiply opacity-90;
+    background: linear-gradient(to top, var(--color-ocean), rgba(131, 197, 190, 0.4), transparent);
+  }
+
+  .onboarding-cta {
+    @apply w-full h-14 flex items-center justify-center gap-2 text-white text-[17px] font-semibold tracking-wide rounded-full shadow-lg overflow-hidden;
+    background: var(--color-coral);
+    box-shadow: 0 4px 14px rgba(255, 107, 107, 0.25);
+  }
+
+  .onboarding-cta:hover {
+    background: var(--color-coral-deep);
+  }
+
+  .onboarding-cta:active {
+    transform: scale(0.98);
+  }
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes pulseHeart {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.4);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-pulse-heart {
+  animation: pulseHeart 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-slide-in-up {
+  animation: slideInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.delay-50 {
+  animation-delay: 50ms;
+}
+
+.delay-100 {
+  animation-delay: 100ms;
+}
+
+.delay-150 {
+  animation-delay: 150ms;
+}
+
+.delay-200 {
+  animation-delay: 200ms;
+}
+
+.delay-300 {
+  animation-delay: 300ms;
+}
+
+.delay-400 {
+  animation-delay: 400ms;
+}
+
+.delay-500 {
+  animation-delay: 500ms;
+}
+
+/* --- Progress Bars --- */
+.progress-bar-container {
+  @apply h-1.5 bg-warm-100 overflow-hidden;
+}
+
+.progress-bar-fill {
+  @apply h-full bg-teal-gradient transition-all duration-500;
+}
+
+.progress-bar-ocean {
+  @apply h-full bg-ocean-500 rounded-full transition-all duration-1000;
+}
+
+/* --- Category Icons --- */
+.category-icon-bg {
+  @apply w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300;
+}
+
+/* ============================================
+   DARK MODE OVERRIDES
+   ============================================ */
+.dark .premium-card {
+  @apply bg-midnight-600 border-midnight-500;
+}
+
+.dark .glass {
+  @apply bg-midnight-700/70;
+}
+
+.dark .input-island {
+  @apply bg-midnight-600 border-midnight-500 text-warm-50;
+}
+
+.dark .btn-secondary {
+  @apply bg-midnight-600 text-warm-50 border-midnight-500;
+}
+
+.dark .skeleton {
+  background: linear-gradient(90deg, #162236 25%, #1e3048 50%, #162236 75%);
+  background-size: 200% 100%;
+}
+
+.dark .seller-card {
+  @apply bg-midnight-600 border-midnight-500;
+}
+
+.dark .safety-tips {
+  @apply bg-midnight-600/50 border-midnight-500;
+}
+
+.dark .ad-card {
+  @apply bg-midnight-600 border-midnight-500;
+}
+
+.dark .chat-bubble-received {
+  @apply bg-midnight-600 text-gray-200 border-midnight-500;
+}
+
+.dark .bottom-nav {
+  @apply bg-midnight-700/95 border-midnight-500;
+}

@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { PrivacyPolicy } from '../views/PrivacyPolicy';
+import { PrivacyPolicy } from '../src/pages/PrivacyPolicy';
 
 describe('PrivacyPolicy', () => {
   it('renders the main heading', () => {

@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { ChatRoom } from '../views/ChatRoom';
-import { supabase } from '../lib/supabase';
+import { ChatRoom } from '../src/pages/ChatRoom';
+import { supabase } from '../src/lib/supabase';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { createMockChain } from './setup';
-import { ToastProvider } from '../components/Toast';
+import { ToastProvider } from '../src/components/Toast';
 
 describe('ChatRoom View', () => {
     beforeEach(() => {

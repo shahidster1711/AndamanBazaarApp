@@ -5,13 +5,15 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  schedule:
+    - cron: '0 0 * * *' # Nightly run at midnight
 
 env:
   NODE_VERSION: "20"
 
 jobs:
   lint-and-test:
-    name: Lint & Test
+    name: Lint, Test & Verify
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -23,16 +25,55 @@ jobs:
           cache: "npm"
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
-      - name: Type check
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+
+      - name: Type Check
         run: npx tsc --noEmit
 
-      - name: Run tests
-        run: npm test -- --run
+      - name: Run Unit Tests with Coverage (80% threshold)
+        run: npm run test:coverage
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          CI: true
+
+      - name: Run E2E Tests
+        run: npx playwright test
+        env:
+          CI: true
+
+      - name: Run Visual Regression Tests
+        run: npm run test:visual
+        continue-on-error: true # Allow visual tests to fail initially without blocking build
+        env:
+          CI: true
+
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 30
+
+      - name: Upload Playwright Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+
+      - name: Upload Visual Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: visual-test-results
+          path: test-results/
+          retention-days: 30
 
   deploy:
     name: Deploy to VPS
@@ -56,12 +97,11 @@ jobs:
             cd /opt/andamanbazaar
             git fetch origin
             git reset --hard origin/main
-
+            
             # Stop conflicting services if any
             systemctl stop nginx apache2 2>/dev/null || true
-
-            # Build with env vars passed from GitHub Secrets
-            # Docker Compose will use these as build args because they are in the environment
+            
+            # Build and deploy
             docker compose build --no-cache
             docker compose up -d
             echo "Deployed at $(date)"

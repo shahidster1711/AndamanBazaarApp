@@ -1,8 +1,8 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { CreateListing } from '../views/CreateListing';
-import { supabase } from '../lib/supabase';
+import { CreateListing } from '../src/pages/CreateListing';
+import { supabase } from '../src/lib/supabase';
 import { MemoryRouter } from 'react-router-dom';
 
 describe('CreateListing View', () => {
@@ -46,7 +46,7 @@ describe('CreateListing View', () => {
         await waitFor(() => {
             // Use exact match or more specific regex to avoid multiple matches
             expect(screen.getByRole('heading', { name: /Add Photos/i })).toBeInTheDocument();
-            expect(screen.getByText(/Step 1 of 5/i)).toBeInTheDocument();
+            expect(screen.getByText(/Step 1 of 4/i)).toBeInTheDocument();
         });
     });
 
@@ -57,7 +57,7 @@ describe('CreateListing View', () => {
 
         await waitFor(() => {
             expect(screen.getByText(/Tap to add photos/i)).toBeInTheDocument();
-            expect(screen.getByText(/High-contrast optimized/i)).toBeInTheDocument();
+            expect(screen.getByText(/AI-optimized automatically/i)).toBeInTheDocument();
         });
     });
 });

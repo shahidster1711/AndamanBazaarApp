@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { TermsOfService } from '../views/TermsOfService';
+import { TermsOfService } from '../src/pages/TermsOfService';
 
 describe('Terms of Service', () => {
   it('renders the safety warning', () => {

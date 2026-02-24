@@ -1,12 +1,12 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { Todos } from '../views/Todos';
-import { supabase } from '../lib/supabase';
-import { ToastProvider } from '../components/Toast';
+import { Todos } from '../src/pages/Todos';
+import { supabase } from '../src/lib/supabase';
+import { ToastProvider } from '../src/components/Toast';
 
 // Mock Supabase
-vi.mock('../lib/supabase', () => ({
+vi.mock('../src/lib/supabase', () => ({
     supabase: {
         from: vi.fn(() => ({
             select: vi.fn().mockReturnThis(),

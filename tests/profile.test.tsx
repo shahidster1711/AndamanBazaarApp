@@ -1,8 +1,8 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { Profile } from '../views/Profile';
-import { supabase } from '../lib/supabase';
+import { Profile } from '../src/pages/Profile';
+import { supabase } from '../src/lib/supabase';
 import { MemoryRouter } from 'react-router-dom';
 import { createMockChain } from './setup';
 

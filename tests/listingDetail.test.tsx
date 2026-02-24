@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
-import { ListingDetail } from '../views/ListingDetail';
-import { supabase } from '../lib/supabase';
+import { ListingDetail } from '../src/pages/ListingDetail';
+import { supabase } from '../src/lib/supabase';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { createMockChain } from './setup';
-import { ToastProvider } from '../components/Toast';
+import { ToastProvider } from '../src/components/Toast';
 
 describe('ListingDetail View', () => {
     beforeEach(() => {
@@ -99,7 +99,7 @@ describe('ListingDetail View', () => {
         renderListingDetail('invalid-id');
 
         await waitFor(() => {
-            expect(screen.getByText(/Item Missing/i)).toBeInTheDocument();
+            expect(screen.getByText(/Item Not Found/i)).toBeInTheDocument();
         });
     });
 });

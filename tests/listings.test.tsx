@@ -1,8 +1,8 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { Listings } from '../views/Listings';
-import { supabase } from '../lib/supabase';
+import { Listings } from '../src/pages/Listings';
+import { supabase } from '../src/lib/supabase';
 import { vi } from 'vitest';
 
 describe('Listings View', () => {
@@ -34,7 +34,7 @@ describe('Listings View', () => {
     (supabase.from as any).mockImplementation(() => createMockChain([]));
     renderListings();
     await waitFor(() => {
-      const searchInput = screen.getByPlaceholderText(/Search in the Islands.../i);
+      const searchInput = screen.getByPlaceholderText(/Search across the islands…/i);
       expect(searchInput).toBeInTheDocument();
     });
   });
@@ -43,9 +43,9 @@ describe('Listings View', () => {
     (supabase.from as any).mockImplementation(() => createMockChain([]));
     renderListings();
     await waitFor(() => {
-      expect(screen.getByText('Mobiles')).toBeInTheDocument();
-      expect(screen.getByText('Home')).toBeInTheDocument();
-      expect(screen.getByText('Vehicles')).toBeInTheDocument();
+      expect(screen.getByText(/Fresh Catch/i)).toBeInTheDocument();
+      expect(screen.getByText(/Produce/i)).toBeInTheDocument();
+      expect(screen.getByText(/Handicrafts/i)).toBeInTheDocument();
     });
   });
 
@@ -54,7 +54,7 @@ describe('Listings View', () => {
 
     renderListings();
     await waitFor(() => {
-      expect(screen.getByText(/No results/i)).toBeInTheDocument();
+      expect(screen.getByText(/Nothing found yet/i)).toBeInTheDocument();
     });
   });
 });

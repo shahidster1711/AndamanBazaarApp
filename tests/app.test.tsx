@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
-import App from '../App';
+import App from '../src/App';
 import { vi } from 'vitest';
 
 describe('App', () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { listingSchema } from '../lib/validation';
+import { listingSchema } from '../src/lib/validation';
 
 describe('Phase 10: Post Ad Validation', () => {
     const baseListing = {

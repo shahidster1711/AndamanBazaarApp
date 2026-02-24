@@ -1,8 +1,8 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
-import { ChatList } from '../views/ChatList';
-import { supabase } from '../lib/supabase';
+import { ChatList } from '../src/pages/ChatList';
+import { supabase } from '../src/lib/supabase';
 import { MemoryRouter } from 'react-router-dom';
 import { createMockChain } from './setup';
 
