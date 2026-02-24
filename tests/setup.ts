@@ -96,6 +96,7 @@ global.sessionStorage = sessionStorageMock as any
 
 global.navigator = {
   ...global.navigator,
+  onLine: true,
   geolocation: {
     getCurrentPosition: vi.fn().mockImplementation((success) => {
       success({
