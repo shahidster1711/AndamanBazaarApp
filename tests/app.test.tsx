@@ -9,7 +9,7 @@ describe('App', () => {
 
     // Use waitFor to account for the initial loading state in App.tsx
     await waitFor(() => {
-      const links = screen.getAllByText(/Sign In/i);
+      const links = screen.getAllByText((content) => content.match(/Sign In/i) !== null);
       expect(links.length).toBeGreaterThan(0);
     });
   });

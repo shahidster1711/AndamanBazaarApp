@@ -150,7 +150,7 @@ export const ChatRoom: React.FC = () => {
   }, [chat]);
 
   useEffect(() => {
-    if (scrollRef.current) {
+    if (scrollRef.current && typeof scrollRef.current.scrollIntoView === 'function') {
       scrollRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);

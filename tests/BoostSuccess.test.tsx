@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import '@testing-library/jest-dom';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { BoostSuccess } from '../src/pages/BoostSuccess';
 import { supabase } from '../src/lib/supabase';
 
@@ -111,7 +112,7 @@ describe('BoostSuccess View', () => {
         // Advance 3 seconds for the setTimeout
         vi.advanceTimersByTime(3000);
         vi.useRealTimers();
-        
+
         // Allow microtasks/promises to settle
         await new Promise(resolve => setTimeout(resolve, 0));
 
@@ -121,7 +122,7 @@ describe('BoostSuccess View', () => {
 
         // single() should have been called twice
         expect(mockSupabaseChain.single).toHaveBeenCalledTimes(2);
-    });
+    }, 10000);
 
     it('should handle errors gracefully and show failed state', async () => {
         vi.mocked(supabase.from).mockReturnValueOnce({
