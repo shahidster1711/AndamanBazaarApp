@@ -13,3 +13,4 @@ firebase-debug.log
 playwright-report/
 test-results/
 .npm-cache/
+supabase/.temp/
