@@ -102,13 +102,14 @@ jobs:
           VITE_SUPABASE_PROJECT_ID: ${{ secrets.VITE_SUPABASE_PROJECT_ID }}
           VITE_GOOGLE_AI_API_KEY: ${{ secrets.VITE_GOOGLE_AI_API_KEY }}
 
-      - name: Deploy via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      - name: Deploy via SSH/SCP
+        uses: appleboy/scp-action@master
         with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./dist/
-          protocol: ftps
-          security: loose
-          timeout: 60000
+          host: ssh.gb.stackcp.com
+          username: shahidster.tech
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          password: ${{ secrets.SSH_PASSWORD }} # Used if SSH_PRIVATE_KEY is not set
+          port: 22
+          source: "dist/"
+          target: "public_html/" # Change if your document root is different
+          strip_components: 1
