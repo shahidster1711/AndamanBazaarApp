@@ -107,10 +107,16 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan ssh.gb.stackcp.com >> ~/.ssh/known_hosts
+          ssh-keyscan -p 22 ssh.gb.stackcp.com >> ~/.ssh/known_hosts
+
+      - name: Test SSH connection
+        run: |
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no -o BatchMode=yes \
+            shahidster.tech@ssh.gb.stackcp.com "echo SSH connection successful && ls ~/public_html/andamanbazaar"
 
       - name: Deploy via rsync
         run: |
           rsync -avz --delete \
+            -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" \
             dist/ \
             shahidster.tech@ssh.gb.stackcp.com:/home/sites/30b/6/6ef8ba74fd/public_html/andamanbazaar/
