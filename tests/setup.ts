@@ -7,41 +7,52 @@ afterEach(() => {
   cleanup()
 })
 
-// Mock Supabase client
-vi.mock('./lib/supabase', () => ({
+// ──────────────────────────────────────────────────────────────────────────────
+// Supabase mock helper – exported so individual test files can import it
+// ──────────────────────────────────────────────────────────────────────────────
+export const createMockChain = (data: any = null, error: any = null) => ({
+  select: vi.fn().mockReturnThis(),
+  insert: vi.fn().mockReturnThis(),
+  update: vi.fn().mockReturnThis(),
+  delete: vi.fn().mockReturnThis(),
+  upsert: vi.fn().mockReturnThis(),
+  eq: vi.fn().mockReturnThis(),
+  neq: vi.fn().mockReturnThis(),
+  single: vi.fn().mockResolvedValue({ data, error }),
+  maybeSingle: vi.fn().mockResolvedValue({ data, error }),
+  order: vi.fn().mockReturnThis(),
+  limit: vi.fn().mockReturnThis(),
+  range: vi.fn().mockResolvedValue({ data: Array.isArray(data) ? data : [], error }),
+  or: vi.fn().mockReturnThis(),
+  in: vi.fn().mockReturnThis(),
+  like: vi.fn().mockReturnThis(),
+  ilike: vi.fn().mockReturnThis(),
+  gte: vi.fn().mockReturnThis(),
+  lte: vi.fn().mockReturnThis(),
+  is: vi.fn().mockReturnThis(),
+  not: vi.fn().mockReturnThis(),
+  contains: vi.fn().mockReturnThis(),
+  overlaps: vi.fn().mockReturnThis(),
+  filter: vi.fn().mockReturnThis(),
+  match: vi.fn().mockReturnThis(),
+  // Allow awaiting the chain directly
+  then: (onFulfilled: any) =>
+    Promise.resolve({ data: Array.isArray(data) ? data : data !== null ? [data] : [], error }).then(onFulfilled),
+})
+
+// Mock Supabase client – path must match what src/ files import
+vi.mock('../src/lib/supabase', () => ({
   supabase: {
     auth: {
-      getUser: vi.fn().mockResolvedValue({ data: { user: null } }),
-      getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
+      getUser: vi.fn().mockResolvedValue({ data: { user: null }, error: null }),
+      getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
       signInWithPassword: vi.fn(),
       signUp: vi.fn(),
       signOut: vi.fn(),
       onAuthStateChange: vi.fn(() => ({ data: { subscription: { unsubscribe: vi.fn() } } })),
     },
-    from: vi.fn(() => ({
-      select: vi.fn().mockReturnThis(),
-      insert: vi.fn().mockReturnThis(),
-      update: vi.fn().mockReturnThis(),
-      delete: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      single: vi.fn().mockReturnThis(),
-      order: vi.fn().mockReturnThis(),
-      limit: vi.fn().mockReturnThis(),
-      range: vi.fn().mockReturnThis(),
-      or: vi.fn().mockReturnThis(),
-      in: vi.fn().mockReturnThis(),
-      like: vi.fn().mockReturnThis(),
-      ilike: vi.fn().mockReturnThis(),
-      gte: vi.fn().mockReturnThis(),
-      lte: vi.fn().mockReturnThis(),
-      is: vi.fn().mockReturnThis(),
-      not: vi.fn().mockReturnThis(),
-      contains: vi.fn().mockReturnThis(),
-      overlaps: vi.fn().mockReturnThis(),
-      filter: vi.fn().mockReturnThis(),
-      match: vi.fn().mockReturnThis(),
-    })),
-    rpc: vi.fn(),
+    from: vi.fn(() => createMockChain()),
+    rpc: vi.fn().mockResolvedValue({ data: null, error: null }),
     channel: vi.fn(() => ({
       on: vi.fn().mockReturnThis(),
       subscribe: vi.fn().mockReturnThis(),
@@ -52,7 +63,11 @@ vi.mock('./lib/supabase', () => ({
   isSupabaseConfigured: vi.fn().mockReturnValue(true),
 }))
 
-// Mock window.matchMedia
+// ──────────────────────────────────────────────────────────────────────────────
+// Browser API mocks
+// ──────────────────────────────────────────────────────────────────────────────
+
+// window.matchMedia
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
   value: vi.fn().mockImplementation(query => ({
@@ -67,7 +82,7 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 })
 
-// Mock window.location
+// window.location
 Object.defineProperty(window, 'location', {
   writable: true,
   value: {
@@ -82,7 +97,13 @@ Object.defineProperty(window, 'location', {
   },
 })
 
-// Mock IntersectionObserver
+// Smooth scroll behaviour (tested by layout.test.tsx)
+Object.defineProperty(document.documentElement.style, 'scrollBehavior', {
+  writable: true,
+  value: 'smooth',
+})
+
+// IntersectionObserver
 global.IntersectionObserver = vi.fn().mockImplementation(() => ({
   observe: vi.fn(),
   unobserve: vi.fn(),
@@ -93,26 +114,26 @@ global.IntersectionObserver = vi.fn().mockImplementation(() => ({
   thresholds: [],
 }))
 
-// Mock ResizeObserver
+// ResizeObserver
 global.ResizeObserver = vi.fn().mockImplementation(() => ({
   observe: vi.fn(),
   unobserve: vi.fn(),
   disconnect: vi.fn(),
 }))
 
-// Mock Notification API
+// Notification API
 global.Notification = vi.fn().mockImplementation(() => ({
   permission: 'default',
   requestPermission: vi.fn().mockResolvedValue('granted'),
-}))
+})) as any
 
-// Mock crypto.randomUUID
+// crypto.randomUUID
 if (!global.crypto) {
   global.crypto = {} as Crypto
 }
 global.crypto.randomUUID = vi.fn().mockReturnValue('test-uuid-12345')
 
-// Mock localStorage
+// localStorage
 const localStorageMock = {
   getItem: vi.fn(),
   setItem: vi.fn(),
@@ -123,7 +144,7 @@ const localStorageMock = {
 }
 global.localStorage = localStorageMock as any
 
-// Mock sessionStorage
+// sessionStorage
 const sessionStorageMock = {
   getItem: vi.fn(),
   setItem: vi.fn(),
@@ -134,7 +155,7 @@ const sessionStorageMock = {
 }
 global.sessionStorage = sessionStorageMock as any
 
-// Mock navigator.geolocation
+// navigator.geolocation
 global.navigator = {
   ...global.navigator,
   geolocation: {
@@ -152,3 +173,9 @@ global.navigator = {
     clearWatch: vi.fn(),
   },
 }
+
+// Add a minimal meta description so DOM queries in tests don't fail
+const metaDesc = document.createElement('meta')
+metaDesc.setAttribute('name', 'description')
+metaDesc.setAttribute('content', 'AndamanBazaar – hyperlocal marketplace')
+document.head.appendChild(metaDesc)

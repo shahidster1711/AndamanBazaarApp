@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { BrowserRouter } from 'react-router-dom'
+import { useState } from 'react'
 
 // Mock the AuthView component
 const AuthView = () => {
@@ -12,19 +13,19 @@ const AuthView = () => {
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
-    
+
     if (!email) {
       newErrors.email = 'Email is required'
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       newErrors.email = 'Please enter a valid email address'
     }
-    
+
     if (!password) {
       newErrors.password = 'Password is required'
     } else if (password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters'
     }
-    
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -32,7 +33,7 @@ const AuthView = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!validateForm()) return
-    
+
     setIsLoading(true)
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 100))
@@ -51,7 +52,7 @@ const AuthView = () => {
           aria-label="Email"
         />
         {errors.email && <span role="alert">{errors.email}</span>}
-        
+
         <input
           type="password"
           placeholder="Password"
@@ -60,7 +61,7 @@ const AuthView = () => {
           aria-label="Password"
         />
         {errors.password && <span role="alert">{errors.password}</span>}
-        
+
         <button type="submit" disabled={isLoading}>
           {isLoading ? 'Signing In...' : 'Sign In'}
         </button>
@@ -70,8 +71,6 @@ const AuthView = () => {
   )
 }
 
-// Import React hooks
-import { useState } from 'react'
 
 describe('AuthView Component', () => {
   const renderAuthView = () => {
@@ -84,7 +83,7 @@ describe('AuthView Component', () => {
 
   it('renders login form by default', () => {
     renderAuthView()
-    
+
     expect(screen.getByText('Welcome Back')).toBeInTheDocument()
     expect(screen.getByPlaceholderText('Email')).toBeInTheDocument()
     expect(screen.getByPlaceholderText('Password')).toBeInTheDocument()
@@ -94,14 +93,14 @@ describe('AuthView Component', () => {
   it('validates email format', async () => {
     const user = userEvent.setup()
     renderAuthView()
-    
+
     const emailInput = screen.getByPlaceholderText('Email')
     const submitButton = screen.getByRole('button', { name: /sign in/i })
-    
+
     // Enter invalid email
     await user.type(emailInput, 'invalid-email')
     await user.click(submitButton)
-    
+
     await waitFor(() => {
       expect(screen.getByText('Please enter a valid email address')).toBeInTheDocument()
     })
@@ -110,16 +109,16 @@ describe('AuthView Component', () => {
   it('validates password length', async () => {
     const user = userEvent.setup()
     renderAuthView()
-    
+
     const emailInput = screen.getByPlaceholderText('Email')
     const passwordInput = screen.getByPlaceholderText('Password')
     const submitButton = screen.getByRole('button', { name: /sign in/i })
-    
+
     // Enter short password
     await user.type(emailInput, 'test@example.com')
     await user.type(passwordInput, '123')
     await user.click(submitButton)
-    
+
     await waitFor(() => {
       expect(screen.getByText('Password must be at least 6 characters')).toBeInTheDocument()
     })
@@ -128,25 +127,25 @@ describe('AuthView Component', () => {
   it('shows loading state during submission', async () => {
     const user = userEvent.setup()
     renderAuthView()
-    
+
     const emailInput = screen.getByPlaceholderText('Email')
     const passwordInput = screen.getByPlaceholderText('Password')
     const submitButton = screen.getByRole('button', { name: /sign in/i })
-    
+
     await user.type(emailInput, 'test@example.com')
     await user.type(passwordInput, 'password123')
     await user.click(submitButton)
-    
+
     expect(screen.getByRole('button', { name: /signing in/i })).toBeInTheDocument()
   })
 
   it('prevents form submission with empty fields', async () => {
     const user = userEvent.setup()
     renderAuthView()
-    
+
     const submitButton = screen.getByRole('button', { name: /sign in/i })
     await user.click(submitButton)
-    
+
     await waitFor(() => {
       expect(screen.getByText('Email is required')).toBeInTheDocument()
       expect(screen.getByText('Password is required')).toBeInTheDocument()
@@ -155,12 +154,12 @@ describe('AuthView Component', () => {
 
   it('has correct semantic structure', () => {
     renderAuthView()
-    
+
     // Check for form landmark
     const form = screen.getByTestId('auth-form')
     expect(form).toBeInTheDocument()
     expect(form.tagName).toBe('FORM')
-    
+
     // Check for headings
     const h1 = screen.getByRole('heading', { level: 1 })
     expect(h1).toHaveTextContent('Welcome Back')
@@ -168,10 +167,10 @@ describe('AuthView Component', () => {
 
   it('has accessible form elements', () => {
     renderAuthView()
-    
+
     const emailInput = screen.getByPlaceholderText('Email')
     const passwordInput = screen.getByPlaceholderText('Password')
-    
+
     expect(emailInput).toHaveAttribute('type', 'email')
     expect(emailInput).toHaveAttribute('aria-label', 'Email')
     expect(passwordInput).toHaveAttribute('type', 'password')
@@ -180,7 +179,7 @@ describe('AuthView Component', () => {
 
   it('has working navigation links', () => {
     renderAuthView()
-    
+
     const signUpLink = screen.getByText('Sign up')
     expect(signUpLink).toBeInTheDocument()
     expect(signUpLink.tagName).toBe('A')
@@ -190,9 +189,9 @@ describe('AuthView Component', () => {
     // Mock mobile viewport
     Object.defineProperty(window, 'innerWidth', { value: 375, writable: true })
     Object.defineProperty(window, 'innerHeight', { value: 667, writable: true })
-    
+
     renderAuthView()
-    
+
     // Check that content is still visible on mobile
     expect(screen.getByText('Welcome Back')).toBeInTheDocument()
   })
@@ -201,15 +200,15 @@ describe('AuthView Component', () => {
     // Mock desktop viewport
     Object.defineProperty(window, 'innerWidth', { value: 1920, writable: true })
     Object.defineProperty(window, 'innerHeight', { value: 1080, writable: true })
-    
+
     renderAuthView()
-    
+
     expect(screen.getByText('Welcome Back')).toBeInTheDocument()
   })
 
   it('has proper color contrast', () => {
     renderAuthView()
-    
+
     // Check for high contrast text
     const headings = screen.getAllByRole('heading')
     headings.forEach(heading => {
@@ -219,7 +218,7 @@ describe('AuthView Component', () => {
 
   it('handles error states gracefully', () => {
     renderAuthView()
-    
+
     // Should still render basic structure
     expect(screen.getByText('Welcome Back')).toBeInTheDocument()
   })
