@@ -51,14 +51,15 @@ describe('ListingDetail View', () => {
 
         const fromSpy = vi.spyOn(supabase, 'from');
 
-        vi.spyOn(supabase, 'from').mockImplementation((table: string) => {
+        fromSpy.mockImplementation((table: string) => {
             if (table === 'listings') {
                 return {
                     select: vi.fn().mockReturnThis(),
                     eq: vi.fn().mockReturnThis(),
+                    single: vi.fn().mockReturnThis(),
                     maybeSingle: vi.fn().mockResolvedValue({ data: mockListing, error: null }),
                     then: (cb: any) => cb({ data: mockListing, error: null })
-                };
+                } as any;
             }
             if (table === 'listing_images') {
                 return createMockChain(mockImages);
@@ -69,7 +70,7 @@ describe('ListingDetail View', () => {
                     eq: vi.fn().mockReturnThis(),
                     single: vi.fn().mockResolvedValue({ data: mockSeller, error: null }),
                     then: (cb: any) => cb({ data: mockSeller, error: null })
-                };
+                } as any;
             }
             return createMockChain([]);
         });

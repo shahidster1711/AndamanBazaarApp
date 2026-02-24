@@ -57,7 +57,7 @@ describe('ChatRoom View', () => {
 
         const fromSpy = vi.spyOn(supabase, 'from');
 
-        vi.spyOn(supabase, 'from').mockImplementation(((table: string) => {
+        fromSpy.mockImplementation(((table: string) => {
             if (table === 'chats') return createMockChain(mockChatWithRelations);
             if (table === 'messages') return createMockChain(mockMessages);
             return createMockChain([]);

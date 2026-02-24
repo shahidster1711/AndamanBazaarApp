@@ -59,11 +59,11 @@ describe('ChatList View', () => {
 
         const fromSpy = vi.spyOn(supabase, 'from');
 
-        vi.spyOn(supabase, 'from').mockImplementation((table: string) => {
-            if (table === 'chats') return createMockChain(mockChats);
-            if (table === 'listings') return createMockChain(mockListings);
-            if (table === 'profiles') return createMockChain(mockProfiles);
-            return createMockChain([]);
+        fromSpy.mockImplementation((table: string) => {
+            if (table === 'chats') return createMockChain(mockChats) as any;
+            if (table === 'listings') return createMockChain(mockListings) as any;
+            if (table === 'profiles') return createMockChain(mockProfiles) as any;
+            return createMockChain([]) as any;
         });
 
         renderChatList();

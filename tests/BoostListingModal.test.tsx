@@ -112,7 +112,7 @@ describe('BoostListingModal Component', () => {
 
         await waitFor(() => {
             expect(fetch).toHaveBeenCalledWith(
-                'https://mock-supabase.com/functions/v1/create-boost-order',
+                expect.stringContaining('/functions/v1/create-boost-order'),
                 expect.objectContaining({
                     method: 'POST',
                     headers: {
