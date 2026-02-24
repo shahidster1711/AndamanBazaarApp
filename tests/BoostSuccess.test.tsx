@@ -82,7 +82,7 @@ describe('BoostSuccess View', () => {
     });
 
     it('should poll a second time after 3 seconds if status is pending and resolve successfully', async () => {
-        vi.useFakeTimers();
+        vi.useFakeTimers({ shouldAdvanceTime: true });
         const mockSupabaseChain = {
             select: vi.fn().mockReturnThis(),
             eq: vi.fn().mockReturnThis(),
@@ -109,12 +109,8 @@ describe('BoostSuccess View', () => {
             expect(screen.getByText('Verifying Payment...')).toBeInTheDocument();
         });
 
-        // Advance 3 seconds for the setTimeout
-        vi.advanceTimersByTime(3000);
-        vi.useRealTimers();
-
-        // Allow microtasks/promises to settle
-        await new Promise(resolve => setTimeout(resolve, 0));
+        // Advance 3 seconds for the setTimeout (async version handles promises)
+        await vi.advanceTimersByTimeAsync(3000);
 
         await waitFor(() => {
             expect(screen.getByText('Payment Successful!')).toBeInTheDocument();
@@ -122,7 +118,7 @@ describe('BoostSuccess View', () => {
 
         // single() should have been called twice
         expect(mockSupabaseChain.single).toHaveBeenCalledTimes(2);
-    }, 10000);
+    }, 15000);
 
     it('should handle errors gracefully and show failed state', async () => {
         vi.mocked(supabase.from).mockReturnValueOnce({
