@@ -13,7 +13,7 @@ describe('ChatList View', () => {
         vi.clearAllMocks();
 
         // Default mock user
-        (supabase.auth.getUser as any).mockResolvedValue({
+        vi.spyOn(supabase.auth, 'getUser').mockResolvedValue({
             data: { user: { id: 'user-123' } },
             error: null
         });
@@ -28,7 +28,7 @@ describe('ChatList View', () => {
     };
 
     it('renders "No messages yet" when inbox is empty', async () => {
-        (supabase.from as any).mockImplementation(() => createMockChain([]));
+        vi.spyOn(supabase, 'from').mockImplementation(() => createMockChain([]));
 
         renderChatList();
 
@@ -59,7 +59,7 @@ describe('ChatList View', () => {
 
         const fromSpy = vi.spyOn(supabase, 'from');
 
-        (supabase.from as any).mockImplementation((table: string) => {
+        vi.spyOn(supabase, 'from').mockImplementation((table: string) => {
             if (table === 'chats') return createMockChain(mockChats);
             if (table === 'listings') return createMockChain(mockListings);
             if (table === 'profiles') return createMockChain(mockProfiles);

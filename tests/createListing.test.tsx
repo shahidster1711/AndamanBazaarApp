@@ -12,13 +12,13 @@ describe('CreateListing View', () => {
         vi.clearAllMocks();
 
         // Default mock user
-        (supabase.auth.getUser as any).mockResolvedValue({
+        vi.spyOn(supabase.auth, 'getUser').mockResolvedValue({
             data: { user: { id: 'user-123' } },
             error: null
         });
 
         // Mock profile for location verification
-        (supabase.from as any).mockImplementation((table: string) => {
+        vi.spyOn(supabase, 'from').mockImplementation((table: string) => {
             if (table === 'profiles') {
                 return {
                     select: vi.fn().mockReturnThis(),

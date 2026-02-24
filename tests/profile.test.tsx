@@ -13,13 +13,13 @@ describe('Profile View', () => {
         vi.clearAllMocks();
 
         // Default mock user
-        (supabase.auth.getUser as any).mockResolvedValue({
+        vi.spyOn(supabase.auth, 'getUser').mockResolvedValue({
             data: { user: { id: 'user-123', email: 'test@example.com' } },
             error: null
         });
 
         // Mock profile and listings using global helper
-        (supabase.from as any).mockImplementation((table: string) => {
+        vi.spyOn(supabase, 'from').mockImplementation((table: string) => {
             if (table === 'profiles') {
                 return createMockChain({
                     id: 'user-123',

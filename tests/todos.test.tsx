@@ -36,10 +36,10 @@ describe('Todos View', () => {
 
     it('renders the Todo list title', async () => {
         // Mock empty response
-        (supabase.from as any).mockImplementation(() => ({
+        vi.spyOn(supabase, 'from').mockImplementation((() => ({
             select: vi.fn().mockReturnThis(),
             order: vi.fn().mockResolvedValue({ data: [], error: null }),
-        }));
+        })) as any);
 
         renderTodos();
 
@@ -49,10 +49,10 @@ describe('Todos View', () => {
     });
 
     it('displays empty state when no todos exist', async () => {
-        (supabase.from as any).mockImplementation(() => ({
+        vi.spyOn(supabase, 'from').mockImplementation((() => ({
             select: vi.fn().mockReturnThis(),
             order: vi.fn().mockResolvedValue({ data: [], error: null }),
-        }));
+        })) as any);
 
         renderTodos();
 
@@ -67,10 +67,10 @@ describe('Todos View', () => {
             { id: '2', title: 'Test Task 2', is_completed: true, created_at: '2023-01-02' },
         ];
 
-        (supabase.from as any).mockImplementation(() => ({
+        vi.spyOn(supabase, 'from').mockImplementation((() => ({
             select: vi.fn().mockReturnThis(),
             order: vi.fn().mockResolvedValue({ data: mockTodos, error: null }),
-        }));
+        })) as any);
 
         renderTodos();
 
@@ -81,18 +81,18 @@ describe('Todos View', () => {
     });
 
     it('allows adding a new todo', async () => {
-        (supabase.from as any).mockImplementation(() => ({
+        vi.spyOn(supabase, 'from').mockImplementation((() => ({
             select: vi.fn().mockReturnThis(),
             order: vi.fn().mockResolvedValue({ data: [], error: null }),
             insert: vi.fn().mockReturnThis(),
-        }));
+        })) as any);
 
         // Mock insert response
         const newTodo = { id: '3', title: 'New Task', is_completed: false };
         const insertMock = vi.fn().mockResolvedValue({ data: [newTodo], error: null });
 
         // Setup chain for insert
-        (supabase.from as any).mockImplementation((table: string) => {
+        vi.spyOn(supabase, 'from').mockImplementation(((table: string) => {
             if (table === 'todos') {
                 return {
                     select: vi.fn().mockReturnThis(),
@@ -100,7 +100,7 @@ describe('Todos View', () => {
                     insert: vi.fn().mockReturnThis(),
                 }
             }
-        });
+        }) as any);
 
         // We need to be more specific with the mock for the interactive test
         const selectMock = vi.fn();
@@ -108,11 +108,11 @@ describe('Todos View', () => {
             select: vi.fn().mockResolvedValue({ data: [newTodo], error: null })
         };
 
-        (supabase.from as any).mockReturnValue({
+        vi.spyOn(supabase, 'from').mockReturnValue({
             select: vi.fn().mockReturnThis(),
             order: vi.fn().mockResolvedValue({ data: [], error: null }),
             insert: vi.fn().mockReturnValue(insertChainMock)
-        });
+        } as any);
 
         renderTodos();
 

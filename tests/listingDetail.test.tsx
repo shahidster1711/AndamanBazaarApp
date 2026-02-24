@@ -12,7 +12,7 @@ vi.mock('../src/lib/supabase');
 describe('ListingDetail View', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        (supabase.auth.getUser as any).mockResolvedValue({
+        vi.spyOn(supabase.auth, 'getUser').mockResolvedValue({
             data: { user: { id: 'user-123' } },
             error: null
         });
@@ -51,7 +51,7 @@ describe('ListingDetail View', () => {
 
         const fromSpy = vi.spyOn(supabase, 'from');
 
-        (supabase.from as any).mockImplementation((table: string) => {
+        vi.spyOn(supabase, 'from').mockImplementation((table: string) => {
             if (table === 'listings') {
                 return {
                     select: vi.fn().mockReturnThis(),
@@ -87,7 +87,7 @@ describe('ListingDetail View', () => {
     });
 
     it('shows missing message when listing not found', async () => {
-        (supabase.from as any).mockImplementation((table: string) => {
+        vi.spyOn(supabase, 'from').mockImplementation((table: string) => {
             if (table === 'listings') {
                 return {
                     select: vi.fn().mockReturnThis(),

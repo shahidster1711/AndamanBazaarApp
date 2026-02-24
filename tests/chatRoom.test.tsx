@@ -12,10 +12,10 @@ vi.mock('../src/lib/supabase');
 describe('ChatRoom View', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        (supabase.auth.getUser as any).mockResolvedValue({
+        vi.spyOn(supabase.auth, 'getUser').mockResolvedValue({
             data: { user: { id: 'user-123' } },
             error: null
-        });
+        } as any);
     });
 
     const renderChatRoom = (id: string = 'chat-1') => {
@@ -57,11 +57,11 @@ describe('ChatRoom View', () => {
 
         const fromSpy = vi.spyOn(supabase, 'from');
 
-        (supabase.from as any).mockImplementation((table: string) => {
+        vi.spyOn(supabase, 'from').mockImplementation(((table: string) => {
             if (table === 'chats') return createMockChain(mockChatWithRelations);
             if (table === 'messages') return createMockChain(mockMessages);
             return createMockChain([]);
-        });
+        }) as any);
 
         renderChatRoom('chat-1');
 
@@ -80,7 +80,7 @@ describe('ChatRoom View', () => {
         const insertSpy = vi.fn().mockReturnThis();
         const updateSpy = vi.fn().mockReturnThis();
 
-        (supabase.from as any).mockImplementation((table: string) => {
+        vi.spyOn(supabase, 'from').mockImplementation(((table: string) => {
             if (table === 'chats') {
                 const chain = createMockChain(mockChat);
                 chain.update = updateSpy;
@@ -92,13 +92,9 @@ describe('ChatRoom View', () => {
                 return chain;
             }
             return createMockChain([]);
-        });
+        }) as any);
 
-        // Resolve necessary fetches
-        (supabase.from('chats').select('*').eq('id', 'chat-1').single as any).mockResolvedValue({ data: mockChat, error: null });
-        (supabase.from('listings').select('*').eq('id', 'listing-1').single as any).mockResolvedValue({ data: null, error: null });
-        (supabase.from('profiles').select('*').eq('id', 'seller-456').single as any).mockResolvedValue({ data: null, error: null });
-        (supabase.from('profiles').select('*').eq('id', 'user-123').single as any).mockResolvedValue({ data: null, error: null });
+
 
         renderChatRoom('chat-1');
 

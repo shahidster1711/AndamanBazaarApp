@@ -34,7 +34,7 @@ describe('Listings View', () => {
   });
 
   it('renders the search input', async () => {
-    (supabase.from as any).mockImplementation(() => createMockChain([]));
+    vi.spyOn(supabase, 'from').mockImplementation(() => createMockChain([]));
     renderListings();
     await waitFor(() => {
       const searchInput = screen.getByPlaceholderText(/Search across the islands…/i);
@@ -43,7 +43,7 @@ describe('Listings View', () => {
   });
 
   it('renders categories', async () => {
-    (supabase.from as any).mockImplementation(() => createMockChain([]));
+    vi.spyOn(supabase, 'from').mockImplementation(() => createMockChain([]));
     renderListings();
     await waitFor(() => {
       expect(screen.getByText(/Fresh Catch/i)).toBeInTheDocument();
@@ -53,7 +53,7 @@ describe('Listings View', () => {
   });
 
   it('shows no results found for unmatched search', async () => {
-    (supabase.from as any).mockImplementation(() => createMockChain([]));
+    vi.spyOn(supabase, 'from').mockImplementation(() => createMockChain([]));
 
     renderListings();
     await waitFor(() => {
