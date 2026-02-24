@@ -9,7 +9,7 @@ const Home = () => (
       <h1>Buy & Sell</h1>
       <span>in Paradise.</span>
       <span>Andaman's Own Marketplace</span>
-      <input placeholder="Search mobiles, scooters..." />
+      <input type="text" placeholder="Search mobiles, scooters..." />
     </div>
     <section>
       <h2>Browse Island Categories</h2>
@@ -62,7 +62,7 @@ describe('Home Component', () => {
 
   it('renders hero section with correct content', () => {
     renderHome()
-    
+
     expect(screen.getByText('Buy & Sell')).toBeTruthy()
     expect(screen.getByText('in Paradise.')).toBeTruthy()
     expect(screen.getByText("Andaman's Own Marketplace")).toBeTruthy()
@@ -71,14 +71,14 @@ describe('Home Component', () => {
 
   it('renders category section', () => {
     renderHome()
-    
+
     expect(screen.getByText('Browse Island Categories')).toBeTruthy()
     expect(screen.getByText('All')).toBeTruthy()
   })
 
   it('renders flash deals section', () => {
     renderHome()
-    
+
     expect(screen.getByText('Flash Deals')).toBeTruthy()
     expect(screen.getByText('Ends in')).toBeTruthy()
     expect(screen.getByText('View Flash Deals')).toBeTruthy()
@@ -86,7 +86,7 @@ describe('Home Component', () => {
 
   it('renders featured picks section', () => {
     renderHome()
-    
+
     expect(screen.getByText('Featured')).toBeTruthy()
     expect(screen.getByText('Picks')).toBeTruthy()
     expect(screen.getByText('Top rated island treasures')).toBeTruthy()
@@ -94,7 +94,7 @@ describe('Home Component', () => {
 
   it('renders hot picks section', () => {
     renderHome()
-    
+
     expect(screen.getByText("Today's")).toBeTruthy()
     expect(screen.getByText('Hot Picks')).toBeTruthy()
     expect(screen.getByText('Handpicked deals just for you')).toBeTruthy()
@@ -102,7 +102,7 @@ describe('Home Component', () => {
 
   it('renders verified sellers section', () => {
     renderHome()
-    
+
     expect(screen.getByText('Island Verified Sellers')).toBeTruthy()
     expect(screen.getByText('GPS-verified locals from across the Andaman Islands')).toBeTruthy()
     expect(screen.getByText('Browse verified listings')).toBeTruthy()
@@ -110,14 +110,14 @@ describe('Home Component', () => {
 
   it('renders fresh arrivals section', () => {
     renderHome()
-    
+
     expect(screen.getByText('Fresh Arrivals')).toBeTruthy()
     expect(screen.getByText('Just listed today')).toBeTruthy()
   })
 
   it('renders seasonal spotlight section', () => {
     renderHome()
-    
+
     expect(screen.getByText('🌊 Seasonal Spotlight')).toBeTruthy()
     expect(screen.getByText('Tourist Season is Here')).toBeTruthy()
     expect(screen.getByText('Nov–May is peak season. Find the best experiences, stays and local products.')).toBeTruthy()
@@ -126,7 +126,7 @@ describe('Home Component', () => {
 
   it('renders footer links', () => {
     renderHome()
-    
+
     expect(screen.getByText('Privacy Policy')).toBeTruthy()
     expect(screen.getByText('Terms of Service')).toBeTruthy()
     expect(screen.getByText('Contact Us')).toBeTruthy()
@@ -134,23 +134,23 @@ describe('Home Component', () => {
 
   it('has correct semantic structure', () => {
     renderHome()
-    
+
     // Check for main landmark
     const main = screen.getByRole('main')
     expect(main).toBeTruthy()
-    
+
     // Check for headings
     const h1 = screen.getByRole('heading', { level: 1 })
     expect(h1).toBeTruthy()
     expect(h1.textContent).toContain('Buy & Sell')
-    
+
     const h2Elements = screen.getAllByRole('heading', { level: 2 })
     expect(h2Elements.length).toBeGreaterThan(0)
   })
 
   it('has working navigation links', () => {
     renderHome()
-    
+
     const categoryLinks = screen.getAllByRole('link')
     categoryLinks.forEach(link => {
       expect(link.getAttribute('href')).toBeTruthy()
@@ -159,17 +159,17 @@ describe('Home Component', () => {
 
   it('handles search functionality', () => {
     renderHome()
-    
+
     const searchInput = screen.getByPlaceholderText('Search mobiles, scooters...')
     expect(searchInput).toBeTruthy()
-    
+
     // Test search input interaction
     expect(searchInput.getAttribute('type')).toBe('text')
   })
 
   it('has proper SEO meta tags', () => {
     renderHome()
-    
+
     // Check for meta description (would be in document head)
     const metaDescription = document.querySelector('meta[name="description"]')
     expect(metaDescription).toBeTruthy()
@@ -179,9 +179,9 @@ describe('Home Component', () => {
     // Mock mobile viewport
     Object.defineProperty(window, 'innerWidth', { value: 375, writable: true })
     Object.defineProperty(window, 'innerHeight', { value: 667, writable: true })
-    
+
     renderHome()
-    
+
     // Check that content is still visible on mobile
     expect(screen.getByText('Buy & Sell')).toBeTruthy()
     expect(screen.getByText('Browse Island Categories')).toBeTruthy()
@@ -190,7 +190,7 @@ describe('Home Component', () => {
   it('handles error states gracefully', () => {
     // Mock error state
     renderHome()
-    
+
     // Should still render basic structure
     expect(screen.getByText('Buy & Sell')).toBeTruthy()
   })

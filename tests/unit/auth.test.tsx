@@ -95,11 +95,11 @@ describe('AuthView Component', () => {
     renderAuthView()
 
     const emailInput = screen.getByPlaceholderText('Email')
-    const submitButton = screen.getByRole('button', { name: /sign in/i })
+    const form = screen.getByTestId('auth-form')
 
     // Enter invalid email
     await user.type(emailInput, 'invalid-email')
-    await user.click(submitButton)
+    fireEvent.submit(form)
 
     await waitFor(() => {
       expect(screen.getByText('Please enter a valid email address')).toBeInTheDocument()
