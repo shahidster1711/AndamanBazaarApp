@@ -5,6 +5,8 @@ import { CreateListing } from '../src/pages/CreateListing';
 import { supabase } from '../src/lib/supabase';
 import { MemoryRouter } from 'react-router-dom';
 
+vi.mock('../src/lib/supabase');
+
 describe('CreateListing View', () => {
     beforeEach(() => {
         vi.clearAllMocks();

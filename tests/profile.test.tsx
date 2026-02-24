@@ -6,6 +6,8 @@ import { supabase } from '../src/lib/supabase';
 import { MemoryRouter } from 'react-router-dom';
 import { createMockChain } from './setup';
 
+vi.mock('../src/lib/supabase');
+
 describe('Profile View', () => {
     beforeEach(() => {
         vi.clearAllMocks();

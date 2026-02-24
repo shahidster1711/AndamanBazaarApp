@@ -2,6 +2,8 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { BoostSuccess } from '../src/pages/BoostSuccess';
 import { supabase } from '../src/lib/supabase';
+
+vi.mock('../src/lib/supabase');
 import { MemoryRouter } from 'react-router-dom';
 
 // Mock Lucide icons

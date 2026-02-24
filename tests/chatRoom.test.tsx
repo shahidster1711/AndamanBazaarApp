@@ -6,6 +6,9 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { createMockChain } from './setup';
 import { ToastProvider } from '../src/components/Toast';
 
+vi.mock('../src/lib/supabase');
+
+
 describe('ChatRoom View', () => {
     beforeEach(() => {
         vi.clearAllMocks();

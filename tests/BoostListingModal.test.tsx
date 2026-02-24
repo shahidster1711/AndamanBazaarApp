@@ -3,6 +3,8 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { BoostListingModal } from '../src/components/BoostListingModal';
 import { supabase } from '../src/lib/supabase';
 
+vi.mock('../src/lib/supabase');
+
 describe('BoostListingModal Component', () => {
     const defaultProps = {
         isOpen: true,

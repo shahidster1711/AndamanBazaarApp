@@ -5,6 +5,9 @@ import { Listings } from '../src/pages/Listings';
 import { supabase } from '../src/lib/supabase';
 import { vi } from 'vitest';
 
+vi.mock('../src/lib/supabase');
+
+
 describe('Listings View', () => {
   beforeEach(() => {
     vi.clearAllMocks();
