@@ -14,3 +14,4 @@ playwright-report/
 test-results/
 .npm-cache/
 supabase/.temp/
+package-lock.json
