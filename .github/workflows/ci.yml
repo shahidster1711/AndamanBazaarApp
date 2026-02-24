@@ -78,7 +78,7 @@ jobs:
           retention-days: 30
 
   deploy:
-    name: Deploy to FTP
+    name: Deploy via SSH/SFTP
     runs-on: ubuntu-latest
     needs: lint-and-test
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -103,13 +103,12 @@ jobs:
           VITE_GOOGLE_AI_API_KEY: ${{ secrets.VITE_GOOGLE_AI_API_KEY }}
 
       - name: Deploy via SSH/SCP
-        uses: appleboy/scp-action@master
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ssh.gb.stackcp.com
           username: shahidster.tech
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          password: ${{ secrets.SSH_PASSWORD }} # Used if SSH_PRIVATE_KEY is not set
           port: 22
-          source: "dist/"
-          target: "public_html/" # Change if your document root is different
+          source: "dist/*"
+          target: "/home/sites/shahidster.tech/public_html"
           strip_components: 1
