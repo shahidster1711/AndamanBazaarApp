@@ -194,7 +194,15 @@ export type SearchQueryInput = z.infer<typeof searchQuerySchema>;
  */
 export const validatePhoneNumber = (phone: string): boolean => {
     if (!phone) return false;
-    const cleaned = phone.replace(/\D/g, '');
+    let cleaned = phone.replace(/\D/g, '');
+
+    // Auto-strip country codes if 11 or 12 digits
+    if (cleaned.length === 12 && cleaned.startsWith('91')) {
+        cleaned = cleaned.substring(2);
+    } else if (cleaned.length === 11 && cleaned.startsWith('0')) {
+        cleaned = cleaned.substring(1);
+    }
+
     return /^[6-9]\d{9}$/.test(cleaned);
 };
 
