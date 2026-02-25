@@ -17,6 +17,9 @@ import { BoostSuccess } from './pages/BoostSuccess';
 import { Todos } from './pages/Todos';
 import { PrivacyPolicy } from './pages/PrivacyPolicy';
 import { TermsOfService } from './pages/TermsOfService';
+import { About } from './pages/About';
+import { Pricing } from './pages/Pricing';
+import { ContactUs } from './pages/ContactUs';
 
 import { Layout } from './components/Layout';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -141,6 +144,9 @@ const App: React.FC = () => {
               <Route path="/todos" element={<Todos />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/terms" element={<TermsOfService />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/contact" element={<ContactUs />} />
               <Route path="*" element={<Navigate to="/" />} />
             </Routes>
           </Layout>

@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Zap, Rocket, Crown, X, Loader2, CheckCircle, ArrowRight, Shield, Star, Clock } from 'lucide-react';
 import { useToast } from './Toast';
+import { BOOST_TIERS as SHARED_TIERS } from '../lib/pricing';
 
 // ============================================================
 // Boost Listing Modal
 // Shows 3 pricing tiers and initiates Cashfree UPI payment
+// Pricing sourced from src/lib/pricing.ts (single source of truth)
 // ============================================================
 
 interface BoostListingModalProps {
@@ -15,7 +17,7 @@ interface BoostListingModalProps {
     listingTitle: string;
 }
 
-interface BoostTier {
+interface BoostTierUI {
     key: string;
     name: string;
     duration: string;
@@ -30,63 +32,22 @@ interface BoostTier {
     popular?: boolean;
 }
 
-const BOOST_TIERS: BoostTier[] = [
-    {
-        key: 'spark',
-        name: 'Spark',
-        duration: '3 days',
-        durationDays: 3,
-        price: 49,
-        icon: <Zap size={24} />,
-        color: 'text-amber-600',
-        bgColor: 'bg-amber-50',
-        borderColor: 'border-amber-200',
-        glowColor: 'shadow-amber-100',
-        features: [
-            'Featured badge on listing',
-            'Priority in search results',
-            'Highlighted card in browse',
-        ],
-    },
-    {
-        key: 'boost',
-        name: 'Boost',
-        duration: '7 days',
-        durationDays: 7,
-        price: 99,
-        icon: <Rocket size={24} />,
-        color: 'text-teal-600',
-        bgColor: 'bg-teal-50',
-        borderColor: 'border-teal-300',
-        glowColor: 'shadow-teal-100',
-        popular: true,
-        features: [
-            'Everything in Spark',
-            'Top placement on Home page',
-            'Featured in category view',
-            '3× more visibility',
-        ],
-    },
-    {
-        key: 'power',
-        name: 'Power',
-        duration: '30 days',
-        durationDays: 30,
-        price: 199,
-        icon: <Crown size={24} />,
-        color: 'text-purple-600',
-        bgColor: 'bg-purple-50',
-        borderColor: 'border-purple-300',
-        glowColor: 'shadow-purple-100',
-        features: [
-            'Everything in Boost',
-            'Premium golden badge',
-            'Push notification to buyers',
-            '10× more visibility',
-            'Priority seller support',
-        ],
-    },
-];
+const TIER_UI: Record<string, { icon: React.ReactNode; color: string; bgColor: string; borderColor: string; glowColor: string }> = {
+    spark: { icon: <Zap size={24} />, color: 'text-amber-600', bgColor: 'bg-amber-50', borderColor: 'border-amber-200', glowColor: 'shadow-amber-100' },
+    boost: { icon: <Rocket size={24} />, color: 'text-teal-600', bgColor: 'bg-teal-50', borderColor: 'border-teal-300', glowColor: 'shadow-teal-100' },
+    power: { icon: <Crown size={24} />, color: 'text-purple-600', bgColor: 'bg-purple-50', borderColor: 'border-purple-300', glowColor: 'shadow-purple-100' },
+};
+
+const BOOST_TIERS: BoostTierUI[] = SHARED_TIERS.map((t) => ({
+    key: t.key,
+    name: t.name,
+    duration: t.durationLabel,
+    durationDays: t.durationDays,
+    price: t.priceInr,
+    features: t.features,
+    popular: t.popular,
+    ...TIER_UI[t.key],
+}));
 
 export const BoostListingModal: React.FC<BoostListingModalProps> = ({
     isOpen,

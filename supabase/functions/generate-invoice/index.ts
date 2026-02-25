@@ -40,11 +40,20 @@ function generateInvoiceHtml(invoice: {
     listing_title: string;
 }): string {
     const tierInfo = TIERS[invoice.tier] || { label: invoice.tier, emoji: "📦" };
-    const paidDate = new Date(invoice.paid_at).toLocaleDateString("en-IN", {
+    const paidDateObj = new Date(invoice.paid_at);
+    const paidDate = paidDateObj.toLocaleDateString("en-IN", {
         year: "numeric",
         month: "long",
         day: "numeric",
+        timeZone: "Asia/Kolkata",
     });
+    const paidTime = paidDateObj.toLocaleTimeString("en-IN", {
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "Asia/Kolkata",
+        hour12: true,
+    });
+    const paidDateTime = `${paidDate}, ${paidTime} IST`;
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -91,14 +100,15 @@ function generateInvoiceHtml(invoice: {
         <div class="header">
             <h1>AndamanBazaar</h1>
             <div class="tagline">Andaman & Nicobar Islands Marketplace</div>
+            <div style="font-size:11px;opacity:0.6;margin-top:4px;">Operated by SHAHID MOOSA (Sole Proprietor)</div>
             <div class="invoice-meta">
                 <div>
                     <div class="label">Invoice Number</div>
                     <div class="value">${invoice.invoice_number}</div>
                 </div>
                 <div>
-                    <div class="label">Date</div>
-                    <div class="value">${paidDate}</div>
+                    <div class="label">Date & Time (IST)</div>
+                    <div class="value">${paidDateTime}</div>
                 </div>
                 <div>
                     <div class="label">Status</div>
@@ -120,6 +130,8 @@ function generateInvoiceHtml(invoice: {
                 <thead>
                     <tr>
                         <th>Description</th>
+                        <th style="text-align:center;">Qty</th>
+                        <th style="text-align:right;">Unit Price</th>
                         <th style="text-align:right;">Amount</th>
                     </tr>
                 </thead>
@@ -129,10 +141,20 @@ function generateInvoiceHtml(invoice: {
                             <div class="item-name">${tierInfo.emoji} ${tierInfo.label} Boost — ${invoice.duration_days} days</div>
                             <div class="item-detail">Listing: "${invoice.listing_title}"</div>
                         </td>
+                        <td style="text-align:center;">1</td>
+                        <td style="text-align:right;">₹${invoice.amount_total.toFixed(2)}</td>
                         <td class="amount">₹${invoice.amount_total.toFixed(2)}</td>
                     </tr>
+                    <tr>
+                        <td colspan="3" style="text-align:right;font-size:13px;color:#666;">Subtotal</td>
+                        <td class="amount" style="font-size:14px;">₹${invoice.amount_total.toFixed(2)}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="3" style="text-align:right;font-size:13px;color:#666;">Tax</td>
+                        <td class="amount" style="font-size:14px;">₹0.00</td>
+                    </tr>
                     <tr class="total-row">
-                        <td><strong>Total Paid</strong></td>
+                        <td colspan="3"><strong>Grand Total (INR)</strong></td>
                         <td class="amount">₹${invoice.amount_total.toFixed(2)}</td>
                     </tr>
                 </tbody>
@@ -149,8 +171,8 @@ function generateInvoiceHtml(invoice: {
                     <span class="value">${invoice.cashfree_order_id}</span>
                 </div>
                 <div class="row">
-                    <span class="label">Payment Date</span>
-                    <span class="value">${paidDate}</span>
+                    <span class="label">Payment Date & Time</span>
+                    <span class="value">${paidDateTime}</span>
                 </div>
                 <div class="row">
                     <span class="label">Status</span>
@@ -162,7 +184,8 @@ function generateInvoiceHtml(invoice: {
         <div class="footer">
             <p>Thank you for boosting your listing on <span class="brand">AndamanBazaar</span>!</p>
             <p>For questions, contact support@andamanbazaar.in</p>
-            <p style="margin-top: 12px; font-size: 10px; color: #ccc;">This is a computer-generated invoice and does not require a signature.</p>
+            <p style="margin-top: 12px; font-size: 10px; color: #aaa;">Operated by SHAHID MOOSA (Sole Proprietor) · Andaman & Nicobar Islands, India</p>
+            <p style="margin-top: 4px; font-size: 10px; color: #ccc;">This is a computer-generated invoice and does not require a signature.</p>
         </div>
     </div>
 </body>
@@ -185,6 +208,27 @@ Deno.serve(async (req: Request) => {
         }
 
         const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+        // 0. Idempotency: check if invoice already exists for this boost
+        const { data: existingInvoice } = await supabase
+            .from("invoices")
+            .select("id, invoice_number, invoice_pdf_url")
+            .eq("boost_id", boost_id)
+            .maybeSingle();
+
+        if (existingInvoice) {
+            console.log(`Invoice already exists for boost ${boost_id}: ${existingInvoice.invoice_number}`);
+            return new Response(
+                JSON.stringify({
+                    success: true,
+                    invoice_id: existingInvoice.id,
+                    invoice_number: existingInvoice.invoice_number,
+                    invoice_url: existingInvoice.invoice_pdf_url || "",
+                    already_existed: true,
+                }),
+                { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+        }
 
         // 1. Fetch boost record
         const { data: boost, error: boostError } = await supabase

@@ -12,10 +12,7 @@ export default defineConfig({
       '**/node_modules/**',
       '**/dist/**',
       'tests/e2e/**',
-      'tests/accessibility/**',
       'tests/performance/**',
-      'tests/security/**',
-      'tests/integration/**',
       'e2e/**',
     ],
     coverage: {

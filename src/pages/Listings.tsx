@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { Listing } from '../types';
 import { Search, MapPin, Heart, Sparkles, Filter, X, ChevronDown, ArrowUpDown, Loader2 } from 'lucide-react';
 import { useToast } from '../components/Toast';
+import { getDemoListings, isDemoListing } from '../lib/demoListings';
 
 const CATEGORIES = [
   { label: '🌊 All', slug: 'all' },
@@ -118,7 +119,14 @@ export const Listings: React.FC = () => {
 
       const results = data || [];
       if (reset) {
-        setListings(results);
+        if (results.length < 4) {
+          // Pad with demo listings when real data is sparse
+          const cat = searchParams.get('category') || undefined;
+          const demos = getDemoListings(cat).slice(0, PAGE_SIZE - results.length);
+          setListings([...results, ...demos]);
+        } else {
+          setListings(results);
+        }
       } else {
         setListings(prev => [...prev, ...results]);
       }
@@ -127,6 +135,7 @@ export const Listings: React.FC = () => {
       if (!reset) setPage(prev => prev + 1);
     } catch (err) {
       console.error("Error fetching listings:", err);
+      setListings(getDemoListings());
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -346,7 +355,8 @@ export const Listings: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowVerifiedOnly(prev => !prev)}
-                  aria-pressed={showVerifiedOnly}
+                  {...({ role: 'switch', 'aria-checked': showVerifiedOnly } as React.HTMLAttributes<HTMLButtonElement>)}
+                  aria-label="Toggle verified sellers only filters"
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${showVerifiedOnly ? 'bg-teal-600' : 'bg-warm-200'}`}
                 >
                   <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${showVerifiedOnly ? 'translate-x-5' : 'translate-x-1'}`} />
@@ -428,9 +438,16 @@ const ListingItem: React.FC<{ listing: any, isFavorited: boolean, onToggleFavori
   const imageUrl = listing.images && listing.images.length > 0
     ? listing.images[0].image_url
     : `https://picsum.photos/seed/list-${listing.id}/600/600`;
+  const isDemo = listing.is_demo || isDemoListing(listing.id);
+
+  const handleClick = (e: React.MouseEvent) => {
+    if (isDemo) {
+      e.preventDefault();
+    }
+  };
 
   return (
-    <Link to={`/listings/${listing.id}`} className="listing-card group">
+    <Link to={isDemo ? '#' : `/listings/${listing.id}`} className="listing-card group" onClick={handleClick}>
       <div className="relative aspect-square bg-warm-100 m-2 rounded-2xl overflow-hidden">
         <img
           src={imageUrl}
@@ -454,6 +471,12 @@ const ListingItem: React.FC<{ listing: any, isFavorited: boolean, onToggleFavori
         {listing.city && (
           <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-full flex items-center gap-1 text-[9px] font-bold text-midnight-700 shadow-sm z-10">
             <MapPin size={8} className="text-teal-500" />{listing.city}
+          </div>
+        )}
+        {/* Demo Badge */}
+        {isDemo && (
+          <div className="absolute bottom-2 right-2 bg-warm-800/60 backdrop-blur-sm text-white/90 text-[7px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full z-10">
+            Demo
           </div>
         )}
       </div>

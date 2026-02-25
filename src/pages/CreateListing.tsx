@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { Camera, PlusCircle, Check, MapPin, ChevronRight, AlertCircle, Loader2, X, Sparkles, Smartphone, Car, Sofa, Shirt, Home as HomeIcon, Zap, ShoppingBag, Rocket } from 'lucide-react';
+import { Camera, PlusCircle, Check, MapPin, ChevronRight, AlertCircle, Loader2, X, Sparkles, Smartphone, Car, Sofa, Shirt, Home as HomeIcon, Zap, ShoppingBag, Rocket, Share2, Facebook, Link as LinkIcon } from 'lucide-react';
 import { compressImage } from '../lib/utils';
 import { listingSchema, sanitizePlainText, detectPromptInjection, validateFileUpload } from '../lib/validation';
 import { logAuditEvent, sanitizeErrorMessage } from '../lib/security';
@@ -206,7 +206,7 @@ export const CreateListing: React.FC = () => {
     for (const file of files) {
       const validation = validateFileUpload(file, { maxSizeMB: 10, allowedTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/heic'] });
       if (!validation.valid) { showToast(validation.error || 'An unknown file validation error occurred.', 'error'); continue; }
-      
+
       try {
         const compressed = await compressImage(file);
         const preview = URL.createObjectURL(compressed);
@@ -425,9 +425,9 @@ export const CreateListing: React.FC = () => {
           <div className="h-1.5 bg-warm-100">
             <div
               className={`h-full bg-teal-gradient transition-all duration-500 ${step === 1 ? 'w-1/4' :
-                  step === 2 ? 'w-2/4' :
-                    step === 3 ? 'w-3/4' :
-                        'w-full'
+                step === 2 ? 'w-2/4' :
+                  step === 3 ? 'w-3/4' :
+                    'w-full'
                 }`}
             />
           </div>
@@ -811,6 +811,53 @@ export const CreateListing: React.FC = () => {
                   <span className="w-2 h-2 bg-teal-500 rounded-full animate-pulse" /> Live Now
                 </div>
               </div>
+
+              {/* Social Sharing */}
+              {createdListingId && !editId && (
+                <div className="pt-6 border-t border-warm-100 mt-6 animate-fade-in delay-200">
+                  <h3 className="font-bold text-midnight-700 text-sm uppercase tracking-widest mb-4">Share your listing</h3>
+                  <div className="flex justify-center gap-4">
+                    <button
+                      onClick={() => {
+                        const url = `${window.location.origin}/listings/${createdListingId}`;
+                        const text = `Check out my new listing on AndamanBazaar: ${title}`;
+                        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text + ' ' + url)}`, '_blank');
+                        logAuditEvent({ action: 'share_intent', resource_type: 'listing', resource_id: createdListingId, metadata: { platform: 'whatsapp' } });
+                      }}
+                      className="w-14 h-14 rounded-2xl bg-[#25D366]/10 text-[#25D366] flex items-center justify-center hover:bg-[#25D366]/20 hover:scale-105 transition-all shadow-sm"
+                      title="Share on WhatsApp"
+                      aria-label="Share on WhatsApp"
+                    >
+                      <Share2 size={24} />
+                    </button>
+                    <button
+                      onClick={() => {
+                        const url = `${window.location.origin}/listings/${createdListingId}`;
+                        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+                        logAuditEvent({ action: 'share_intent', resource_type: 'listing', resource_id: createdListingId, metadata: { platform: 'facebook' } });
+                      }}
+                      className="w-14 h-14 rounded-2xl bg-[#1877F2]/10 text-[#1877F2] flex items-center justify-center hover:bg-[#1877F2]/20 hover:scale-105 transition-all shadow-sm"
+                      title="Share on Facebook"
+                      aria-label="Share on Facebook"
+                    >
+                      <Facebook size={24} />
+                    </button>
+                    <button
+                      onClick={() => {
+                        const url = `${window.location.origin}/listings/${createdListingId}`;
+                        navigator.clipboard.writeText(url);
+                        showToast('Link copied to clipboard!', 'success');
+                        logAuditEvent({ action: 'share_intent', resource_type: 'listing', resource_id: createdListingId, metadata: { platform: 'copy_link' } });
+                      }}
+                      className="w-14 h-14 rounded-2xl bg-warm-100 text-midnight-600 flex items-center justify-center hover:bg-warm-200 hover:scale-105 transition-all shadow-sm"
+                      title="Copy Link"
+                      aria-label="Copy Link"
+                    >
+                      <LinkIcon size={24} />
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Upsell to Boost */}
               {createdListingId && (

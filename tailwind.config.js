@@ -84,9 +84,9 @@ module.exports = {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['Instrument Sans', 'Inter', 'system-ui', 'sans-serif'],
         heading: ['Plus Jakarta Sans', 'Outfit', 'sans-serif'],
-        display: ['Playfair Display', 'Georgia', 'serif'],
+        display: ['DM Serif Display', 'Playfair Display', 'Georgia', 'serif'],
       },
       borderRadius: {
         '2xl': '16px',
@@ -160,6 +160,19 @@ module.exports = {
         carousel: {
           from: { opacity: '0', transform: 'translateX(30px)' },
           to: { opacity: '1', transform: 'translateX(0)' },
+        },
+        drift: {
+          '0%, 100%': { transform: 'translate(0, 0) rotate(0deg)' },
+          '33%': { transform: 'translate(2px, -4px) rotate(0.5deg)' },
+          '66%': { transform: 'translate(-2px, 2px) rotate(-0.5deg)' },
+        },
+        'reveal-up': {
+          from: { opacity: '0', transform: 'translateY(32px) scale(0.97)' },
+          to: { opacity: '1', transform: 'translateY(0) scale(1)' },
+        },
+        'ocean-swell': {
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(-6px)' },
         },
       },
     },

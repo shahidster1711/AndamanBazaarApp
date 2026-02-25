@@ -7,18 +7,27 @@ import DOMPurify from 'dompurify';
  * Sanitize HTML content to prevent XSS attacks
  */
 export const sanitizeHtml = (input: string): string => {
-    if (typeof window === 'undefined') {
-        // Server-side: basic sanitization
-        return input
-            .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-            .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
-            .replace(/on\w+\s*=\s*["'][^"']*["']/gi, '');
+    if (typeof input !== 'string') {
+        throw new TypeError('sanitizeHtml: input must be a string');
     }
-    // Client-side: use DOMPurify
-    return DOMPurify.sanitize(input, {
-        ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'br', 'p'],
-        ALLOWED_ATTR: [],
-    });
+    // Use DOMPurify only in a real browser with a working document.createElement
+    if (typeof window !== 'undefined' && typeof window.document?.createElement === 'function') {
+        try {
+            return DOMPurify.sanitize(input, {
+                ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'br', 'p'],
+                ALLOWED_ATTR: [],
+            });
+        } catch {
+            // Fall through to regex approach if DOMPurify fails
+        }
+    }
+    // Server-side or jsdom fallback: regex-based sanitization
+    return input
+        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+        .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
+        .replace(/on\w+\s*=\s*["'][^"']*["']/gi, '')
+        // Remove all tags that are NOT in the allowed list
+        .replace(/<(?!\/?(?:b|i|em|strong|br|p)(?:\s|>|\/))(?:[^>]*)>/gi, '');
 };
 
 /**
@@ -26,7 +35,7 @@ export const sanitizeHtml = (input: string): string => {
  */
 export const sanitizePlainText = (input: string): string => {
     return input
-        .replace(/[<>\\\"'`]/g, '') // Remove dangerous characters including backslash
+        .replace(/[<>\/\\"'`]/g, '') // Remove dangerous characters including backslash and forward slash
         .trim()
         .slice(0, 10000); // Prevent DoS via huge strings
 };
@@ -262,8 +271,12 @@ export const sanitizeUrl = (url: string): string => {
  * Safe JSON parse with error handling
  */
 export const safeJsonParse = <T>(json: string, fallback: T): T => {
+    if (json === null || json === undefined || json === '') return fallback;
     try {
-        return JSON.parse(json) as T;
+        const result = JSON.parse(json);
+        // JSON.parse(null) returns null without throwing — treat as fallback unless string was exactly "null"
+        if (result === null && json.trim() !== 'null') return fallback;
+        return result as T;
     } catch {
         return fallback;
     }

@@ -1,0 +1,106 @@
+
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { BrowserRouter } from 'react-router-dom';
+import { Listings } from '../../src/pages/Listings';
+import { supabase } from '../../src/lib/supabase';
+import { createMockChain } from '../setup';
+import { ToastProvider } from '../../src/components/Toast';
+
+// Mock Supabase
+vi.mock('../../src/lib/supabase', () => ({
+    supabase: {
+        auth: {
+            getUser: vi.fn().mockResolvedValue({ data: { user: null }, error: null }),
+        },
+        from: vi.fn(),
+    },
+}));
+
+describe('Marketplace UI Logic (Vitest)', () => {
+    const mockListings = [
+        {
+            id: '1',
+            title: 'Test Scooter',
+            price: 50000,
+            city: 'Port Blair',
+            is_location_verified: true,
+            category_id: 'vehicles',
+            images: [{ image_url: 'https://picsum.photos/200' }]
+        }
+    ];
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        (supabase.from as any).mockReturnValue(createMockChain(mockListings));
+    });
+
+    const renderListings = () => {
+        return render(
+            <BrowserRouter>
+                <ToastProvider>
+                    <Listings />
+                </ToastProvider>
+            </BrowserRouter>
+        );
+    };
+
+    it('renders search input and handles search query', async () => {
+        renderListings();
+        const searchInput = screen.getByPlaceholderText(/Search across the islands/i);
+        expect(searchInput).toBeTruthy();
+
+        fireEvent.change(searchInput, { target: { value: 'Scooter' } });
+        fireEvent.submit(searchInput.closest('form')!);
+
+        await waitFor(() => {
+            expect(window.location.search).toContain('q=Scooter');
+        });
+    });
+
+    it('filters by category when clicked', async () => {
+        renderListings();
+        const produceCategory = screen.getByText(/🥥 Produce/i);
+        fireEvent.click(produceCategory);
+
+        await waitFor(() => {
+            expect(window.location.search).toContain('category=produce');
+        });
+    });
+
+    it('opens and applies filters (verified only)', async () => {
+        renderListings();
+
+        // Open Filters
+        const filterBtn = screen.getByRole('button', { name: /Filters/i });
+        fireEvent.click(filterBtn);
+
+        // Toggle Verified Sellers Only
+        const toggle = screen.getByRole('switch', { name: /Toggle verified sellers only/i });
+        fireEvent.click(toggle);
+
+        // Apply Filters
+        const applyBtn = screen.getByRole('button', { name: /Apply Filters/i });
+        fireEvent.click(applyBtn);
+
+        await waitFor(() => {
+            expect(window.location.search).toContain('verified=true');
+        });
+    });
+
+    it('clears all filters correctly', async () => {
+        renderListings();
+
+        // Open Filters
+        fireEvent.click(screen.getByRole('button', { name: /Filters/i }));
+
+        // Clear All
+        const clearBtn = screen.getByRole('button', { name: /Clear All/i });
+        fireEvent.click(clearBtn);
+
+        await waitFor(() => {
+            expect(window.location.search).not.toContain('verified=true');
+            expect(window.location.search).not.toContain('category=');
+        });
+    });
+});

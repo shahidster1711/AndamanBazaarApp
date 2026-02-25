@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { getFeaturedDemos, getTrendingDemos, getDemoListings, isDemoListing } from '../lib/demoListings';
 import {
-  Search, ArrowRight, Loader2, Heart, MapPin, Clock, Flame,
-  Smartphone, Car, Sofa, Shirt, TrendingUp,
-  BadgeCheck, Star, ChevronLeft, ChevronRight, Mic
+  Search, ArrowRight, Loader2, Heart, MapPin, Flame,
+  Smartphone, Car, Sofa, Shirt,
+  BadgeCheck, Star
 } from 'lucide-react';
 
 // ============================================================
@@ -18,48 +19,6 @@ const ISLAND_CATEGORIES = [
   { name: 'Fashion', slug: 'fashion', icon: Shirt, bgClass: 'bg-red-50', textClass: 'text-red-600' },
 ];
 
-const HERO_SLIDES = [
-  {
-    id: 1,
-    tag: 'Fresh Catch Today',
-    emoji: '🐟',
-    headline: 'Straight from the Sea',
-    sub: 'Local fishermen, freshest catch',
-    slug: 'fresh-catch',
-    from: 'from-teal-600',
-    to: 'to-teal-500',
-  },
-  {
-    id: 2,
-    tag: 'Island Artisans',
-    emoji: '🐚',
-    headline: 'Crafted with Island Soul',
-    sub: 'Shells, pearls & handmade art',
-    slug: 'handicrafts',
-    from: 'from-purple-600',
-    to: 'to-indigo-500',
-  },
-  {
-    id: 3,
-    tag: 'Tourism Experiences',
-    emoji: '🤿',
-    headline: 'Explore Paradise',
-    sub: 'Diving, tours & local guides',
-    slug: 'experiences',
-    from: 'from-coral-500',
-    to: 'to-sandy-400',
-  },
-  {
-    id: 4,
-    tag: 'Seasonal Specials',
-    emoji: '🏖️',
-    headline: 'Tourist Season Deals',
-    sub: 'Best prices, verified sellers',
-    slug: 'tourism',
-    from: 'from-emerald-600',
-    to: 'to-teal-400',
-  },
-];
 
 const SEARCH_PLACEHOLDERS = [
   'Search fish, coconuts, tours…',
@@ -83,6 +42,7 @@ interface Listing {
   created_at?: string;
   views_count?: number;
   images?: { image_url: string }[];
+  is_demo?: boolean;
 }
 
 // ============================================================
@@ -107,10 +67,6 @@ export const Home: React.FC = () => {
   const [placeholderIdx, setPlaceholderIdx] = useState(0);
   const [savedListings, setSavedListings] = useState<Set<string>>(new Set());
 
-  // Hero carousel
-  const [heroIdx, setHeroIdx] = useState(0);
-  const heroTimer = useRef<ReturnType<typeof setInterval> | null>(null);
-
   // Flash deal timer (countdown)
   const [flashTime, setFlashTime] = useState(3 * 3600 + 47 * 60 + 22);
 
@@ -128,13 +84,6 @@ export const Home: React.FC = () => {
     return () => clearInterval(t);
   }, []);
 
-  // Auto-advance hero carousel
-  useEffect(() => {
-    heroTimer.current = setInterval(() => {
-      setHeroIdx(i => (i + 1) % HERO_SLIDES.length);
-    }, 4500);
-    return () => { if (heroTimer.current) clearInterval(heroTimer.current); };
-  }, []);
 
   // Flash deal countdown
   useEffect(() => {
@@ -154,9 +103,13 @@ export const Home: React.FC = () => {
         .eq('is_featured', true)
         .order('created_at', { ascending: false })
         .limit(10);
-      setFeaturedListings(data || []);
+      const real = data || [];
+      // Pad with demo listings if real data is sparse
+      const demos = real.length < 4 ? getFeaturedDemos().slice(0, 4 - real.length) : [];
+      setFeaturedListings([...real, ...demos]);
     } catch (err) {
       console.error('Featured fetch error:', err);
+      setFeaturedListings(getFeaturedDemos());
     } finally {
       setLoadingFeatured(false);
     }
@@ -171,9 +124,12 @@ export const Home: React.FC = () => {
         .eq('status', 'active')
         .order('views_count', { ascending: false })
         .limit(6);
-      setTrendingListings(data || []);
+      const real = data || [];
+      const demos = real.length < 4 ? getTrendingDemos(6 - real.length) : [];
+      setTrendingListings([...real, ...demos]);
     } catch (err) {
       console.error('Trending fetch error:', err);
+      setTrendingListings(getTrendingDemos(6));
     } finally {
       setLoadingTrending(false);
     }
@@ -191,13 +147,19 @@ export const Home: React.FC = () => {
         .eq('status', 'active')
         .order('created_at', { ascending: false })
         .range(from, to);
-      if (data) {
+      const real = data || [];
+      if (pageIndex === 0 && real.length < 4) {
+        // Pad first page with demo listings
+        const demos = getDemoListings().slice(0, RECENT_PAGE_SIZE - real.length);
+        setRecentListings([...real, ...demos]);
+      } else if (data) {
         setRecentListings(prev => pageIndex === 0 ? data : [...prev, ...data]);
-        setHasMore(data.length === RECENT_PAGE_SIZE);
-        setPage(pageIndex);
       }
+      setHasMore(real.length === RECENT_PAGE_SIZE);
+      setPage(pageIndex);
     } catch (err) {
       console.error('Recent fetch error:', err);
+      if (pageIndex === 0) setRecentListings(getDemoListings());
     } finally {
       setLoadingRecent(false);
       setLoadingMore(false);
@@ -237,130 +199,171 @@ export const Home: React.FC = () => {
   };
 
   const { h, m, ss } = formatTimer(flashTime);
-  const slide = HERO_SLIDES[heroIdx];
 
   return (
     <div className="min-h-screen bg-warm-50 pb-28 md:pb-12">
 
-      {/* ── HERO TEXT ── */}
-      <section className="px-4 pt-8 pb-6 bg-warm-50 text-center">
-        <div className="app-container space-y-8">
-          <div className="space-y-4">
-            <div className="inline-flex items-center bg-white px-3 py-1.5 rounded-full shadow-sm border border-gray-100">
-              <span className="text-[10px] md:text-xs xl:text-sm font-bold text-teal-600 tracking-wide uppercase">Andaman's Own Marketplace</span>
+      {/* ── HERO — IMMERSIVE OCEAN ── */}
+      <section className="relative overflow-hidden wave-divider bg-gradient-ocean-deep">
+        {/* Atmospheric light orbs */}
+        <div className="absolute top-[-20%] right-[-10%] w-[500px] h-[500px] rounded-full opacity-20 blur-3xl pointer-events-none bg-radial-teal-glow" />
+        <div className="absolute bottom-[-10%] left-[-5%] w-[300px] h-[300px] rounded-full opacity-15 blur-3xl pointer-events-none bg-radial-sandy-glow" />
+
+        <div className="relative z-10 px-4 pt-16 pb-24 md:pt-24 md:pb-32 text-center">
+          <div className="app-container space-y-8 max-w-3xl mx-auto">
+            {/* Tag */}
+            <div className="reveal">
+              <span className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 px-4 py-2 rounded-full text-white/90 text-[11px] md:text-xs font-bold uppercase tracking-[0.15em]">
+                <span className="w-2 h-2 rounded-full bg-teal-300 animate-pulse" />
+                Andaman's Own Marketplace
+              </span>
             </div>
-            <h1 className="text-3xl md:text-4xl xl:text-5xl font-extrabold text-midnight-700 leading-tight tracking-tight">
-              Buy & Sell <br />
-              <span className="text-teal-500">in Paradise.</span>
-            </h1>
-            <p className="text-warm-500 text-sm md:text-base xl:text-lg max-w-[280px] md:max-w-[560px] xl:max-w-[640px] mx-auto leading-relaxed">
-              Join thousands of islanders trading safely. From Port Blair to Diglipur, we've got you covered.
-            </p>
-          </div>
-          <div className="relative max-w-md mx-auto search-pill">
-            <form onSubmit={handleSearch}>
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <span className="material-symbols-outlined text-gray-400 text-[20px]">search</span>
-              </div>
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Search mobiles, scooters..."
-                className="block w-full pl-11 pr-24 py-3.5 bg-white border border-gray-200 rounded-full shadow-soft text-sm text-midnight-700 placeholder-gray-400 focus:ring-2 focus:ring-teal-100 focus:border-teal-400 focus:outline-none"
-              />
-              <button
-                type="submit"
-                className="absolute right-1.5 top-1.5 bottom-1.5 bg-midnight-700 hover:bg-midnight-600 text-white text-sm font-semibold px-5 rounded-full transition-colors"
-              >
-                Search
-              </button>
-            </form>
+
+            {/* Display Heading */}
+            <div className="reveal reveal-delay-1">
+              <h1 className="font-display text-5xl md:text-6xl xl:text-7xl text-white leading-[1.1] tracking-tight">
+                Buy & Sell{' '}
+                <br className="md:hidden" />
+                <span className="relative">
+                  <span className="bg-gradient-to-r from-teal-200 via-teal-300 to-sandy-300 bg-clip-text text-transparent">in Paradise.</span>
+                </span>
+              </h1>
+            </div>
+
+            {/* Subtext */}
+            <div className="reveal reveal-delay-2">
+              <p className="text-teal-100/70 text-base md:text-lg max-w-md mx-auto leading-relaxed font-sans">
+                Join thousands of islanders trading safely. From Port Blair to Diglipur — one marketplace for every island.
+              </p>
+            </div>
+
+            {/* Search */}
+            <div className="reveal reveal-delay-3 max-w-lg mx-auto">
+              <form onSubmit={handleSearch}>
+                <div className="relative group">
+                  <div className="absolute inset-0 bg-white/5 rounded-full blur-xl group-hover:bg-white/10 transition-all duration-500" />
+                  <div className="relative flex items-center bg-white/15 backdrop-blur-xl border border-white/25 rounded-full shadow-elevated overflow-hidden hover:bg-white/20 transition-all duration-500">
+                    <div className="pl-5 flex items-center pointer-events-none">
+                      <Search size={18} className="text-white/50" />
+                    </div>
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                      placeholder={SEARCH_PLACEHOLDERS[placeholderIdx]}
+                      className="flex-1 px-4 py-4 bg-transparent text-white placeholder-white/40 text-sm md:text-base outline-none font-sans"
+                    />
+                    <button
+                      type="submit"
+                      className="mr-1.5 my-1.5 bg-white text-midnight-700 text-sm font-heading font-bold px-6 py-2.5 rounded-full hover:bg-teal-50 transition-colors active:scale-95 flex-shrink-0"
+                    >
+                      Search
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            {/* Trust indicators */}
+            <div className="reveal reveal-delay-4 flex flex-wrap items-center justify-center gap-6 text-white/40 text-xs font-medium">
+              <span className="flex items-center gap-1.5">
+                <BadgeCheck size={14} className="text-teal-300/70" />
+                GPS Verified Sellers
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Star size={14} className="text-sandy-400/70" />
+                4,000+ Listings
+              </span>
+              <span className="flex items-center gap-1.5">
+                <MapPin size={14} className="text-coral-300/70" />
+                All Islands Covered
+              </span>
+            </div>
           </div>
         </div>
       </section>
 
       {/* ── ISLAND CATEGORY GRID ── */}
-      <section className="px-4 mb-8">
+      <section className="px-4 pt-10 mb-10">
         <div className="app-container">
-          <div className="section-header">
-            <h2 className="section-title">Browse Island Categories</h2>
-            <Link to="/listings" className="section-link">All <ArrowRight size={14} /></Link>
+          <div className="section-header reveal">
+            <h2 className="font-heading font-extrabold text-xl text-midnight-700 tracking-tight">Browse Categories</h2>
+            <Link to="/listings" className="section-link">See all <ArrowRight size={14} /></Link>
           </div>
-          <div className="flex gap-3 overflow-x-auto snap-x hide-scrollbar pb-2 -mx-4 px-4 md:mx-0 md:px-0">
+          <div className="grid grid-cols-4 md:grid-cols-4 gap-3 md:gap-5">
             {ISLAND_CATEGORIES.map((cat, i) => {
               const Icon = cat.icon;
               return (
                 <Link
                   key={cat.slug}
                   to={`/listings?category=${cat.slug}`}
-                  className="category-pill animate-fade-in-up min-w-[80px] flex-shrink-0 snap-start"
-                  style={{ animationDelay: `${i * 40}ms` }}
+                  className={`reveal group flex flex-col items-center gap-3 p-4 md:p-6 rounded-3xl bg-white border border-warm-200/60 hover:border-teal-200 transition-all duration-500 hover:shadow-card-hover`}
+                  style={{ animationDelay: `${(i + 1) * 80}ms` }}
                 >
-                  <div className={`category-icon-wrap ${cat.bgClass}`}>
+                  <div className={`w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center ${cat.bgClass} group-hover:scale-110 transition-transform duration-500 ease-out-expo`}
+                  >
                     <Icon size={28} className={cat.textClass} />
                   </div>
-                  <span className="text-[11px] md:text-xs xl:text-sm font-bold text-midnight-700 text-center leading-tight">{cat.name}</span>
+                  <span className="text-[11px] md:text-sm font-bold text-midnight-700 text-center leading-tight">{cat.name}</span>
                 </Link>
               );
             })}
           </div>
         </div>
-      </section >
+      </section>
 
       {/* ── FLASH DEALS ── */}
-      < section className="px-4 mb-8" >
+      <section className="px-4 mb-10">
         <div className="app-container">
-        <div className="bg-gradient-to-r from-coral-500 to-coral-600 rounded-3xl p-5 relative overflow-hidden">
-          {/* Background pattern */}
-          <div className="absolute right-0 top-0 bottom-0 w-32 opacity-10">
-            <svg viewBox="0 0 100 120" className="w-full h-full">
-              <circle cx="80" cy="30" r="60" fill="white" />
-            </svg>
-          </div>
+          <div className="relative rounded-[28px] overflow-hidden reveal">
+            {/* Layered gradient background */}
+            <div className="absolute inset-0 bg-gradient-flash" />
+            <div className="absolute inset-0 opacity-20 bg-flash-highlight" />
 
-          <div className="relative z-10 flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <Flame size={16} className="text-sandy-400 animate-pulse" />
-                <span className="text-white/80 text-xs md:text-sm font-black uppercase tracking-widest">Flash Deals</span>
-              </div>
-              <p className="text-white font-heading font-black text-lg leading-tight">Ends in</p>
-            </div>
-
-            <div className="flex items-center gap-1.5">
-              {[h, m, ss].map((val, i) => (
-                <React.Fragment key={i}>
-                  <div className="timer-block min-w-[36px]">
-                    <div className="text-lg font-black leading-none">{val}</div>
-                    <div className="text-[8px] md:text-[10px] text-white/50 uppercase">{['HRS', 'MIN', 'SEC'][i]}</div>
+            <div className="relative z-10 p-6 md:p-8">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Flame size={18} className="text-white/90" />
+                    <span className="text-white/80 text-xs font-heading font-extrabold uppercase tracking-[0.15em]">Flash Deals</span>
                   </div>
-                  {i < 2 && <span className="text-white font-black text-lg">:</span>}
-                </React.Fragment>
-              ))}
+                  <p className="text-white font-display text-2xl md:text-3xl leading-tight">Ends in</p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {[h, m, ss].map((val, i) => (
+                    <React.Fragment key={i}>
+                      <div className="bg-midnight-700/80 backdrop-blur-sm text-white text-center px-3 py-2 rounded-xl min-w-[44px]">
+                        <div className="text-xl font-heading font-black leading-none">{val}</div>
+                        <div className="text-[8px] text-white/40 uppercase font-bold mt-0.5">{['HRS', 'MIN', 'SEC'][i]}</div>
+                      </div>
+                      {i < 2 && <span className="text-white/60 font-bold text-lg">:</span>}
+                    </React.Fragment>
+                  ))}
+                </div>
+              </div>
+
+              <Link
+                to="/listings?sort=newest"
+                className="mt-5 flex w-full items-center justify-center gap-2 bg-white/25 backdrop-blur-sm border border-white/30 text-white font-heading font-bold text-sm py-3 rounded-2xl hover:bg-white/35 transition-all duration-300 active:scale-[0.98]"
+              >
+                View Flash Deals <ArrowRight size={14} />
+              </Link>
             </div>
           </div>
-
-          <Link
-            to="/listings?sort=newest"
-            className="mt-4 flex w-full items-center justify-center gap-2 bg-white/20 border border-white/30 text-white font-bold text-sm py-2.5 rounded-xl hover:bg-white/30 transition-all"
-          >
-            View Flash Deals <ArrowRight size={14} />
-          </Link>
         </div>
-        </div>
-      </section >
+      </section>
 
       {/* ── FEATURED LISTINGS ── */}
       {(loadingFeatured || featuredListings.length > 0) && (
-        <section className="px-4 mb-8">
+        <section className="px-4 mb-10">
           <div className="app-container">
-            <div className="section-header px-0">
+            <div className="section-header px-0 reveal">
               <div>
-                <h2 className="section-title flex items-center gap-2">
-                  <span className="text-midnight-700">Featured</span> <span className="text-amber-500">Picks</span>
+                <h2 className="font-heading font-extrabold text-xl text-midnight-700 tracking-tight flex items-center gap-2">
+                  Featured <span className="text-amber-500">Picks</span>
                 </h2>
-                <p className="text-xs text-warm-400 font-medium mt-0.5">Top rated island treasures</p>
+                <p className="text-xs text-warm-400 font-medium mt-1">Top rated island treasures</p>
               </div>
             </div>
             <div className="overflow-x-auto hide-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
@@ -384,14 +387,14 @@ export const Home: React.FC = () => {
       )}
 
       {/* ── TRENDING ON THE ISLANDS ── */}
-      < section className="px-4 mb-8" >
+      <section className="px-4 mb-10">
         <div className="app-container">
-          <div className="section-header px-0">
+          <div className="section-header px-0 reveal">
             <div>
-              <h2 className="section-title flex items-center gap-2">
-                <span className="text-midnight-700">Today's</span> <span className="text-coral-500">Hot Picks</span>
+              <h2 className="font-heading font-extrabold text-xl text-midnight-700 tracking-tight flex items-center gap-2">
+                Today's <span className="text-coral-500">Hot Picks</span>
               </h2>
-              <p className="text-xs text-warm-400 font-medium mt-0.5">Handpicked deals just for you</p>
+              <p className="text-xs text-warm-400 font-medium mt-1">Handpicked deals just for you</p>
             </div>
             <Link to="/listings?sort=popular" className="section-link">All <ArrowRight size={14} /></Link>
           </div>
@@ -412,34 +415,41 @@ export const Home: React.FC = () => {
             </div>
           </div>
         </div>
-      </section >
+      </section>
 
       {/* ── ISLAND VERIFIED STRIP ── */}
-      < section className="px-4 mb-8" >
+      <section className="px-4 mb-10">
         <div className="app-container">
-        <div className="bg-teal-50 border border-teal-100 rounded-3xl p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <BadgeCheck size={18} className="text-teal-600" />
-            <h3 className="font-heading font-bold text-teal-800 text-sm md:text-base">Island Verified Sellers</h3>
+          <div className="relative rounded-[28px] overflow-hidden reveal bg-gradient-verified">
+            <div className="absolute top-0 right-0 w-40 h-40 rounded-full opacity-30 blur-2xl bg-radial-verified-glow" />
+            <div className="relative p-6 md:p-8 space-y-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-teal-600/10 flex items-center justify-center">
+                  <BadgeCheck size={18} className="text-teal-600" />
+                </div>
+                <h3 className="font-heading font-extrabold text-teal-800 text-base md:text-lg">Island Verified Sellers</h3>
+              </div>
+              <p className="text-teal-700/60 text-sm md:text-base leading-relaxed">
+                GPS-verified locals from across the Andaman Islands. Trade with confidence.
+              </p>
+              <Link
+                to="/listings?verified=true"
+                className="inline-flex items-center gap-1.5 text-teal-700 text-sm font-heading font-bold hover:gap-2.5 transition-all duration-300"
+              >
+                Browse verified listings <ArrowRight size={14} />
+              </Link>
+            </div>
           </div>
-          <p className="text-teal-700/70 text-xs md:text-sm mb-4">GPS-verified locals from across the Andaman Islands</p>
-          <Link
-            to="/listings?verified=true"
-            className="text-teal-700 text-sm font-bold flex items-center gap-1 hover:gap-2 transition-all"
-          >
-            Browse verified listings <ArrowRight size={14} />
-          </Link>
         </div>
-        </div>
-      </section >
+      </section>
 
       {/* ── FRESH ARRIVALS GRID ── */}
-      < section className="px-4 mb-8" >
+      <section className="px-4 mb-10">
         <div className="app-container">
-          <div className="section-header">
+          <div className="section-header reveal">
             <div>
-              <h2 className="section-title">Fresh Arrivals</h2>
-              <p className="text-xs text-warm-400 font-medium mt-0.5">Just listed today</p>
+              <h2 className="font-heading font-extrabold text-xl text-midnight-700 tracking-tight">Fresh Arrivals</h2>
+              <p className="text-xs text-warm-400 font-medium mt-1">Just listed today</p>
             </div>
             <Link to="/listings" className="section-link">All <ArrowRight size={14} /></Link>
           </div>
@@ -460,44 +470,53 @@ export const Home: React.FC = () => {
           </div>
           {
             hasMore && !loadingRecent && (
-              <div className="flex justify-center mt-8">
+              <div className="flex justify-center mt-10">
                 <button
                   onClick={() => fetchRecent(page + 1)}
                   disabled={loadingMore}
-                  className="btn-secondary disabled:opacity-50 gap-2"
+                  className="group bg-white text-midnight-700 font-heading font-bold px-8 py-3.5 rounded-full border border-warm-200 shadow-card hover:shadow-card-hover hover:border-teal-200 transition-all duration-500 disabled:opacity-50 flex items-center gap-2 ease-out-expo"
                 >
                   {loadingMore && <Loader2 size={16} className="animate-spin" />}
                   {loadingMore ? 'Loading…' : 'Load More Listings'}
+                  {!loadingMore && <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />}
                 </button>
               </div>
             )
           }
         </div>
-      </section >
+      </section>
 
       {/* ── SEASONAL SPOTLIGHT ── */}
-      < section className="px-4 mb-8" >
+      <section className="px-4 mb-12">
         <div className="app-container">
-          <div className="relative rounded-3xl overflow-hidden">
-          <div className="bg-gradient-to-br from-midnight-700 to-teal-600/80 p-6">
-            <span className="text-[10px] uppercase tracking-widest font-black text-sandy-400 bg-white/10 px-3 py-1 rounded-full">
-              🌊 Seasonal Spotlight
-            </span>
-            <h3 className="text-white font-heading font-black text-xl mt-3 mb-1">
-              Tourist Season is Here
-            </h3>
-            <p className="text-white/70 text-sm mb-4">
-              Nov–May is peak season. Find the best experiences, stays and local products.
-            </p>
-            <Link to="/listings?category=tourism" className="btn-coral text-sm py-2.5 px-5">
-              Explore Season Picks <ArrowRight size={14} />
-            </Link>
+          <div className="relative rounded-[32px] overflow-hidden reveal">
+            <div className="absolute inset-0 bg-gradient-ocean-deep" />
+            <div className="absolute inset-0 opacity-30 bg-seasonal-highlight" />
+
+            <div className="relative z-10 p-8 md:p-12">
+              <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] font-bold text-sandy-400 bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/10">
+                🌊 Seasonal Spotlight
+              </span>
+              <h3 className="text-white font-display text-3xl md:text-4xl mt-5 mb-3 leading-tight">
+                Tourist Season
+                <br />
+                is Here
+              </h3>
+              <p className="text-white/50 text-sm md:text-base mb-6 max-w-sm leading-relaxed">
+                Nov–May is peak season. Find the best experiences, stays and local products from verified island sellers.
+              </p>
+              <Link
+                to="/listings?category=tourism"
+                className="inline-flex items-center gap-2 bg-white text-midnight-700 font-heading font-bold text-sm py-3 px-6 rounded-full hover:bg-teal-50 transition-colors active:scale-95"
+              >
+                Explore Season Picks <ArrowRight size={14} />
+              </Link>
+            </div>
           </div>
         </div>
-        </div>
-      </section >
+      </section>
 
-    </div >
+    </div>
   );
 };
 
@@ -517,12 +536,20 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, saved, onSave, timeA
   const imageUrl = listing.images?.length
     ? listing.images[0].image_url
     : `https://picsum.photos/seed/${listing.id}/400/400`;
+  const isDemo = listing.is_demo || isDemoListing(listing.id);
+
+  const handleClick = (e: React.MouseEvent) => {
+    if (isDemo) {
+      e.preventDefault();
+    }
+  };
 
   return (
     <Link
-      to={`/listings/${listing.id}`}
+      to={isDemo ? '#' : `/listings/${listing.id}`}
       className="listing-card animate-fade-in-up"
       style={style}
+      onClick={handleClick}
     >
       {/* Image */}
       <div className="relative aspect-square overflow-hidden bg-warm-100 m-2 rounded-2xl">
@@ -556,6 +583,12 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, saved, onSave, timeA
             ✦ Featured
           </div>
         )}
+        {/* Demo Badge */}
+        {isDemo && (
+          <div className="absolute bottom-2 right-2 bg-warm-800/60 backdrop-blur-sm text-white/90 text-[7px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full z-10">
+            Demo
+          </div>
+        )}
       </div>
 
       {/* Content */}
@@ -587,9 +620,16 @@ const HorizontalListingCard: React.FC<HorizontalCardProps> = ({ listing, rank, s
   const imageUrl = listing.images?.length
     ? listing.images[0].image_url
     : `https://picsum.photos/seed/${listing.id}/300/300`;
+  const isDemo = listing.is_demo || isDemoListing(listing.id);
+
+  const handleClick = (e: React.MouseEvent) => {
+    if (isDemo) {
+      e.preventDefault();
+    }
+  };
 
   return (
-    <Link to={`/listings/${listing.id}`} className="w-44 flex-shrink-0 listing-card group">
+    <Link to={isDemo ? '#' : `/listings/${listing.id}`} className="w-44 flex-shrink-0 listing-card group" onClick={handleClick}>
       <div className="relative aspect-square overflow-hidden bg-warm-100 m-2 rounded-2xl">
         <img src={imageUrl} alt={listing.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
         {/* Location badge */}
@@ -611,7 +651,13 @@ const HorizontalListingCard: React.FC<HorizontalCardProps> = ({ listing, rank, s
           </div>
         </div>
 
-        {/* Removed Rank code, it's not in the image */}
+        {/* Demo Badge */}
+        {isDemo && (
+          <div className="absolute top-2 right-10 bg-warm-800/60 backdrop-blur-sm text-white/90 text-[7px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full z-10">
+            Demo
+          </div>
+        )}
+
         <button
           onClick={e => onSave(listing.id, e)}
           className={`absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center shadow-glass transition-all ${saved ? 'bg-coral-500' : 'bg-white/90 backdrop-blur-sm'}`}

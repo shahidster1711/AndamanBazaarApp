@@ -225,12 +225,36 @@ export const Layout: React.FC<LayoutProps> = ({ children, user }) => {
           </div>
 
           <div>
-            <h4 className="font-black text-sandy-400 mb-4 text-[11px] uppercase tracking-widest">Legal</h4>
+            <h4 className="font-black text-sandy-400 mb-4 text-[11px] uppercase tracking-widest">Company</h4>
             <ul className="space-y-2 text-sm text-warm-400">
+              <li><Link to="/about" className="hover:text-white transition-colors">About Us</Link></li>
+              <li><Link to="/pricing" className="hover:text-white transition-colors">Pricing</Link></li>
+              <li><Link to="/contact" className="hover:text-white transition-colors">Contact Us</Link></li>
               <li><Link to="/terms" className="hover:text-white transition-colors">Terms of Service</Link></li>
               <li><Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
             </ul>
-            <p className="text-xs text-warm-400/50 mt-6">© 2026 AndamanBazaar. All rights reserved.</p>
+            <div className="mt-6 pt-5 border-t border-warm-600/20">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center text-white text-xs font-black shadow-lg">
+                  S
+                </div>
+                <div>
+                  <p className="text-sm text-warm-200 font-bold leading-tight">
+                    Built by{' '}
+                    <a
+                      href="https://shahidster.tech"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sandy-400 hover:text-sandy-300 transition-colors"
+                    >
+                      Shahid Moosa
+                    </a>
+                  </p>
+                  <p className="text-[10px] text-warm-400/60 tracking-wide">Sole Proprietor · Andaman Islands</p>
+                </div>
+              </div>
+              <p className="text-[10px] text-warm-400/40 mt-3">© {new Date().getFullYear()} AndamanBazaar · Made with 🌊 on the islands</p>
+            </div>
           </div>
         </div>
       </footer>
