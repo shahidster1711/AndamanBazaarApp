@@ -191,6 +191,21 @@ Deno.serve(async (req: Request) => {
                 `✅ Boost activated: listing ${boost.listing_id}, tier ${boost.tier}, until ${featuredUntil.toISOString()}`
             );
 
+            // 11. Generate invoice and send email (non-blocking)
+            try {
+                await fetch(`${SUPABASE_URL}/functions/v1/generate-invoice`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+                    },
+                    body: JSON.stringify({ boost_id: boost.id }),
+                });
+                console.log(`📄 Invoice generation triggered for boost ${boost.id}`);
+            } catch (invoiceErr) {
+                console.error("Invoice generation trigger failed (non-blocking):", invoiceErr);
+            }
+
             return new Response(
                 JSON.stringify({ success: true, message: "Boost activated" }),
                 { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
