@@ -18,15 +18,6 @@
     "test:all": "npm run test:unit && npm run test:integration && npm run test:security && npm run test:accessibility"
   },
   "dependencies": {
-    "@capacitor/android": "5.7.8",
-    "@capacitor/app": "5.0.8",
-    "@capacitor/camera": "5.0.10",
-    "@capacitor/core": "5.7.8",
-    "@capacitor/geolocation": "5.0.8",
-    "@capacitor/haptics": "5.0.8",
-    "@capacitor/keyboard": "5.0.9",
-    "@capacitor/share": "5.0.8",
-    "@capacitor/status-bar": "5.0.8",
     "@google/generative-ai": "0.24.1",
     "@lovable.dev/cloud-auth-js": "0.0.3",
     "@radix-ui/react-dialog": "1.1.2",
@@ -56,7 +47,6 @@
     "zod": "3.23.8"
   },
   "devDependencies": {
-    "@capacitor/assets": "3.0.5",
     "@playwright/test": "1.58.2",
     "@testing-library/jest-dom": "6.9.1",
     "@testing-library/react": "14.3.1",
