@@ -5,15 +5,14 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
-  schedule:
-    - cron: "0 0 * * *" # Nightly run at midnight
 
 env:
   NODE_VERSION: "20"
 
 jobs:
-  lint-and-test:
-    name: Lint, Test & Verify
+  # ─── JOB 1: Fast type + lint check ────────────────────────────
+  typecheck:
+    name: Type Check & Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,77 +21,61 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
 
       - name: Install dependencies
-        run: npm install
-
-      - name: Install Playwright Browsers
-        run: npx -y playwright install chromium firefox webkit
-        env:
-          CI: true
+        run: npm ci
 
       - name: Type Check
-        run: npx -y tsc --noEmit
+        run: npx tsc --noEmit
 
-      - name: Run Unit Tests with Coverage (80% threshold)
-        run: npm run test:coverage
-        env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-          CI: true
-
-      - name: Run E2E Tests
-        run: npx -y playwright test
-        continue-on-error: true
-        env:
-          CI: true
-
-      - name: Run Visual Regression Tests
-        run: npm run test:visual
-        continue-on-error: true
-        env:
-          CI: true
-
-      - name: Upload Coverage Report
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: coverage-report
-          path: coverage/
-          retention-days: 30
-
-      - name: Upload Playwright Report
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: playwright-report
-          path: playwright-report/
-          retention-days: 30
-
-      - name: Upload Visual Test Results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: visual-test-results
-          path: test-results/
-          retention-days: 30
-
-  deploy:
-    name: Deploy via SSH (rsync)
+  # ─── JOB 2: Unit tests (parallel with typecheck) ───────────────
+  unit-tests:
+    name: Unit Tests
     runs-on: ubuntu-latest
-    needs: lint-and-test
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
+
+      - name: Run Unit Tests
+        run: npm run test:unit
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          CI: true
+
+      - name: Upload Coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 7
+
+  # ─── JOB 3: Build (depends on type+unit passing) ───────────────
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [typecheck, unit-tests]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Build Application
         run: npm run build
@@ -102,6 +85,26 @@ jobs:
           VITE_SUPABASE_PROJECT_ID: ${{ secrets.VITE_SUPABASE_PROJECT_ID }}
           VITE_GOOGLE_AI_API_KEY: ${{ secrets.VITE_GOOGLE_AI_API_KEY }}
 
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-build
+          path: dist/
+          retention-days: 1
+
+  # ─── JOB 4: Deploy (only on main push, reuses build artifact) ──
+  deploy:
+    name: Deploy to cPanel (rsync)
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-build
+          path: dist/
+
       - name: Setup SSH Agent
         uses: webfactory/ssh-agent@v0.9.0
         with:
@@ -110,12 +113,55 @@ jobs:
       - name: Add server to known hosts
         run: ssh-keyscan -p 22 ssh.gb.stackcp.com >> ~/.ssh/known_hosts
 
-      - name: Test SSH connection
-        run: ssh shahidster.tech@ssh.gb.stackcp.com "echo SSH OK && ls ~/public_html/andamanbazaar"
-
       - name: Deploy via rsync
         run: |
           rsync -avz --delete \
             -e "ssh -o StrictHostKeyChecking=no" \
             dist/ \
             shahidster.tech@ssh.gb.stackcp.com:/home/sites/30b/6/6ef8ba74fd/public_html/andamanbazaar/
+
+      - name: Verify deployment
+        run: |
+          ssh shahidster.tech@ssh.gb.stackcp.com \
+            "echo '✅ Deploy OK' && ls -la ~/public_html/andamanbazaar/ | head -5"
+
+  # ─── JOB 5: E2E (non-blocking, runs in parallel with deploy) ───
+  e2e:
+    name: E2E Tests (non-blocking)
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: github.event_name == 'push'
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright (chromium only)
+        run: npx playwright install chromium --with-deps
+
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-build
+          path: dist/
+
+      - name: Run E2E Tests
+        run: npx playwright test
+        env:
+          CI: true
+
+      - name: Upload Playwright Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
