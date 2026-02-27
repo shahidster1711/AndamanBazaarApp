@@ -94,7 +94,7 @@ jobs:
 
   # ─── JOB 4: Deploy (only on main push, reuses build artifact) ──
   deploy:
-    name: Deploy to cPanel (rsync)
+    name: Deploy to cPanel (FTP)
     runs-on: ubuntu-latest
     needs: [build]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -105,25 +105,14 @@ jobs:
           name: dist-build
           path: dist/
 
-      - name: Setup SSH Agent
-        uses: webfactory/ssh-agent@v0.9.0
+      - name: Deploy via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - name: Add server to known hosts
-        run: ssh-keyscan -p 22 ssh.gb.stackcp.com >> ~/.ssh/known_hosts
-
-      - name: Deploy via rsync
-        run: |
-          rsync -avz --delete \
-            -e "ssh -o StrictHostKeyChecking=no" \
-            dist/ \
-            shahidster.tech@ssh.gb.stackcp.com:/home/sites/30b/6/6ef8ba74fd/public_html/andamanbazaar/
-
-      - name: Verify deployment
-        run: |
-          ssh shahidster.tech@ssh.gb.stackcp.com \
-            "echo '✅ Deploy OK' && ls -la ~/public_html/andamanbazaar/ | head -5"
+          server: ftp.shahidster.site
+          username: shahidster.site@ftp.shahidster.site
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./dist/
+          server-dir: /public_html/andamanbazaar/
 
   # ─── JOB 5: E2E (non-blocking, runs in parallel with deploy) ───
   e2e:
