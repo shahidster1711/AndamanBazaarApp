@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthView } from '../../src/pages/AuthView';
-import { supabase } from '../../src/lib/supabase';
+import { supabase, isSupabaseConfigured } from '../../src/lib/supabase';
 import { ToastProvider } from '../../src/components/Toast';
 
 // Mock Supabase
@@ -89,8 +89,7 @@ describe('Auth UI Logic (Vitest)', () => {
     });
 
     it('shows error message if supabase is not configured', () => {
-        const { isSupabaseConfigured } = require('../../src/lib/supabase');
-        isSupabaseConfigured.mockReturnValue(false);
+        vi.mocked(isSupabaseConfigured).mockReturnValue(false);
 
         renderAuth();
         expect(screen.getByText(/Auth is not configured/i)).toBeTruthy();
