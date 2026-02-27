@@ -20,6 +20,7 @@ import { TermsOfService } from './pages/TermsOfService';
 import { About } from './pages/About';
 import { Pricing } from './pages/Pricing';
 import { ContactUs } from './pages/ContactUs';
+import { NotFound } from './pages/NotFound';
 
 import { Layout } from './components/Layout';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -147,7 +148,7 @@ const App: React.FC = () => {
               <Route path="/about" element={<About />} />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/contact" element={<ContactUs />} />
-              <Route path="*" element={<Navigate to="/" />} />
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </Layout>
         </BrowserRouter>

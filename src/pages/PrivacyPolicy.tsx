@@ -15,7 +15,7 @@ export const PrivacyPolicy: React.FC = () => {
           <div className="absolute top-0 right-0 w-64 h-64 bg-accent/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
           <Shield size={52} className="mb-6 text-accent" />
           <h1 className="text-5xl md:text-6xl font-heading font-black tracking-tight leading-tight">Privacy Policy</h1>
-          <p className="mt-4 text-secondary font-bold text-base uppercase tracking-widest">Last Updated: August 2024</p>
+          <p className="mt-4 text-secondary font-bold text-base uppercase tracking-widest">Last Updated: February 2026</p>
         </div>
 
         <div className="p-8 md:p-16 space-y-12">

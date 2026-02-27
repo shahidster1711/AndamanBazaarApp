@@ -25,8 +25,7 @@ export const AuthView: React.FC = () => {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
-  const [sessionInfo, setSessionInfo] = useState<{ email?: string | null; provider?: string | null; userId?: string | null } | null>(null);
-  const [sessionCheckError, setSessionCheckError] = useState<string | null>(null);
+  const [emailNotConfirmed, setEmailNotConfirmed] = useState(false);
 
   useEffect(() => {
     if (!isSupabaseConfigured()) {
@@ -38,20 +37,10 @@ export const AuthView: React.FC = () => {
       const { data, error } = await supabase.auth.getSession();
       if (error) {
         setError(error.message || 'Failed to load session.');
-        setSessionCheckError(error.message || 'Failed to load session.');
         return;
       }
       if (data.session?.access_token) {
-        const user = data.session.user;
-        const provider = user.app_metadata?.provider || user.app_metadata?.providers?.[0] || null;
-        setSessionInfo({
-          email: user.email ?? null,
-          provider,
-          userId: user.id ?? null,
-        });
         navigate('/');
-      } else {
-        setSessionInfo(null);
       }
     };
 
@@ -86,6 +75,11 @@ export const AuthView: React.FC = () => {
   const handleResendEmail = async () => {
     if (!email) {
       setError("Please enter your email address first.");
+      return;
+    }
+    // Bug 5 fix: Only allow resend if user hit "Email not confirmed" error
+    if (!emailNotConfirmed) {
+      setError("Resend is only available after a failed login due to unverified email.");
       return;
     }
     setResending(true);
@@ -180,6 +174,7 @@ export const AuthView: React.FC = () => {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) {
           if (error.message.includes("Email not confirmed")) {
+            setEmailNotConfirmed(true);
             setError(
               <div className="space-y-3">
                 <p className="font-bold">Email Not Verified</p>
@@ -335,7 +330,7 @@ export const AuthView: React.FC = () => {
             <div className="mt-4 text-center">
               <button
                 onClick={handleResendEmail}
-                disabled={resending || !email}
+                disabled={resending || !email || !emailNotConfirmed}
                 className="text-[10px] font-black text-ocean-700 uppercase tracking-widest hover:underline disabled:opacity-30"
               >
                 {resending ? 'Resending link...' : "Didn't receive verification email?"}
@@ -364,29 +359,11 @@ export const AuthView: React.FC = () => {
             </button>
           </div>
 
-          <div className="mt-8 bg-slate-50 border border-slate-100 rounded-3xl p-4">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">OAuth Status</p>
-              <span className={`text-[10px] font-black uppercase tracking-widest ${sessionInfo ? 'text-emerald-600' : 'text-slate-400'}`}>
-                {sessionInfo ? 'Authenticated' : 'Not Authenticated'}
-              </span>
-            </div>
-            {sessionCheckError ? (
-              <p className="text-xs font-semibold text-red-600">{sessionCheckError}</p>
-            ) : sessionInfo ? (
-              <div className="space-y-1 text-xs font-semibold text-slate-600">
-                <p>Email: {sessionInfo.email || 'Unknown'}</p>
-                <p>Provider: {sessionInfo.provider || 'Unknown'}</p>
-                <p>User ID: {sessionInfo.userId || 'Unknown'}</p>
-              </div>
-            ) : (
-              <p className="text-xs font-semibold text-slate-500">Sign in with Google to populate session details.</p>
-            )}
-          </div>
+
 
         </div>
       </div>
-      <p className="mt-12 text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Island Verified Technology &copy; 2025</p>
+      <p className="mt-12 text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Island Verified Technology &copy; {new Date().getFullYear()}</p>
     </div >
   );
 };

@@ -135,20 +135,27 @@ export const ListingDetail: React.FC = () => {
   };
 
   const handleShare = async () => {
+    const shareUrl = window.location.href;
+    const shareTitle = listing?.title || 'AndamanBazaar Listing';
+    const shareText = `Check out this ${listing?.title} on AndamanBazaar!`;
+
     try {
       if (navigator.share) {
-        await navigator.share({
-          title: listing?.title || 'AndamanBazaar Listing',
-          text: `Check out this ${listing?.title} on AndamanBazaar!`,
-          url: window.location.href
-        });
+        await navigator.share({ title: shareTitle, text: shareText, url: shareUrl });
       } else {
-        throw new Error('Web Share API not supported');
-      }
-    } catch (err) {
-      if ((err as any).message !== 'Share canceled') {
-        navigator.clipboard.writeText(window.location.href);
+        // Fallback: copy to clipboard
+        await navigator.clipboard.writeText(shareUrl);
         showToast('Link copied to clipboard!', 'success');
+      }
+    } catch (err: any) {
+      // User cancelled share dialog, or share failed — copy to clipboard as fallback
+      if (err?.name !== 'AbortError' && err?.message !== 'Share canceled') {
+        try {
+          await navigator.clipboard.writeText(shareUrl);
+          showToast('Link copied to clipboard!', 'success');
+        } catch {
+          showToast('Could not copy link.', 'error');
+        }
       }
     }
   };
@@ -394,7 +401,7 @@ export const ListingDetail: React.FC = () => {
               <div>
                 <div className="flex items-center gap-1.5">
                   <h4 className="font-heading font-black text-midnight-700 text-base leading-none">
-                    {seller?.name || 'Island Seller'}
+                    {seller?.name || seller?.email?.split('@')[0] || 'Seller'}
                   </h4>
                   {seller?.is_location_verified && (
                     <span className="w-5 h-5 bg-teal-600 text-white rounded-full flex items-center justify-center text-[10px]" title="Island Verified">✓</span>
@@ -458,6 +465,6 @@ export const ListingDetail: React.FC = () => {
         listingId={listing.id}
         listingTitle={listing.title}
       />
-    </div>
+    </div >
   );
 };

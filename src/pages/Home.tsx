@@ -2,9 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { getFeaturedDemos, getTrendingDemos, getDemoListings, isDemoListing } from '../lib/demoListings';
+import { useToast } from '../components/Toast';
 import {
   Search, ArrowRight, Loader2, Heart, MapPin, Flame,
-  Smartphone, Car, Sofa, Shirt,
+  Fish, Leaf, Shell, Compass,
   BadgeCheck, Star
 } from 'lucide-react';
 
@@ -13,10 +14,10 @@ import {
 // ============================================================
 
 const ISLAND_CATEGORIES = [
-  { name: 'Mobiles', slug: 'mobiles', icon: Smartphone, bgClass: 'bg-blue-50', textClass: 'text-blue-600' },
-  { name: 'Vehicles', slug: 'vehicles', icon: Car, bgClass: 'bg-teal-50', textClass: 'text-teal-600' },
-  { name: 'Home', slug: 'home', icon: Sofa, bgClass: 'bg-purple-50', textClass: 'text-purple-600' },
-  { name: 'Fashion', slug: 'fashion', icon: Shirt, bgClass: 'bg-red-50', textClass: 'text-red-600' },
+  { name: 'Fresh Catch', slug: 'fresh-catch', icon: Fish, bgClass: 'bg-blue-50', textClass: 'text-blue-600' },
+  { name: 'Produce', slug: 'produce', icon: Leaf, bgClass: 'bg-teal-50', textClass: 'text-teal-600' },
+  { name: 'Handicrafts', slug: 'handicrafts', icon: Shell, bgClass: 'bg-purple-50', textClass: 'text-purple-600' },
+  { name: 'Experiences', slug: 'experiences', icon: Compass, bgClass: 'bg-red-50', textClass: 'text-red-600' },
 ];
 
 
@@ -50,6 +51,7 @@ interface Listing {
 // ============================================================
 export const Home: React.FC = () => {
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   // Data state
   const [featuredListings, setFeaturedListings] = useState<Listing[]>([]);
@@ -171,15 +173,21 @@ export const Home: React.FC = () => {
     navigate(searchQuery.trim() ? `/listings?q=${encodeURIComponent(searchQuery.trim())}` : '/listings');
   };
 
-  const toggleSave = useCallback((id: string, e: React.MouseEvent) => {
+  const toggleSave = useCallback(async (id: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    // Bug 6 fix: check auth before saving
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      showToast('Sign in to save items to your favorites.', 'info');
+      return;
+    }
     setSavedListings(prev => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
-  }, []);
+  }, [showToast]);
 
   const formatTimeAgo = (dateStr?: string) => {
     if (!dateStr) return '';
@@ -255,9 +263,10 @@ export const Home: React.FC = () => {
                     />
                     <button
                       type="submit"
-                      className="mr-1.5 my-1.5 bg-white text-midnight-700 text-sm font-heading font-bold px-6 py-2.5 rounded-full hover:bg-teal-50 transition-colors active:scale-95 flex-shrink-0"
+                      className="mr-1.5 my-1.5 bg-white text-midnight-700 text-sm font-heading font-bold px-4 md:px-6 py-2.5 rounded-full hover:bg-teal-50 transition-colors active:scale-95 flex-shrink-0"
                     >
-                      Search
+                      <span className="hidden md:inline">Search</span>
+                      <Search size={16} className="md:hidden" />
                     </button>
                   </div>
                 </div>
@@ -344,8 +353,8 @@ export const Home: React.FC = () => {
               </div>
 
               <Link
-                to="/listings?sort=newest"
-                className="mt-5 flex w-full items-center justify-center gap-2 bg-white/25 backdrop-blur-sm border border-white/30 text-white font-heading font-bold text-sm py-3 rounded-2xl hover:bg-white/35 transition-all duration-300 active:scale-[0.98]"
+                to="/listings?sort=price_low"
+                className="mt-5 flex w-full items-center justify-center gap-2 bg-white text-midnight-700 font-heading font-bold text-sm py-3 rounded-2xl hover:bg-teal-50 transition-all duration-300 active:scale-[0.98] shadow-lg"
               >
                 View Flash Deals <ArrowRight size={14} />
               </Link>

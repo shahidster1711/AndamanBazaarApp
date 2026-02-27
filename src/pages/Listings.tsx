@@ -48,6 +48,7 @@ export const Listings: React.FC = () => {
   const [maxPrice, setMaxPrice] = useState('');
   const [showSortDropdown, setShowSortDropdown] = useState(false);
   const [showVerifiedOnly, setShowVerifiedOnly] = useState(searchParams.get('verified') === 'true');
+  const sortDropdownRef = useRef<HTMLDivElement>(null);
 
   // Infinite scroll observer
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -163,6 +164,17 @@ export const Listings: React.FC = () => {
     observer.observe(sentinelRef.current);
     return () => observer.disconnect();
   }, [hasMore, loading, loadingMore, fetchListings]);
+
+  // Bug 18: Close sort dropdown on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showSortDropdown) {
+        setShowSortDropdown(false);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showSortDropdown]);
 
   const fetchFavorites = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -375,7 +387,7 @@ export const Listings: React.FC = () => {
       {!loading && listings.length > 0 && (
         <div className="flex items-center justify-between mb-6">
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-            {listings.length} items{hasMore ? '+' : ''} found
+            {listings.length} {listings.length === 1 ? 'item' : 'items'}{hasMore ? '+' : ''} found
           </p>
         </div>
       )}
@@ -406,7 +418,7 @@ export const Listings: React.FC = () => {
       </div>
 
       {/* Infinite Scroll Sentinel */}
-      {hasMore && !loading && (
+      {hasMore && !loading && listings.length > 0 && (
         <div ref={sentinelRef} className="flex items-center justify-center py-12">
           {loadingMore && (
             <div className="flex items-center gap-3">

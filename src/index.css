@@ -126,6 +126,34 @@
     font-size: clamp(16px, 0.35vw + 12px, 18px);
   }
 
+  /* Bug 2 fix: Neutralize DaisyUI focus rings / teal circle on click */
+  *,
+  *::before,
+  *::after {
+    --tw-ring-color: transparent !important;
+    --tw-ring-offset-shadow: none !important;
+    --tw-ring-shadow: none !important;
+  }
+
+  button:focus,
+  input:focus,
+  select:focus,
+  textarea:focus,
+  a:focus,
+  [role="button"]:focus,
+  [tabindex]:focus {
+    outline: none !important;
+  }
+
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline: 2px solid var(--color-ocean);
+    outline-offset: 2px;
+  }
+
   body {
     @apply bg-warm-50 text-midnight-700 antialiased font-sans overflow-x-hidden;
     -webkit-font-smoothing: antialiased;

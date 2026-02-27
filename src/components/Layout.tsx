@@ -216,11 +216,11 @@ export const Layout: React.FC<LayoutProps> = ({ children, user }) => {
           <div>
             <h4 className="font-black text-sandy-400 mb-4 text-[11px] uppercase tracking-widest">Island Locations</h4>
             <ul className="space-y-2 text-sm text-warm-400">
-              <li>Port Blair</li>
-              <li>Havelock (Swaraj Dweep)</li>
-              <li>Neil (Shaheed Dweep)</li>
-              <li>Diglipur</li>
-              <li>Little Andaman</li>
+              <li><Link to="/listings?q=Port+Blair" className="hover:text-white transition-colors">Port Blair</Link></li>
+              <li><Link to="/listings?q=Havelock" className="hover:text-white transition-colors">Havelock (Swaraj Dweep)</Link></li>
+              <li><Link to="/listings?q=Neil" className="hover:text-white transition-colors">Neil (Shaheed Dweep)</Link></li>
+              <li><Link to="/listings?q=Diglipur" className="hover:text-white transition-colors">Diglipur</Link></li>
+              <li><Link to="/listings?q=Little+Andaman" className="hover:text-white transition-colors">Little Andaman</Link></li>
             </ul>
           </div>
 
