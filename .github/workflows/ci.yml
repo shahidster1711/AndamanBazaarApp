@@ -94,7 +94,7 @@ jobs:
 
   # ─── JOB 4: Deploy (only on main push, reuses build artifact) ──
   deploy:
-    name: Deploy to cPanel (FTP)
+    name: Deploy to cPanel (SSH/Rsync)
     runs-on: ubuntu-latest
     needs: [build]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -105,23 +105,22 @@ jobs:
           name: dist-build
           path: dist/
 
-      - name: Fetch Public IP for Whitelisting
-        run: |
-          PUBLIC_IP=$(curl -s https://api.ipify.org)
-          echo "=================================================="
-          echo "THIS RUNNER'S PUBLIC IP IS: $PUBLIC_IP"
-          echo "=================================================="
-
-      - name: Deploy via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      - name: Setup SSH Agent
+        uses: webfactory/ssh-agent@v0.9.0
         with:
-          server: ftp.shahidster.site
-          username: shahidster.site@ftp.shahidster.site
-          password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftp
-          port: 21
-          local-dir: ./dist/
-          server-dir: /public_html/andamanbazaar/
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Deploy via rsync
+        run: |
+          rsync -avz --delete \
+            -e "ssh -o StrictHostKeyChecking=no" \
+            dist/ \
+            shahidster.site@ssh.gb.stackcp.com:public_html/andamanbazaar/
+
+      - name: Verify deployment
+        run: |
+          ssh -o StrictHostKeyChecking=no shahidster.site@ssh.gb.stackcp.com \
+            "echo '✅ Deploy OK' && ls -la public_html/andamanbazaar/ | head -5"
 
   # ─── JOB 5: E2E (non-blocking, runs in parallel with deploy) ───
   e2e:
