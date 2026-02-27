@@ -118,6 +118,8 @@ jobs:
           server: ftp.shahidster.site
           username: shahidster.site@ftp.shahidster.site
           password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftp
+          port: 21
           local-dir: ./dist/
           server-dir: /public_html/andamanbazaar/
 
