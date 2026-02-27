@@ -21,5 +21,22 @@
     "java.import.exclusions": [
         "**/.git/**",
         "**/dist/**"
+    ],
+    "github-actions.workflows.pinned.workflows": [
+        ".github/workflows/ci.yml"
+    ],
+    "sshfs.configs": [
+        {
+            "name": "Serverbyt",
+            "label": "Serverbytssh",
+            "host": true,
+            "username": true,
+            "privateKeyPath": "-----BEGIN OPENSSH PRIVATE KEY----- b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW QyNTUxOQAAACAsXqxT4GBmHKLxsmAaByhQDECVQmujz+H9LlYQWbJjtAAAAJAFbzEjBW8x IwAAAAtzc2gtZWQyNTUxOQAAACAsXqxT4GBmHKLxsmAaByhQDECVQmujz+H9LlYQWbJjtA AAAECnn2K/lzZX7jSWFZqPVUakPj46Dgs18j83AyoRqr/q4ixerFPgYGYcovGyYBoHKFAM QJVCa6PP4f0uVhBZsmO0AAAACTxjb21tZW50PgECAwQ= -----END OPENSSH PRIVATE KEY-----",
+            "passphrase": true,
+            "putty": true,
+            "root": "/",
+            "agent": "//./pipe/openssh-ssh-agent",
+            "password": true
+        }
     ]
 }

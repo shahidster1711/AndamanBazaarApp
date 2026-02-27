@@ -15,3 +15,9 @@ test-results/
 .npm-cache/
 supabase/.temp/
 package-lock.json
+
+# Unrelated tools
+.acme.sh/
+acme.sh-repo
+api-cli
+hapi
