@@ -4,7 +4,6 @@ export default defineConfig({
   testDir: './tests/e2e',
   testIgnore: [
     '**/visual.spec.ts',
-    'e2e/**',
     'tests/accessibility/**',
     'tests/performance/**',
     'tests/security/**',
