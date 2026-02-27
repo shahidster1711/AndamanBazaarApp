@@ -1,6 +1,6 @@
 {
     "imports": {
-        "npm:cashfree-pg": "npm:cashfree-pg@1.0.1",
+        "npm:cashfree-pg": "npm:cashfree-pg@^5.1.0",
         "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2"
     }
 }
