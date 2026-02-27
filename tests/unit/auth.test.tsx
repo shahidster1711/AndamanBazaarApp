@@ -137,6 +137,11 @@ describe('AuthView Component', () => {
     await user.click(submitButton)
 
     expect(screen.getByRole('button', { name: /signing in/i })).toBeInTheDocument()
+
+    // Wait for the async submission to complete to avoid act() warnings
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: /signing in/i })).not.toBeInTheDocument()
+    })
   })
 
   it('prevents form submission with empty fields', async () => {

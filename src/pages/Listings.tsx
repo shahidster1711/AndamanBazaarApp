@@ -230,7 +230,7 @@ export const Listings: React.FC = () => {
     const newParams = new URLSearchParams(searchParams);
     newParams.delete('verified');
     setSearchParams(newParams);
-    handleCategorySelect('All');
+    handleCategorySelect('all');
   };
 
   const toggleFavorite = async (listingId: string, e: React.MouseEvent) => {

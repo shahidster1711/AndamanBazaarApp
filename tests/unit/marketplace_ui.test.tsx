@@ -101,11 +101,11 @@ describe('Marketplace UI Logic (Vitest)', () => {
         const clearBtn = screen.getByRole('button', { name: /Clear All/i });
         fireEvent.click(clearBtn);
 
-        // After clearing, the filter panel should remain open with reset state
-        // Verify the verified-only toggle is unchecked (OFF state)
+        // After clearing, the filter panel closes, and the "All" category becomes active
         await waitFor(() => {
-            const toggle = screen.getByRole('switch', { name: /Toggle verified sellers only/i });
-            expect(toggle.getAttribute('aria-checked')).toBe('false');
+            const allCategory = screen.getByText(/🌊 All/i);
+            expect(allCategory.className).toContain('bg-teal-600');
+            expect(screen.queryByRole('switch', { name: /Toggle verified sellers only/i })).toBeNull();
         });
     });
 });
