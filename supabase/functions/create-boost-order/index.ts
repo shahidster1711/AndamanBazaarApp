@@ -1,6 +1,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+import { Cashfree } from "npm:cashfree-pg";
+
 // ============================================================
 // Edge Function: create-boost-order
 // Creates a Cashfree payment order for boosting a listing.
@@ -12,12 +14,13 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-// Use sandbox for testing, production for live
+// Initialize Cashfree SDK
 const CASHFREE_ENV = Deno.env.get("CASHFREE_ENV") || "sandbox";
-const CASHFREE_BASE_URL =
-    CASHFREE_ENV === "production"
-        ? "https://api.cashfree.com/pg"
-        : "https://sandbox.cashfree.com/pg";
+Cashfree.XClientId = CASHFREE_APP_ID;
+Cashfree.XClientSecret = CASHFREE_SECRET_KEY;
+Cashfree.XEnvironment = CASHFREE_ENV === "production"
+    ? Cashfree.Environment.PRODUCTION
+    : Cashfree.Environment.SANDBOX;
 
 interface BoostTier {
     name: string;
@@ -183,21 +186,12 @@ Deno.serve(async (req: Request) => {
             },
         };
 
-        const cashfreeResponse = await fetch(`${CASHFREE_BASE_URL}/orders`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "x-api-version": "2023-08-01",
-                "x-client-id": CASHFREE_APP_ID,
-                "x-client-secret": CASHFREE_SECRET_KEY,
-            },
-            body: JSON.stringify(cashfreePayload),
-        });
-
-        const cashfreeData = await cashfreeResponse.json();
-
-        if (!cashfreeResponse.ok) {
-            console.error("Cashfree order creation failed:", cashfreeData);
+        let cashfreeData;
+        try {
+            const response = await Cashfree.PGCreateOrder("2023-08-01", cashfreePayload as any);
+            cashfreeData = response.data;
+        } catch (error: any) {
+            console.error("Cashfree order creation failed:", error.response?.data || error);
 
             // Mark the boost as failed
             await supabaseAdmin

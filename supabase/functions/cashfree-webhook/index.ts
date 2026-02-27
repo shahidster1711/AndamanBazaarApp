@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { createHmac } from "node:crypto";
+import { Cashfree } from "npm:cashfree-pg";
 
 // ============================================================
 // Edge Function: cashfree-webhook
@@ -8,38 +8,24 @@ import { createHmac } from "node:crypto";
 // and activates the listing boost on successful payment.
 // ============================================================
 
+const CASHFREE_APP_ID = Deno.env.get("CASHFREE_APP_ID")!;
 const CASHFREE_SECRET_KEY = Deno.env.get("CASHFREE_SECRET_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+// Initialize Cashfree SDK
+const CASHFREE_ENV = Deno.env.get("CASHFREE_ENV") || "sandbox";
+Cashfree.XClientId = CASHFREE_APP_ID;
+Cashfree.XClientSecret = CASHFREE_SECRET_KEY;
+Cashfree.XEnvironment = CASHFREE_ENV === "production"
+    ? Cashfree.Environment.PRODUCTION
+    : Cashfree.Environment.SANDBOX;
 
 const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers":
         "authorization, x-client-info, apikey, content-type, x-webhook-signature, x-webhook-timestamp, x-webhook-id",
 };
-
-/**
- * Verify Cashfree webhook signature.
- * Cashfree sends: x-webhook-signature (base64 HMAC-SHA256)
- * Payload to sign: timestamp + rawBody
- */
-function verifyWebhookSignature(
-    rawBody: string,
-    timestamp: string,
-    receivedSignature: string
-): boolean {
-    try {
-        const payload = timestamp + rawBody;
-        const expectedSignature = createHmac("sha256", CASHFREE_SECRET_KEY)
-            .update(payload)
-            .digest("base64");
-
-        return expectedSignature === receivedSignature;
-    } catch (err) {
-        console.error("Signature verification error:", err);
-        return false;
-    }
-}
 
 Deno.serve(async (req: Request) => {
     // Handle CORS preflight
@@ -60,8 +46,10 @@ Deno.serve(async (req: Request) => {
         const signature = req.headers.get("x-webhook-signature") || "";
 
         // 1. Verify webhook signature
-        if (!verifyWebhookSignature(rawBody, timestamp, signature)) {
-            console.warn("Invalid webhook signature received");
+        try {
+            Cashfree.PGVerifyWebhookSignature(signature, rawBody, timestamp);
+        } catch (err) {
+            console.warn("Invalid webhook signature received:", err);
 
             // Still log the attempt for debugging
             await supabaseAdmin.from("payment_audit_log").insert({
