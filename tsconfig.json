@@ -20,8 +20,11 @@
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
     "types": [
-      "vitest/globals"
+      "vitest/globals",
+      "vitest",
+      "node"
     ],
+    "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
     "paths": {
       "@/*": [
@@ -31,6 +34,7 @@
   },
   "include": [
     "src",
+    "tests",
     "types.ts",
     "vite.config.ts",
     "vitest.config.ts"
