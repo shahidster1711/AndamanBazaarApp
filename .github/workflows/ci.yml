@@ -105,6 +105,13 @@ jobs:
           name: dist-build
           path: dist/
 
+      - name: Fetch Public IP for Whitelisting
+        run: |
+          PUBLIC_IP=$(curl -s https://api.ipify.org)
+          echo "=================================================="
+          echo "THIS RUNNER'S PUBLIC IP IS: $PUBLIC_IP"
+          echo "=================================================="
+
       - name: Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
