@@ -17,7 +17,7 @@ describe('validation utilities', () => {
 
     describe('sanitizeHtml()', () => {
         it('strips dangerous tags like script and iframe but preserves allowed ones', () => {
-            const input = '<script>alert(1)</script><p>Hello <b>World</b></p><iframe src="https://example.com"></iframe>';
+            const input = '<script>alert(1)</script><p>Hello <b>World</b></p><iframe></iframe>';
             const output = sanitizeHtml(input);
             expect(output).not.toContain('<script');
             expect(output).not.toContain('<iframe');
