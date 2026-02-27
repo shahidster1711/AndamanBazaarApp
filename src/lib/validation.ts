@@ -13,10 +13,14 @@ export const sanitizeHtml = (input: string): string => {
     // Use DOMPurify only in a real browser with a working document.createElement
     if (typeof window !== 'undefined' && typeof window.document?.createElement === 'function') {
         try {
-            return DOMPurify.sanitize(input, {
+            const result = DOMPurify.sanitize(input, {
                 ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'br', 'p'],
                 ALLOWED_ATTR: [],
             });
+            // DOMPurify may silently return '' in jsdom; fall through to regex if so
+            if (result || !input) {
+                return result;
+            }
         } catch {
             // Fall through to regex approach if DOMPurify fails
         }

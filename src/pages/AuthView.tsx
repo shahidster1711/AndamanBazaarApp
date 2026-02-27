@@ -273,19 +273,19 @@ export const AuthView: React.FC = () => {
           <form onSubmit={mode === 'phone' || mode === 'verify' ? handlePhoneAuth : handleEmailAuth} className="space-y-5">
             {mode === 'signup' && (
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Display Name</label>
-                <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} placeholder="e.g. Rahul Sharma" className="w-full p-4 bg-slate-50 border-2 border-transparent focus:border-ocean-500 focus:bg-white rounded-2xl outline-none font-bold transition-all" required />
+                <label htmlFor="displayName" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Display Name</label>
+                <input id="displayName" type="text" value={fullName} onChange={e => setFullName(e.target.value)} placeholder="e.g. Rahul Sharma" className="w-full p-4 bg-slate-50 border-2 border-transparent focus:border-ocean-500 focus:bg-white rounded-2xl outline-none font-bold transition-all" required />
               </div>
             )}
             {(mode === 'login' || mode === 'signup') && (
               <>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
-                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="name@domain.com" className="w-full p-4 bg-slate-50 border-2 border-transparent focus:border-ocean-500 focus:bg-white rounded-2xl outline-none font-bold transition-all" required />
+                  <label htmlFor="emailAddress" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
+                  <input id="emailAddress" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="name@domain.com" className="w-full p-4 bg-slate-50 border-2 border-transparent focus:border-ocean-500 focus:bg-white rounded-2xl outline-none font-bold transition-all" required />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Secret Password</label>
-                  <input type="password" value={password} onChange={e => handlePasswordChange(e.target.value)} placeholder="••••••••" className="w-full p-4 bg-slate-50 border-2 border-transparent focus:border-ocean-500 focus:bg-white rounded-2xl outline-none font-bold transition-all" required minLength={8} />
+                  <label htmlFor="secretPassword" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Secret Password</label>
+                  <input id="secretPassword" type="password" value={password} onChange={e => handlePasswordChange(e.target.value)} placeholder="••••••••" className="w-full p-4 bg-slate-50 border-2 border-transparent focus:border-ocean-500 focus:bg-white rounded-2xl outline-none font-bold transition-all" required minLength={8} />
                   {mode === 'signup' && password.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mt-1 ml-1">
                       {['8+ chars', 'Uppercase', 'Lowercase', 'Number'].map((req, i) => {
@@ -308,14 +308,14 @@ export const AuthView: React.FC = () => {
             )}
             {mode === 'phone' && (
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Phone Number</label>
-                <input type="tel" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} placeholder="+91 99999 99999" className="w-full p-4 bg-slate-50 border-2 border-transparent focus:border-ocean-500 focus:bg-white rounded-2xl outline-none font-bold transition-all" required />
+                <label htmlFor="phoneNumber" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Phone Number</label>
+                <input id="phoneNumber" type="tel" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} placeholder="+91 99999 99999" className="w-full p-4 bg-slate-50 border-2 border-transparent focus:border-ocean-500 focus:bg-white rounded-2xl outline-none font-bold transition-all" required />
               </div>
             )}
             {mode === 'verify' && (
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">OTP Code</label>
-                <input type="text" value={otpToken} onChange={e => setOtpToken(e.target.value)} placeholder="123456" className="w-full p-4 bg-slate-50 border-2 border-transparent focus:border-ocean-500 focus:bg-white rounded-2xl outline-none font-bold transition-all" required />
+                <label htmlFor="otpCode" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">OTP Code</label>
+                <input id="otpCode" type="text" value={otpToken} onChange={e => setOtpToken(e.target.value)} placeholder="123456" className="w-full p-4 bg-slate-50 border-2 border-transparent focus:border-ocean-500 focus:bg-white rounded-2xl outline-none font-bold transition-all" required />
               </div>
             )}
             <button type="submit" disabled={loading} className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black uppercase text-xs tracking-[0.2em] hover:bg-black transition-all shadow-xl shadow-slate-900/20 active:scale-[0.98] disabled:opacity-50">
