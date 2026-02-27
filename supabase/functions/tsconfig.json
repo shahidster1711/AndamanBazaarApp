@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+        "target": "esnext",
+        "module": "esnext",
+        "lib": [
+            "deno.window",
+            "deno.ns"
+        ],
+        "strict": true,
+        "isolatedModules": true,
+        "noEmit": true,
+        "types": []
+    },
+    "include": [
+        "**/*.ts"
+    ]
+}
