@@ -1,4 +1,6 @@
 import { supabase } from './supabase';
+import DOMPurify from 'dompurify';
+import { safeRandomUUID } from './random';
 
 // ===== RATE LIMITING =====
 

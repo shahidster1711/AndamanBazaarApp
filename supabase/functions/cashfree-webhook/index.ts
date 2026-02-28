@@ -11,15 +11,15 @@ import { Cashfree } from "npm:cashfree-pg";
 const CASHFREE_APP_ID = Deno.env.get("CASHFREE_APP_ID")!;
 const CASHFREE_SECRET_KEY = Deno.env.get("CASHFREE_SECRET_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SERVICE_ROLE_KEY")!;
 
 // Initialize Cashfree SDK
 const CASHFREE_ENV = Deno.env.get("CASHFREE_ENV") || "sandbox";
 Cashfree.XClientId = CASHFREE_APP_ID;
 Cashfree.XClientSecret = CASHFREE_SECRET_KEY;
 Cashfree.XEnvironment = CASHFREE_ENV === "production"
-    ? Cashfree.Environment.PRODUCTION
-    : Cashfree.Environment.SANDBOX;
+    ? (Cashfree.Environment?.PRODUCTION || "PRODUCTION" as any)
+    : (Cashfree.Environment?.SANDBOX || "SANDBOX" as any);
 
 const corsHeaders = {
     "Access-Control-Allow-Origin": "*",

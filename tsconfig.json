@@ -34,10 +34,11 @@
   },
   "include": [
     "src",
-    "tests",
     "types.ts",
     "vite.config.ts",
     "vitest.config.ts"
   ],
-  "exclude": []
+  "exclude": [
+    "tests"
+  ]
 }

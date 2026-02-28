@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { safeRandomUUID } from '../lib/random';
 import { CheckCircle, AlertCircle, Info, X, AlertTriangle } from 'lucide-react';
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning';
@@ -22,7 +23,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const [toasts, setToasts] = useState<Toast[]>([]);
 
     const showToast = useCallback((message: string, type: ToastType = 'info', duration: number = 3500) => {
-        const id = crypto.randomUUID();
+        const id = safeRandomUUID();
         setToasts(prev => [...prev, { id, message, type, duration }]);
     }, []);
 
@@ -82,7 +83,7 @@ const ToastItem: React.FC<{ toast: Toast; onDismiss: (id: string) => void }> = (
         >
             <span className="flex-shrink-0">{toastIcons[toast.type]}</span>
             <span className="flex-1 leading-snug">{toast.message}</span>
-            <button onClick={handleDismiss} className="flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity">
+            <button onClick={handleDismiss} className="flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity" aria-label="Close" title="Close">
                 <X size={16} />
             </button>
         </div>

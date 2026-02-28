@@ -13,6 +13,7 @@ import {
   loadContactPreferences, saveContactPreferences, DEFAULT_CONTACT_PREFERENCES,
 } from '../lib/postAdUtils';
 import { useToast } from '../components/Toast';
+import { safeRandomUUID } from '../lib/random';
 import { BoostListingModal } from '../components/BoostListingModal';
 
 // ===== STEP COMPONENTS =====
@@ -269,6 +270,11 @@ export const CreateListing: React.FC = () => {
   const handleVerifyLocation = async () => {
     setIsVerifying(true);
     try {
+      if (!navigator.geolocation) {
+        showToast('GPS is not supported by your browser.', 'error');
+        setIsVerifying(false);
+        return;
+      }
       const pos = await new Promise<GeolocationPosition>((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 }));
       const { latitude: lat, longitude: lng } = pos.coords;
       const isAndaman = lat >= 6.5 && lat <= 14.0 && lng >= 92.0 && lng <= 94.5;
@@ -359,7 +365,7 @@ export const CreateListing: React.FC = () => {
 
       const newPhotos = photos.filter(p => p.file);
       for (const photo of newPhotos) {
-        const fileName = `${user.id}/${crypto.randomUUID()}.webp`;
+        const fileName = `${user.id}/${safeRandomUUID()}.webp`;
         const { error: uploadError } = await supabase.storage.from('listings').upload(fileName, photo.file!, { contentType: 'image/webp' });
         if (uploadError) {
           console.warn('Image upload failed, skipping:', uploadError.message);

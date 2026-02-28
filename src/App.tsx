@@ -125,6 +125,17 @@ const App: React.FC = () => {
     };
   }, [bypassAuth]);
 
+  const RequireAuth = ({ children, user, loading }: { children: React.ReactNode, user: User | null, loading: boolean }) => {
+    if (loading) {
+      return (
+        <div className="flex justify-center items-center h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-600"></div>
+        </div>
+      );
+    }
+    return user ? <>{children}</> : <Navigate to="/auth" />;
+  };
+
   return (
     <ErrorBoundary>
       <ToastProvider>
@@ -134,14 +145,14 @@ const App: React.FC = () => {
               <Route path="/" element={<Home />} />
               <Route path="/listings" element={<Listings />} />
               <Route path="/listings/:id" element={<ListingDetail />} />
-              <Route path="/post" element={user ? <CreateListing /> : <Navigate to="/auth" />} />
-              <Route path="/chats" element={user ? <ChatList /> : <Navigate to="/auth" />} />
-              <Route path="/chats/:chatId" element={user ? <ChatRoom /> : <Navigate to="/auth" />} />
-              <Route path="/profile" element={user ? <Profile /> : <Navigate to="/auth" />} />
-              <Route path="/dashboard" element={user ? <Dashboard /> : <Navigate to="/auth" />} />
-              <Route path="/admin" element={user ? <Admin /> : <Navigate to="/auth" />} />
+              <Route path="/post" element={<RequireAuth user={user} loading={loading}><CreateListing /></RequireAuth>} />
+              <Route path="/chats" element={<RequireAuth user={user} loading={loading}><ChatList /></RequireAuth>} />
+              <Route path="/chats/:chatId" element={<RequireAuth user={user} loading={loading}><ChatRoom /></RequireAuth>} />
+              <Route path="/profile" element={<RequireAuth user={user} loading={loading}><Profile /></RequireAuth>} />
+              <Route path="/dashboard" element={<RequireAuth user={user} loading={loading}><Dashboard /></RequireAuth>} />
+              <Route path="/admin" element={<RequireAuth user={user} loading={loading}><Admin /></RequireAuth>} />
               <Route path="/auth" element={<AuthView />} />
-              <Route path="/boost-success" element={user ? <BoostSuccess /> : <Navigate to="/auth" />} />
+              <Route path="/boost-success" element={<RequireAuth user={user} loading={loading}><BoostSuccess /></RequireAuth>} />
               <Route path="/todos" element={<Todos />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/terms" element={<TermsOfService />} />

@@ -9,6 +9,7 @@ const __dirname = path.dirname(__filename);
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  base: './',
   plugins: [
     react(),
     VitePWA({
@@ -39,8 +40,8 @@ export default defineConfig({
         theme_color: '#0284c7',
         background_color: '#f8fafc',
         display: 'standalone',
-        scope: '/',
-        start_url: '/',
+        scope: './',
+        start_url: './',
         icons: [
           {
             src: '/favicon.ico',

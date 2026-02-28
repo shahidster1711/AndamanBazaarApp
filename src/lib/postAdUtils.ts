@@ -1,4 +1,5 @@
 import { DraftListing, ContactPreferences, ItemCondition } from '../types';
+import { safeRandomUUID } from './random';
 
 // ===== CONSTANTS =====
 
@@ -97,7 +98,7 @@ export function hasDraft(userId: string): boolean {
  * Generate a UUID v4 idempotency key for preventing duplicate submissions.
  */
 export function generateIdempotencyKey(): string {
-    return crypto.randomUUID();
+    return safeRandomUUID();
 }
 
 // ===== DEBOUNCE HELPER =====

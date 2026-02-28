@@ -8,32 +8,9 @@ import { Cashfree } from "npm:cashfree-pg";
 // Creates a Cashfree payment order for boosting a listing.
 // ============================================================
 
-const CASHFREE_APP_ID = Deno.env.get("CASHFREE_APP_ID")!;
-const CASHFREE_SECRET_KEY = Deno.env.get("CASHFREE_SECRET_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SERVICE_ROLE_KEY")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
-
-// Initialize Cashfree SDK
-const CASHFREE_ENV = Deno.env.get("CASHFREE_ENV") || "sandbox";
-Cashfree.XClientId = CASHFREE_APP_ID;
-Cashfree.XClientSecret = CASHFREE_SECRET_KEY;
-Cashfree.XEnvironment = CASHFREE_ENV === "production"
-    ? Cashfree.Environment.PRODUCTION
-    : Cashfree.Environment.SANDBOX;
-
-interface BoostTier {
-    name: string;
-    duration_days: number;
-    amount_inr: number;
-    label: string;
-}
-
-const TIERS: Record<string, BoostTier> = {
-    spark: { name: "spark", duration_days: 3, amount_inr: 49, label: "Spark ⚡" },
-    boost: { name: "boost", duration_days: 7, amount_inr: 99, label: "Boost 🚀" },
-    power: { name: "power", duration_days: 30, amount_inr: 199, label: "Power 💎" },
-};
 
 const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
@@ -41,10 +18,50 @@ const corsHeaders = {
         "authorization, x-client-info, apikey, content-type",
 };
 
+const TIERS: Record<string, { amount_inr: number; duration_days: number; label: string }> = {
+    spark: { amount_inr: 49, duration_days: 3, label: "Spark ⚡" },
+    boost: { amount_inr: 99, duration_days: 7, label: "Boost 🚀" },
+    power: { amount_inr: 199, duration_days: 30, label: "Power 💎" },
+};
+
+let sdkInitialized = false;
+
+function initSdk() {
+    if (sdkInitialized) return;
+    try {
+        const CASHFREE_APP_ID = Deno.env.get("CASHFREE_APP_ID");
+        const CASHFREE_SECRET_KEY = Deno.env.get("CASHFREE_SECRET_KEY");
+        const CASHFREE_ENV = Deno.env.get("CASHFREE_ENV") || "sandbox";
+
+        if (!CASHFREE_APP_ID || !CASHFREE_SECRET_KEY) {
+            throw new Error("Missing Cashfree environment variables");
+        }
+
+        Cashfree.XClientId = CASHFREE_APP_ID;
+        Cashfree.XClientSecret = CASHFREE_SECRET_KEY;
+        Cashfree.XEnvironment = CASHFREE_ENV === "production"
+            ? (Cashfree.Environment?.PRODUCTION || "PRODUCTION" as any)
+            : (Cashfree.Environment?.SANDBOX || "SANDBOX" as any);
+
+        sdkInitialized = true;
+    } catch (err: any) {
+        throw new Error("Cashfree SDK Init Error: " + err.message);
+    }
+}
+
 Deno.serve(async (req: Request) => {
     // Handle CORS preflight
     if (req.method === "OPTIONS") {
         return new Response("ok", { headers: corsHeaders });
+    }
+
+    try {
+        initSdk();
+    } catch (sdkError: any) {
+        return new Response(
+            JSON.stringify({ error: "SDK Initialization Failed", details: sdkError.message }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
     }
 
     try {
@@ -97,8 +114,9 @@ Deno.serve(async (req: Request) => {
             .single();
 
         if (listingError || !listing) {
+            console.error("Listing lookup failed:", listingError);
             return new Response(
-                JSON.stringify({ error: "Listing not found" }),
+                JSON.stringify({ error: "Listing not found", details: listingError }),
                 { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
             );
         }
