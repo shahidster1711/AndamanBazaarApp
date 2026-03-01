@@ -2,12 +2,35 @@ import { z } from 'zod';
 import DOMPurify from 'dompurify';
 
 // ===== SANITIZATION UTILITIES =====
-const sanitizeHtmlFallback = (input: string): string =>
+const ALLOWED_HTML_TAGS = new Set(['B', 'I', 'EM', 'STRONG', 'BR', 'P']);
+
+const escapeHtml = (input: string): string =>
     input
-        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-        .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
-        .replace(/on\w+\s*=\s*["'][^"']*["']/gi, '')
-        .replace(/<(?!\/?(?:b|i|em|strong|br|p)(?:\s|>|\/))(?:[^>]*)>/gi, '');
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;');
+
+const sanitizeWithAllowlist = (input: string): string => {
+    const container = document.createElement('div');
+    container.innerHTML = input;
+
+    for (const el of Array.from(container.querySelectorAll('*'))) {
+        for (const attr of Array.from(el.attributes)) {
+            el.removeAttribute(attr.name);
+        }
+
+        if (!ALLOWED_HTML_TAGS.has(el.tagName)) {
+            const parent = el.parentNode;
+            if (!parent) continue;
+            while (el.firstChild) {
+                parent.insertBefore(el.firstChild, el);
+            }
+            parent.removeChild(el);
+        }
+    }
+
+    return container.innerHTML;
+};
 
 /**
  * Sanitize HTML content to prevent XSS attacks
@@ -22,19 +45,14 @@ export const sanitizeHtml = (input: string): string => {
             const result = DOMPurify.sanitize(input, {
                 ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'br', 'p'],
                 ALLOWED_ATTR: [],
+                FORBID_TAGS: ['script', 'iframe'],
             });
-            // DOMPurify may silently return '' in jsdom; fall through to regex if so
-            if (result || !input) {
-                if (!/<\/?(?:script|iframe)\b/i.test(result)) {
-                    return result;
-                }
-            }
+            return sanitizeWithAllowlist(result);
         } catch {
-            // Fall through to regex approach if DOMPurify fails
+            // Fall through to escaped plain text if DOMPurify fails
         }
     }
-    // Server-side or jsdom fallback: regex-based sanitization
-    return sanitizeHtmlFallback(input);
+    return escapeHtml(input);
 };
 
 /**
