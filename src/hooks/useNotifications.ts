@@ -18,19 +18,8 @@ export const useNotifications = () => {
     if (!('Notification' in window)) return;
 
     let isActive = true;
-    let messagesChannel: ReturnType<typeof supabase.channel> | null = null;
+    let messagesChannels: (ReturnType<typeof supabase.channel>)[] = [];
     let chatsChannel: ReturnType<typeof supabase.channel> | null = null;
-
-    const primeChatIds = async (userId: string) => {
-      const { data: chats } = await supabase
-        .from('chats')
-        .select('id, buyer_id, seller_id')
-        .or(`buyer_id.eq.${userId},seller_id.eq.${userId}`);
-
-      if (!isActive) return;
-
-      chatIdsRef.current = new Set((chats || []).map((c: any) => c.id));
-    };
 
     const getSenderName = async (senderId: string) => {
       const cached = senderNameCacheRef.current.get(senderId);
@@ -47,39 +36,23 @@ export const useNotifications = () => {
       return name;
     };
 
-    const setup = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user || !isActive) return;
-
-      await primeChatIds(user.id);
-      if (!isActive) return;
-
-      chatsChannel = supabase
-        .channel(`notifications_chats:${user.id}`)
+    const setupMessagesSubscription = (chatId: string, userId: string) => {
+      const channel = supabase
+        .channel(`notifications_messages:${chatId}`)
         .on(
           'postgres_changes',
-          { event: '*', schema: 'public', table: 'chats', filter: `buyer_id=eq.${user.id}` },
-          () => primeChatIds(user.id)
-        )
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'chats', filter: `seller_id=eq.${user.id}` },
-          () => primeChatIds(user.id)
-        )
-        .subscribe();
-
-      messagesChannel = supabase
-        .channel(`notifications_messages:${user.id}`)
-        .on(
-          'postgres_changes',
-          { event: 'INSERT', schema: 'public', table: 'messages' },
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'messages',
+            filter: `chat_id=eq.${chatId}`,
+          },
           async (payload) => {
             const msg: any = payload.new;
 
             if (!isActive) return;
             if (!msg?.chat_id || !msg?.sender_id) return;
-            if (msg.sender_id === user.id) return;
-            if (!chatIdsRef.current.has(msg.chat_id)) return;
+            if (msg.sender_id === userId) return;
 
             const isChatOpen = location.pathname === `/chats/${msg.chat_id}`;
             if (isChatOpen && document.visibilityState === 'visible') return;
@@ -101,15 +74,58 @@ export const useNotifications = () => {
           }
         )
         .subscribe();
+      
+      messagesChannels.push(channel);
+    };
+
+    const primeChatIdsAndSubscribe = async (userId: string) => {
+      const { data: chats } = await supabase
+        .from('chats')
+        .select('id')
+        .or(`buyer_id.eq.${userId},seller_id.eq.${userId}`);
+
+      if (!isActive) return;
+
+      const newChatIds = new Set((chats || []).map((c: any) => c.id));
+      
+      // Subscribe to new chats that we aren't already listening to
+      newChatIds.forEach(id => {
+        if (!chatIdsRef.current.has(id)) {
+          setupMessagesSubscription(id, userId);
+        }
+      });
+
+      chatIdsRef.current = newChatIds;
+    };
+
+    const setup = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || !isActive) return;
+
+      await primeChatIdsAndSubscribe(user.id);
+      if (!isActive) return;
+
+      chatsChannel = supabase
+        .channel(`notifications_chats:${user.id}`)
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'chats', filter: `buyer_id=eq.${user.id}` },
+          () => primeChatIdsAndSubscribe(user.id)
+        )
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'chats', filter: `seller_id=eq.${user.id}` },
+          () => primeChatIdsAndSubscribe(user.id)
+        )
+        .subscribe();
     };
 
     setup();
 
     return () => {
       isActive = false;
-      if (messagesChannel) supabase.removeChannel(messagesChannel);
+      messagesChannels.forEach(ch => supabase.removeChannel(ch));
       if (chatsChannel) supabase.removeChannel(chatsChannel);
     };
   }, [location.pathname]);
 };
-

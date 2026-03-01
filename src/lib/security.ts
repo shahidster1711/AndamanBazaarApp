@@ -218,15 +218,16 @@ export const detectSuspiciousActivity = (): {
     return { suspicious: false };
 };
 
-type RetryOptions = {
+export interface IRetryOptions {
     maxAttempts?: number;
     baseDelayMs?: number;
     maxDelayMs?: number;
     backoffFactor?: number;
     jitterMs?: number;
     label?: string;
+    log?: boolean;
     retryOn?: (error: any) => boolean;
-    onAttempt?: (info: { attempt: number; maxAttempts: number; delayMs: number; label?: string; error?: any }) => void;
+    onAttempt?: (info: { attempt: number; maxAttempts: number; delayMs: number; label?: string; error?: any; log: (message: string, ...args: any[]) => void; }) => void;
 };
 
 export const isTransientError = (error: any): boolean => {
@@ -258,7 +259,7 @@ export const isTransientError = (error: any): boolean => {
 
 export const retryAsync = async <T>(
     operation: () => Promise<T>,
-    options: RetryOptions = {}
+    options: IRetryOptions = {}
 ): Promise<T> => {
     const {
         maxAttempts = 4,
@@ -267,21 +268,27 @@ export const retryAsync = async <T>(
         backoffFactor = 2,
         jitterMs = 200,
         label = 'operation',
+        log = false, // Default to no logging
         retryOn = isTransientError,
         onAttempt,
     } = options;
 
     let attempt = 0;
     let lastError: any;
+    const logger = (message: string, ...args: any[]) => {
+        if (log) {
+            console.log(message, ...args);
+        }
+    };
 
     while (attempt < maxAttempts) {
         attempt += 1;
         try {
-            onAttempt?.({ attempt, maxAttempts, delayMs: 0, label });
-            console.info(`[retry] ${label} attempt ${attempt}/${maxAttempts}`);
+            onAttempt?.({ attempt, maxAttempts, delayMs: 0, label, log: logger });
+            logger(`[retry] ${label} attempt ${attempt}/${maxAttempts}`);
             const result = await operation();
             if (attempt > 1) {
-                console.info(`[retry] ${label} succeeded on attempt ${attempt}/${maxAttempts}`);
+                logger(`[retry] ${label} succeeded on attempt ${attempt}/${maxAttempts}`);
             }
             return result;
         } catch (error) {
@@ -290,18 +297,18 @@ export const retryAsync = async <T>(
             const delayBase = Math.min(baseDelayMs * Math.pow(backoffFactor, attempt - 1), maxDelayMs);
             const jitter = jitterMs > 0 ? Math.floor(Math.random() * jitterMs) : 0;
             const delayMs = delayBase + jitter;
-            console.warn(`[retry] ${label} failed attempt ${attempt}/${maxAttempts}`, error);
-            onAttempt?.({ attempt, maxAttempts, delayMs, label, error });
+            logger(`[retry] ${label} failed attempt ${attempt}/${maxAttempts}`, error);
+            onAttempt?.({ attempt, maxAttempts, delayMs, label, error, log: logger });
             if (!shouldRetry) {
-                console.error(`[retry] ${label} aborted after attempt ${attempt}/${maxAttempts}`, error);
+                logger(`[retry] ${label} aborted after attempt ${attempt}/${maxAttempts}`, error);
                 throw error;
             }
-            console.info(`[retry] ${label} retrying in ${delayMs}ms`);
+            logger(`[retry] ${label} retrying in ${delayMs}ms`);
             await new Promise(resolve => setTimeout(resolve, delayMs));
         }
     }
 
-    console.error(`[retry] ${label} exhausted after ${maxAttempts} attempts`, lastError);
+    logger(`[retry] ${label} exhausted after ${maxAttempts} attempts`, lastError);
     throw lastError;
 };
 

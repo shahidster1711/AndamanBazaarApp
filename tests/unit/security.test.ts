@@ -1,7 +1,15 @@
-import { describe, it, expect, vi } from 'vitest'
-import { detectSuspiciousActivity, isTransientError, retryAsync } from '../../src/lib/security'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { detectSuspiciousActivity, isTransientError, retryAsync, IRetryOptions } from '../../src/lib/security'
 
 describe('Security Utilities', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   describe('detectSuspiciousActivity', () => {
     it('should return not suspicious for normal activity', () => {
       const result = detectSuspiciousActivity()
@@ -11,165 +19,187 @@ describe('Security Utilities', () => {
   })
 
   describe('isTransientError', () => {
-    it('should identify transient HTTP errors', () => {
-      expect(isTransientError({ status: 408 })).toBe(true)
-      expect(isTransientError({ status: 429 })).toBe(true)
-      expect(isTransientError({ status: 500 })).toBe(true)
-      expect(isTransientError({ status: 503 })).toBe(true)
+    it.each([
+      { status: 408 },
+      { status: 429 },
+      { status: 500 },
+      { status: 502 },
+      { status: 503 },
+      { status: 504 },
+      { name: 'TypeError', message: 'Failed to fetch' },
+      { code: 'ECONNRESET' },
+      { code: 'ETIMEDOUT' },
+      { code: 'ENETUNREACH' },
+    ])('should identify transient error: %j', (error) => {
+      expect(isTransientError(error)).toBe(true)
     })
 
-    it('should identify network errors', () => {
-      expect(isTransientError({ name: 'TypeError', message: 'Failed to fetch' })).toBe(true)
-      expect(isTransientError({ name: 'FetchError', message: 'Network error' })).toBe(true)
-      expect(isTransientError({ code: 'ECONNRESET' })).toBe(true)
-      expect(isTransientError({ code: 'ETIMEDOUT' })).toBe(true)
-    })
-
-    it('should not identify non-transient errors', () => {
-      expect(isTransientError({ status: 400 })).toBe(false)
-      expect(isTransientError({ status: 401 })).toBe(false)
-      expect(isTransientError({ status: 403 })).toBe(false)
-      expect(isTransientError({ status: 404 })).toBe(false)
-      expect(isTransientError({ name: 'Error', message: 'Generic error' })).toBe(false)
-    })
-
-    it('should handle null/undefined errors', () => {
-      expect(isTransientError(null)).toBe(false)
-      expect(isTransientError(undefined)).toBe(false)
-      expect(isTransientError({})).toBe(false)
+    it.each([
+      { status: 400 },
+      { status: 401 },
+      { status: 403 },
+      { status: 404 },
+      { name: 'Error', message: 'Generic error' },
+      null,
+      undefined,
+      {},
+    ])('should not identify non-transient error: %j', (error) => {
+      expect(isTransientError(error)).toBe(false)
     })
   })
 
   describe('retryAsync', () => {
-    it('should succeed on first attempt', async () => {
-      const operation = () => Promise.resolve('success')
-      const result = await retryAsync(operation)
-      
-      expect(result).toBe('success')
+    const mockOperation = vi.fn()
+    const mockOnAttempt = vi.fn()
+
+    beforeEach(() => {
+      mockOperation.mockClear()
+      mockOnAttempt.mockClear()
     })
 
-    it('should retry on transient errors', async () => {
-      let attempts = 0
-      const operation = () => {
-        attempts++
-        if (attempts < 3) {
-          return Promise.reject({ status: 500 })
-        }
-        return Promise.resolve('success')
-      }
-      
-      const result = await retryAsync(operation, { maxAttempts: 3, baseDelayMs: 10 })
-      
+    it('should succeed on the first attempt', async () => {
+      mockOperation.mockResolvedValue('success')
+      const result = await retryAsync(mockOperation)
       expect(result).toBe('success')
-      expect(attempts).toBe(3)
+      expect(mockOperation).toHaveBeenCalledTimes(1)
     })
 
-    it('should throw after max attempts', async () => {
-      const operation = () => Promise.reject({ status: 500 })
-      
-      await expect(retryAsync(operation, { maxAttempts: 2, baseDelayMs: 10 }))
-        .rejects.toThrow()
+    it('should retry on transient errors and eventually succeed', async () => {
+      mockOperation
+        .mockRejectedValueOnce({ status: 500 })
+        .mockRejectedValueOnce({ status: 503 })
+        .mockResolvedValue('success')
+
+      const options: IRetryOptions = { maxAttempts: 4, baseDelayMs: 100 }
+      const retryPromise = retryAsync(mockOperation, options)
+
+      await vi.advanceTimersByTimeAsync(100 + 200) // 1st retry + 2nd retry delay
+
+      const result = await retryPromise
+      expect(result).toBe('success')
+      expect(mockOperation).toHaveBeenCalledTimes(3)
+    })
+
+    it('should throw after exhausting max attempts', async () => {
+      const error = { status: 500, message: 'Server Error' }
+      mockOperation.mockRejectedValue(error)
+
+      const options: IRetryOptions = { maxAttempts: 3, baseDelayMs: 100 }
+      const retryPromise = retryAsync(mockOperation, options)
+
+      await vi.runAllTimersAsync()
+
+      await expect(retryPromise).rejects.toThrow(error.message)
+      expect(mockOperation).toHaveBeenCalledTimes(3)
     })
 
     it('should not retry on non-transient errors', async () => {
-      const operation = () => Promise.reject({ status: 400 })
-      
-      await expect(retryAsync(operation, { maxAttempts: 3, baseDelayMs: 10 }))
-        .rejects.toThrow()
+      const error = { status: 400, message: 'Bad Request' }
+      mockOperation.mockRejectedValue(error)
+
+      const retryPromise = retryAsync(mockOperation)
+
+      await expect(retryPromise).rejects.toThrow(error.message)
+      expect(mockOperation).toHaveBeenCalledTimes(1)
     })
 
-    it('should call onAttempt callback', async () => {
-      const operation = () => Promise.reject({ status: 500 })
-      const onAttempt = (info: any) => {
-        // Callback implementation
-      }
-      
-      await expect(retryAsync(operation, { 
-        maxAttempts: 2, 
-        baseDelayMs: 10,
-        onAttempt 
-      })).rejects.toThrow()
+    it('should call onAttempt for each attempt', async () => {
+      mockOperation.mockRejectedValue({ status: 500 })
+      const options: IRetryOptions = { maxAttempts: 3, baseDelayMs: 100, onAttempt: mockOnAttempt }
+      const retryPromise = retryAsync(mockOperation, options)
+
+      await vi.runAllTimersAsync()
+
+      await expect(retryPromise).rejects.toBeDefined()
+      expect(mockOnAttempt).toHaveBeenCalledTimes(3)
+      expect(mockOnAttempt).toHaveBeenCalledWith(expect.objectContaining({ attempt: 1 }))
+      expect(mockOnAttempt).toHaveBeenCalledWith(expect.objectContaining({ attempt: 2 }))
+      expect(mockOnAttempt).toHaveBeenCalledWith(expect.objectContaining({ attempt: 3 }))
     })
 
-    it('should respect custom retry function', async () => {
-      const operation = () => Promise.reject({ custom: 'error' })
-      const customRetry = (error: any) => error.custom === 'error'
-      
-      await expect(retryAsync(operation, { 
-        maxAttempts: 2, 
-        baseDelayMs: 10,
-        retryOn: customRetry 
-      })).rejects.toThrow()
+    it('should respect a custom retryOn function', async () => {
+      const customError = { custom: true }
+      mockOperation.mockRejectedValue(customError)
+      const retryOn = (e: any) => e.custom === true
+
+      const options: IRetryOptions = { maxAttempts: 2, baseDelayMs: 100, retryOn }
+      const retryPromise = retryAsync(mockOperation, options)
+
+      await vi.runAllTimersAsync()
+
+      await expect(retryPromise).rejects.toBeDefined()
+      expect(mockOperation).toHaveBeenCalledTimes(2)
     })
 
-    it('should apply exponential backoff', async () => {
-      let attempts = 0
-      const operation = () => {
-        attempts++
-        if (attempts < 3) {
-          return Promise.reject({ status: 500 })
-        }
-        return Promise.resolve('success')
-      }
-      
-      const startTime = Date.now()
-      await retryAsync(operation, { 
-        maxAttempts: 3, 
-        baseDelayMs: 100,
-        backoffFactor: 2 
-      })
-      const endTime = Date.now()
-      
-      // Should take at least 300ms (100 + 200)
-      expect(endTime - startTime).toBeGreaterThanOrEqual(300)
-      expect(attempts).toBe(3)
-    })
-
-    it('should respect max delay', async () => {
-      let attempts = 0
-      const operation = () => {
-        attempts++
-        return Promise.reject({ status: 500 })
-      }
-      
-      await expect(retryAsync(operation, { 
-        maxAttempts: 4, 
-        baseDelayMs: 100,
-        maxDelayMs: 200,
-        backoffFactor: 3 
-      })).rejects.toThrow()
-      
-      expect(attempts).toBe(4)
-    })
-
-    it('should apply jitter', async () => {
+    it('should apply exponential backoff correctly', async () => {
       const delays: number[] = []
-      const originalSetTimeout = global.setTimeout
-      
-      // Mock setTimeout to capture delays
-      global.setTimeout = ((callback: any, delay?: number) => {
-        if (delay) delays.push(delay)
-        return originalSetTimeout(callback, 0)
-      }) as any
-      
-      const operation = () => Promise.reject({ status: 500 })
-      
-      await expect(retryAsync(operation, { 
-        maxAttempts: 3, 
-        baseDelayMs: 100,
-        jitterMs: 50,
-        backoffFactor: 1
-      })).rejects.toThrow()
-      
-      // Restore original setTimeout
-      global.setTimeout = originalSetTimeout
-      
-      // Delays should vary due to jitter
-      expect(delays.length).toBeGreaterThan(0)
-      delays.forEach(delay => {
-        expect(delay).toBeGreaterThanOrEqual(100)
-        expect(delay).toBeLessThanOrEqual(150)
+      vi.spyOn(global, 'setTimeout').mockImplementation((cb, ms) => {
+        delays.push(ms!)
+        return setTimeout(cb, ms) as any
       })
+
+      mockOperation.mockRejectedValue({ status: 500 })
+      const options: IRetryOptions = { maxAttempts: 4, baseDelayMs: 100, backoffFactor: 2 }
+      const retryPromise = retryAsync(mockOperation, options)
+
+      await vi.runAllTimersAsync()
+      await expect(retryPromise).rejects.toBeDefined()
+
+      expect(delays.map(d => Math.round(d))).toEqual([100, 200, 400])
+      vi.restoreAllMocks()
+    })
+
+    it('should respect maxDelayMs', async () => {
+      const delays: number[] = []
+      vi.spyOn(global, 'setTimeout').mockImplementation((cb, ms) => {
+        delays.push(ms!)
+        return setTimeout(cb, ms) as any
+      })
+
+      mockOperation.mockRejectedValue({ status: 500 })
+      const options: IRetryOptions = { maxAttempts: 5, baseDelayMs: 100, backoffFactor: 3, maxDelayMs: 500 }
+      const retryPromise = retryAsync(mockOperation, options)
+
+      await vi.runAllTimersAsync()
+      await expect(retryPromise).rejects.toBeDefined()
+
+      expect(delays.map(d => Math.round(d))).toEqual([100, 300, 500, 500])
+      vi.restoreAllMocks()
+    })
+
+    it('should apply jitter within the expected range', async () => {
+      const delays: number[] = []
+      vi.spyOn(global, 'setTimeout').mockImplementation((cb, ms) => {
+        delays.push(ms!)
+        return setTimeout(cb, ms) as any
+      })
+
+      mockOperation.mockRejectedValue({ status: 500 })
+      const options: IRetryOptions = { maxAttempts: 4, baseDelayMs: 100, jitterMs: 50, backoffFactor: 1 }
+      const retryPromise = retryAsync(mockOperation, options)
+
+      await vi.runAllTimersAsync()
+      await expect(retryPromise).rejects.toBeDefined()
+
+      expect(delays.length).toBe(3)
+      delays.forEach(delay => {
+        expect(delay).toBeGreaterThanOrEqual(100) // base
+        expect(delay).toBeLessThanOrEqual(150)   // base + jitter
+      })
+      vi.restoreAllMocks()
+    })
+
+    it('should log to the console when log option is true', async () => {
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => { })
+      mockOperation.mockRejectedValue({ status: 500 })
+      const options: IRetryOptions = { maxAttempts: 3, baseDelayMs: 10, log: true }
+      const retryPromise = retryAsync(mockOperation, options)
+
+      await vi.runAllTimersAsync()
+
+      await expect(retryPromise).rejects.toBeDefined()
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('[retry]'))
+      consoleSpy.mockRestore()
     })
   })
 })

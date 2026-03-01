@@ -31,7 +31,7 @@ export const Profile: React.FC = () => {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [stats, setStats] = useState({ active: 0, sold: 0 });
+  const [stats, setStats] = useState({ active: 0, totalViews: 0, sold: 0 });
   const menuRef = useRef<HTMLDivElement | null>(null);
   const PROFILE_PAGE_SIZE = 20;
   const [listingPage, setListingPage] = useState(0);
@@ -76,13 +76,14 @@ export const Profile: React.FC = () => {
       if (profileError) throw profileError;
       setProfile(profileData);
 
-      const { data: statsData, error: statsError } = await supabase.from('listings').select('status').eq('user_id', user.id);
+      const { data: statsData, error: statsError } = await supabase.from('listings').select('status, views_count').eq('user_id', user.id);
       if (statsError) throw statsError;
 
-      const newStats = { active: 0, sold: 0 };
+      const newStats = { active: 0, totalViews: 0, sold: 0 };
       statsData.forEach((l: any) => {
         if (l.status === 'active') newStats.active++;
         else if (l.status === 'sold') newStats.sold++;
+        newStats.totalViews += (l.views_count || 0);
       });
       setStats(newStats);
     } catch (err) {
@@ -167,7 +168,7 @@ export const Profile: React.FC = () => {
       const to = from + PROFILE_PAGE_SIZE - 1;
       const { data, error } = await supabase
         .from('listings')
-        .select('*')
+        .select('*, views:views_count')
         .eq('user_id', user.id)
         .eq('status', activeTab)
         .order('created_at', { ascending: false })
@@ -213,7 +214,7 @@ export const Profile: React.FC = () => {
       const listingIds = favoritedData.map(f => f.listing_id);
       const { data: listingData, error: listError } = await supabase
         .from('listings')
-        .select('*')
+        .select('*, views:views_count')
         .in('id', listingIds);
 
       if (listError) throw listError;
@@ -379,6 +380,8 @@ export const Profile: React.FC = () => {
             <div className="flex items-center justify-center gap-10 md:bg-base-100 md:p-6 md:rounded-[32px] md:border-2 md:border-secondary/10 md:shadow-sm">
               <div className="text-center cursor-pointer" onClick={() => setActiveTab('active')}><p className="text-4xl font-heading font-black text-primary leading-none transition-colors">{stats.active}</p><p className="text-sm font-black text-secondary uppercase tracking-widest mt-2">Active Ads</p></div>
               <div className="w-px h-12 bg-secondary/20 hidden md:block"></div>
+              <div className="text-center"><p className="text-4xl font-heading font-black text-primary leading-none transition-colors">{stats.totalViews}</p><p className="text-sm font-black text-secondary uppercase tracking-widest mt-2">Total Views</p></div>
+              <div className="w-px h-12 bg-secondary/20 hidden md:block"></div>
               <div className="text-center cursor-pointer" onClick={() => setActiveTab('sold')}><p className="text-4xl font-heading font-black text-primary leading-none transition-colors">{stats.sold}</p><p className="text-sm font-black text-secondary uppercase tracking-widest mt-2">Items Sold</p></div>
             </div>
           </div>
@@ -442,7 +445,7 @@ export const Profile: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-3 text-xs text-warm-500 font-medium">
                       <div className="flex items-center bg-warm-50 px-1.5 py-0.5 rounded">
-                        <Eye size={14} className="mr-1 text-teal-500" /> {item.views_count || 0}
+                        <Eye size={14} className="mr-1 text-teal-500" /> {item.views || 0}
                       </div>
                       <div className="flex items-center bg-warm-50 px-1.5 py-0.5 rounded">
                         <MessageCircle size={14} className="mr-1 text-teal-500" /> 0

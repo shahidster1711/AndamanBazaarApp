@@ -83,6 +83,7 @@ export interface Listing {
   moderation_notes?: string;
   is_featured: boolean;
   views_count: number;
+  views: number; // Added views field
 
   // Draft
   draft_step?: number;

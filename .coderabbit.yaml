@@ -1,0 +1,17 @@
+# .coderabbit.yaml
+language: en-US
+tone_instructions: "Be concise. Focus on security, performance, and Firebase/Supabase best practices."
+reviews:
+  auto_review:
+    enabled: true
+    drafts: false
+  path_filters:
+    - "!package-lock.json"
+    - "!**/*.zip"
+    - "!build_log.txt"
+    - "!CI:CD Logs/**"
+  finishing_touches:
+    docstrings:
+      enabled: true
+chat:
+  auto_reply: true

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, MapPin, Clock, Send, ArrowLeft, MessageSquare } from 'lucide-react';
+import { Mail, MapPin, Clock, Send, ArrowLeft, MessageSquare, Code } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const ContactUs: React.FC = () => {
@@ -9,7 +9,7 @@ export const ContactUs: React.FC = () => {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         // Open mailto with form data as a fallback
-        const mailto = `mailto:support@andamanbazaar.in?subject=${encodeURIComponent(formData.subject)}&body=${encodeURIComponent(`Name: ${formData.name}\nEmail: ${formData.email}\n\n${formData.message}`)}`;
+        const mailto = `mailto:help@andamanbazaar.in?subject=${encodeURIComponent(formData.subject)}&body=${encodeURIComponent(`Name: ${formData.name}\nEmail: ${formData.email}\n\n${formData.message}`)}`;
         window.open(mailto, '_blank');
         setSubmitted(true);
     };
@@ -32,17 +32,36 @@ export const ContactUs: React.FC = () => {
 
                 <div className="p-8 md:p-16 space-y-12">
                     {/* Contact Info Cards */}
-                    <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="p-8 bg-secondary/5 rounded-3xl border-2 border-secondary/10 space-y-3 text-center">
                             <Mail size={32} className="text-accent mx-auto" />
-                            <h3 className="font-black text-primary uppercase text-lg">Email</h3>
+                            <h3 className="font-black text-primary uppercase text-lg">General Support</h3>
                             <a
-                                href="mailto:support@andamanbazaar.in"
-                                className="text-accent font-bold underline hover:text-primary transition-colors block"
+                                href="mailto:help@andamanbazaar.in"
+                                className="text-accent font-bold underline hover:text-primary transition-colors block text-lg"
                             >
-                                support@andamanbazaar.in
+                                help@andamanbazaar.in
                             </a>
+                            <p className="text-secondary font-medium text-xs mt-2">
+                                For listings, payments, and account issues
+                            </p>
                         </div>
+                        <div className="p-8 bg-secondary/5 rounded-3xl border-2 border-secondary/10 space-y-3 text-center">
+                            <Code size={32} className="text-accent mx-auto" />
+                            <h3 className="font-black text-primary uppercase text-lg">Technical Contact</h3>
+                            <a
+                                href="mailto:connect@shahidster.tech"
+                                className="text-accent font-bold underline hover:text-primary transition-colors block text-lg"
+                            >
+                                connect@shahidster.tech
+                            </a>
+                            <p className="text-secondary font-medium text-xs mt-2">
+                                For bugs, security, and developer inquiries
+                            </p>
+                        </div>
+                    </section>
+
+                    <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="p-8 bg-secondary/5 rounded-3xl border-2 border-secondary/10 space-y-3 text-center">
                             <MapPin size={32} className="text-accent mx-auto" />
                             <h3 className="font-black text-primary uppercase text-lg">Address</h3>
@@ -72,8 +91,8 @@ export const ContactUs: React.FC = () => {
                                 <p className="text-teal-600 font-medium text-lg">
                                     Your email client should have opened with the message. If not, please
                                     email us directly at{' '}
-                                    <a href="mailto:support@andamanbazaar.in" className="underline font-bold">
-                                        support@andamanbazaar.in
+                                    <a href="mailto:help@andamanbazaar.in" className="underline font-bold">
+                                        help@andamanbazaar.in
                                     </a>
                                 </p>
                                 <button

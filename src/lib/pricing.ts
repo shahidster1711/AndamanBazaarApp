@@ -111,6 +111,7 @@ export const LEGAL_ENTITY = {
     platform: 'AndamanBazaar',
     website: 'www.andamanbazaar.in',
     founderUrl: 'https://shahidster.tech',
-    supportEmail: 'support@andamanbazaar.in',
+    supportEmail: 'help@andamanbazaar.in',
+    technicalContact: 'connect@shahidster.tech',
     location: 'Andaman & Nicobar Islands, India',
 } as const;

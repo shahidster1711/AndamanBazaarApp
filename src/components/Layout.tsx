@@ -50,8 +50,17 @@ export const Layout: React.FC<LayoutProps> = ({ children, user }) => {
     fetchUnread();
 
     const channel = supabase
-      .channel('layout_unread_count')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'chats' }, fetchUnread)
+      .channel(`layout_unread_count:${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'chats', filter: `buyer_id=eq.${user.id}` },
+        fetchUnread
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'chats', filter: `seller_id=eq.${user.id}` },
+        fetchUnread
+      )
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };

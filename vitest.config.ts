@@ -13,9 +13,6 @@ export default defineConfig({
       '**/dist/**',
       'tests/e2e/**',
       'tests/performance/**',
-      'tests/security/**',
-      'tests/integration/**',
-      'tests/accessibility/**',
       'e2e/**',
     ],
     coverage: {
@@ -34,10 +31,10 @@ export default defineConfig({
         'src/lib/supabase.ts', // Mocked in tests
       ],
       thresholds: {
-        lines: 40,
-        functions: 25,
-        branches: 40,
-        statements: 40,
+        lines: 70,
+        functions: 60,
+        branches: 70,
+        statements: 70,
       },
     },
   },

@@ -2,163 +2,120 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   pull_request:
-    branches: [main]
-
-env:
-  NODE_VERSION: "20"
+    branches: [ main ]
+  schedule:
+    - cron: '0 0 * * *'
 
 jobs:
-  # ─── JOB 1: Fast type + lint check ────────────────────────────
-  typecheck:
-    name: Type Check & Lint
+  lint-and-typecheck:
+    name: Lint & Type Check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build # Runs tsc && vite build
+      - run: npx eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Type Check
-        run: npx tsc --noEmit
-
-  # ─── JOB 2: Unit tests (parallel with typecheck) ───────────────
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run Unit Tests
-        run: npm run test:unit
-        env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-          CI: true
-
-      - name: Upload Coverage
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run test:coverage
+      - uses: actions/upload-artifact@v4
         if: always()
-        uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: coverage/
           retention-days: 7
 
-  # ─── JOB 3: Build (depends on type+unit passing) ───────────────
-  build:
-    name: Build
+  security-tests:
+    name: Security Tests
     runs-on: ubuntu-latest
-    needs: [typecheck, unit-tests]
+    needs: [unit-tests]
+    continue-on-error: false
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run test:security
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build Application
-        run: npm run build
-        env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-          VITE_SUPABASE_PROJECT_ID: ${{ secrets.VITE_SUPABASE_PROJECT_ID }}
-          VITE_GOOGLE_AI_API_KEY: ${{ secrets.VITE_GOOGLE_AI_API_KEY }}
-
-      - name: Upload dist artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist-build
-          path: dist/
-          retention-days: 1
-
-  # ─── JOB 4: Deploy (only on main push, reuses build artifact) ──
-  deploy:
-    name: Deploy to cPanel (SSH/Rsync)
+  cashfree-sandbox:
+    name: Cashfree Sandbox Tests
     runs-on: ubuntu-latest
-    needs: [build]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    steps:
-      - name: Download dist artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: dist-build
-          path: dist/
-
-      - name: Setup SSH Agent
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - name: Deploy via rsync
-        run: |
-          rsync -avz --delete \
-            -e "ssh -o StrictHostKeyChecking=no" \
-            dist/ \
-            shahidster.site@ssh.gb.stackcp.com:public_html/andamanbazaar/
-
-      - name: Verify deployment
-        run: |
-          ssh -o StrictHostKeyChecking=no shahidster.site@ssh.gb.stackcp.com \
-            "echo '✅ Deploy OK' && ls -la public_html/andamanbazaar/ | head -5"
-
-  # ─── JOB 5: E2E (non-blocking, runs in parallel with deploy) ───
-  e2e:
-    name: E2E Tests (non-blocking)
-    runs-on: ubuntu-latest
-    needs: [build]
-    if: github.event_name == 'push'
+    needs: [lint-and-typecheck]
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install Playwright (chromium only)
-        run: npx playwright install chromium --with-deps
-
-      - name: Download dist artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: dist-build
-          path: dist/
-
-      - name: Run E2E Tests
-        run: npx playwright test
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: node test_cashfree.mjs
         env:
-          CI: true
+          CASHFREE_APP_ID: ${{ secrets.CASHFREE_SANDBOX_APP_ID }}
+          CASHFREE_SECRET_KEY: ${{ secrets.CASHFREE_SANDBOX_SECRET_KEY }}
 
-      - name: Upload Playwright Report
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: [unit-tests]
+    container:
+      image: mcr.microsoft.com/playwright:v1.49.0-jammy
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npx playwright install chromium
+      - run: npx playwright test --project=chromium
+      - uses: actions/upload-artifact@v4
         if: always()
-        uses: actions/upload-artifact@v4
         with:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
+
+  deploy:
+    name: Deploy to Production
+    if: github.ref == 'refs/heads/main'
+    needs: [security-tests, e2e-tests]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build
+      - name: Deploy via SSH (Rsync)
+        uses: easingthemes/ssh-deploy@v5.0.0
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          ARGS: "-rlgoDzvc -i"
+          SOURCE: "dist/"
+          REMOTE_HOST: ${{ secrets.SSH_HOST }}
+          REMOTE_USER: ${{ secrets.SSH_USERNAME }}
+          TARGET: "/home/${{ secrets.SSH_USERNAME }}/public_html"
+          SCRIPT_BEFORE: |
+            echo "Starting deployment..."
+          SCRIPT_AFTER: |
+            echo "Deployment complete!"
