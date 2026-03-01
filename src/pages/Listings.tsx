@@ -120,8 +120,12 @@ export const Listings: React.FC = () => {
 
       const results = data || [];
       if (reset) {
-        if (results.length < 4) {
-          // Pad with demo listings when real data is sparse
+        const hasActiveSearch = !!searchParams.get('q') ||
+          (!!searchParams.get('category') && searchParams.get('category') !== 'all') ||
+          searchParams.get('verified') === 'true' ||
+          !!minPrice || !!maxPrice;
+        if (results.length < 4 && !hasActiveSearch) {
+          // Pad with demo listings when real data is sparse and no active search/filters
           const cat = searchParams.get('category') || undefined;
           const demos = getDemoListings(cat).slice(0, PAGE_SIZE - results.length);
           setListings([...results, ...demos]);
