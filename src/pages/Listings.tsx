@@ -370,9 +370,10 @@ export const Listings: React.FC = () => {
                 </div>
                 <button
                   type="button"
+                  role="switch"
+                  aria-checked={showVerifiedOnly}
                   onClick={() => setShowVerifiedOnly(prev => !prev)}
-                  {...({ role: 'switch', 'aria-checked': showVerifiedOnly } as React.HTMLAttributes<HTMLButtonElement>)}
-                  aria-label="Toggle verified sellers only filters"
+                  aria-label="Toggle verified sellers only"
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${showVerifiedOnly ? 'bg-teal-600' : 'bg-warm-200'}`}
                 >
                   <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${showVerifiedOnly ? 'translate-x-5' : 'translate-x-1'}`} />
