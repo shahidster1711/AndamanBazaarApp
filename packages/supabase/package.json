@@ -1,0 +1,16 @@
+{
+  "name": "@andamanbazaar/planner-supabase",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@andamanbazaar/planner-shared": "0.0.1",
+    "@supabase/supabase-js": "^2.45.0",
+    "@supabase/ssr": "^0.5.2",
+    "zod": "^3.23.8"
+  }
+}
+
