@@ -32,11 +32,10 @@ describe("LeadFormModal", () => {
     await user.type(screen.getByLabelText("Name *"), "Ananya Das");
     await user.type(screen.getByLabelText("Phone *"), "9999977777");
     await user.type(screen.getByLabelText("Preferred Date *"), "2026-08-20");
-    await user.type(screen.getByLabelText("Location *"), "North Bay");
+    await user.selectOptions(screen.getByLabelText("Location *"), "North Bay");
     await user.selectOptions(screen.getByLabelText("Swimming Ability *"), "Beginner");
-    await user.clear(screen.getByLabelText("Budget *"));
-    await user.type(screen.getByLabelText("Budget *"), "12000");
-    await user.click(screen.getByLabelText("Scuba Diving"));
+    await user.selectOptions(screen.getByLabelText("Budget Range per Person *"), "above_10000");
+    await user.click(screen.getByLabelText(/Scuba Diving/));
     await user.click(
       screen.getByLabelText(
         "I agree to be contacted by AndamanBazaar regarding this booking enquiry. *",
@@ -47,7 +46,7 @@ describe("LeadFormModal", () => {
 
     expect(
       await screen.findByText(
-        "Thank you — we usually reach out within 12 hours of submission. Kindly wait.",
+        "Thank you — we will get back to you as soon as possible. We usually reach out within 12 hours of submission. Kindly wait.",
       ),
     ).toBeInTheDocument();
   });

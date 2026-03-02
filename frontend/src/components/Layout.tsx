@@ -18,6 +18,9 @@ export const Layout = ({ children }: PropsWithChildren) => {
             <NavLink to="/" className={navLinkClass}>
               Home
             </NavLink>
+            <NavLink to="/water-adventures" className={navLinkClass}>
+              Water Adventures
+            </NavLink>
             <NavLink to="/activities" className={navLinkClass}>
               Activities
             </NavLink>

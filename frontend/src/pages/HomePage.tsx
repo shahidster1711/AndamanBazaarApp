@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { ActivityCard } from "../components/ActivityCard";
 import { ActivityFilters, type FilterValues } from "../components/ActivityFilters";
 import { LeadFormModal } from "../components/LeadFormModal";
@@ -50,13 +51,21 @@ export const HomePage = () => {
           Browse curated experiences, compare prices, and request custom itineraries with local
           operators.
         </p>
+        <div className="mt-5 flex flex-wrap gap-3">
         <button
           type="button"
           onClick={() => openLeadModal()}
-          className="mt-5 rounded-md bg-white px-4 py-2 font-semibold text-blue-700 hover:bg-blue-50"
+          className="rounded-md bg-white px-4 py-2 font-semibold text-blue-700 hover:bg-blue-50"
         >
           Plan My Adventure
         </button>
+          <Link
+            to="/water-adventures"
+            className="rounded-md border border-white/40 bg-white/10 px-4 py-2 font-semibold text-white hover:bg-white/15"
+          >
+            View Complete Guide
+          </Link>
+        </div>
       </section>
 
       <ActivityFilters

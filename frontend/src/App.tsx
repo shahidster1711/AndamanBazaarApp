@@ -4,6 +4,7 @@ import { ActivitiesPage } from "./pages/ActivitiesPage";
 import { ActivityDetailPage } from "./pages/ActivityDetailPage";
 import { AdminLeadsPage } from "./pages/AdminLeadsPage";
 import { HomePage } from "./pages/HomePage";
+import { WaterAdventuresGuidePage } from "./pages/WaterAdventuresGuidePage";
 
 const App = () => {
   return (
@@ -11,6 +12,7 @@ const App = () => {
       <Layout>
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/water-adventures" element={<WaterAdventuresGuidePage />} />
           <Route path="/activities" element={<ActivitiesPage />} />
           <Route path="/activities/:slug" element={<ActivityDetailPage />} />
           <Route path="/admin/leads" element={<AdminLeadsPage />} />
