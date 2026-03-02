@@ -1,5 +1,0 @@
-{
-  "/api/planner/itineraries/route": "app/api/planner/itineraries/route.js",
-  "/api/planner/itineraries/[id]/route": "app/api/planner/itineraries/[id]/route.js",
-  "/api/planner/generate/route": "app/api/planner/generate/route.js"
-}
