@@ -1,0 +1,17 @@
+{
+  "name": "andaman-planner-pro",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "pnpm -r build",
+    "dev:next": "pnpm --filter planner-next dev",
+    "dev:vite": "pnpm --filter planner-vite dev",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint",
+    "clean": "pnpm -r exec rm -rf dist .next node_modules/.cache"
+  },
+  "engines": {
+    "node": ">=18",
+    "pnpm": ">=8"
+  }
+}
