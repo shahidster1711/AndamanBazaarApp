@@ -2,6 +2,10 @@
   "name": "andaman-bazaar",
   "version": "1.0.0",
   "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",

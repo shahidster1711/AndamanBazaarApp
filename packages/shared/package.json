@@ -1,0 +1,13 @@
+{
+  "name": "@andamanbazaar/planner-shared",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "zod": "^3.23.8"
+  }
+}
+
