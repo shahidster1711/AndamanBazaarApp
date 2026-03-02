@@ -29,7 +29,9 @@ export const ActivitiesPage = () => {
   });
 
   const activityNames = useMemo(() => {
-    return Array.from(new Set([...KNOWN_ACTIVITY_NAMES, ...activities.map((activity) => activity.title)]));
+    return Array.from(
+      new Set([...KNOWN_ACTIVITY_NAMES, ...activities.map((activity) => activity.title)]),
+    );
   }, [activities]);
 
   const openLeadModal = (activity: Activity) => {
@@ -39,9 +41,11 @@ export const ActivitiesPage = () => {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-3xl font-bold">All Activities</h1>
-        <p className="mt-1 text-slate-600">Browse and compare water adventures across the islands.</p>
+      <header className="rounded-2xl bg-gradient-to-r from-sky-700 to-cyan-600 px-6 py-8 text-white">
+        <h1 className="text-3xl font-extrabold">All Water Adventures</h1>
+        <p className="mt-1 text-sky-100">
+          18 activities across 7 island locations — filter, compare, and book your perfect experience.
+        </p>
       </header>
 
       <ActivityFilters
@@ -54,23 +58,39 @@ export const ActivitiesPage = () => {
         types={KNOWN_TYPES}
       />
 
-      {loading && <p>Loading activities...</p>}
+      {loading && (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 9 }).map((_, i) => (
+            <div
+              key={i}
+              className="h-80 animate-pulse rounded-2xl border border-slate-100 bg-slate-100"
+            />
+          ))}
+        </div>
+      )}
+
       {error && (
-        <p role="alert" className="rounded-md bg-red-50 p-3 text-red-700">
+        <p role="alert" className="rounded-xl bg-red-50 p-4 text-red-700">
           {error}
         </p>
       )}
 
       {!loading && !error && (
         <>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {activities.map((activity) => (
-              <ActivityCard key={activity.id} activity={activity} onRequestBooking={openLeadModal} />
-            ))}
-          </div>
-
-          {activities.length === 0 && (
-            <p className="rounded-md border bg-white p-4">No activities found for selected filters.</p>
+          {activities.length === 0 ? (
+            <p className="rounded-xl border bg-white p-8 text-center text-slate-500">
+              No activities found for the selected filters.
+            </p>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {activities.map((activity) => (
+                <ActivityCard
+                  key={activity.id}
+                  activity={activity}
+                  onRequestBooking={openLeadModal}
+                />
+              ))}
+            </div>
           )}
 
           {meta && meta.totalPages > 1 && (
@@ -79,20 +99,20 @@ export const ActivitiesPage = () => {
                 type="button"
                 onClick={() => setPage((prev) => Math.max(1, prev - 1))}
                 disabled={page === 1}
-                className="rounded-md border bg-white px-3 py-2 disabled:opacity-50"
+                className="rounded-xl border bg-white px-4 py-2 text-sm font-medium shadow-sm disabled:opacity-40"
               >
-                Previous
+                ← Previous
               </button>
-              <span className="text-sm">
+              <span className="rounded-xl bg-sky-50 px-4 py-2 text-sm font-semibold text-sky-700">
                 Page {meta.page} of {meta.totalPages}
               </span>
               <button
                 type="button"
                 onClick={() => setPage((prev) => Math.min(meta.totalPages, prev + 1))}
                 disabled={page >= meta.totalPages}
-                className="rounded-md border bg-white px-3 py-2 disabled:opacity-50"
+                className="rounded-xl border bg-white px-4 py-2 text-sm font-medium shadow-sm disabled:opacity-40"
               >
-                Next
+                Next →
               </button>
             </nav>
           )}
