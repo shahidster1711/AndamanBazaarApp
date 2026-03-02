@@ -1,0 +1,21 @@
+{
+  "name": "@andaman-planner/supabase",
+  "version": "1.0.0",
+  "description": "Supabase client, DB types, and repository layer for Andaman Planner Pro",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@andaman-planner/shared": "workspace:*",
+    "@supabase/supabase-js": "^2.45.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4"
+  }
+}
