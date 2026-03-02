@@ -1,0 +1,14 @@
+{
+  "name": "@andamanbazaar/planner-ui",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@andamanbazaar/planner-shared": "0.0.1",
+    "react": "^18.3.1"
+  }
+}
+
