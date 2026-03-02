@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "Bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": true,
+    "baseUrl": ".",
+    "paths": {
+      "@planner/shared": ["../../packages/shared/src/index.ts"],
+      "@planner/shared/*": ["../../packages/shared/src/*"],
+      "@planner/ui": ["../../packages/ui/src/index.ts"],
+      "@planner/ui/*": ["../../packages/ui/src/*"]
+    }
+  },
+  "include": [
+    "src",
+    "vite.config.ts",
+    "../../packages/shared/src/**/*.ts",
+    "../../packages/ui/src/**/*.ts",
+    "../../packages/ui/src/**/*.tsx"
+  ]
+}

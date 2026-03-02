@@ -1,0 +1,60 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": [
+      "DOM",
+      "DOM.Iterable",
+      "ES2022"
+    ],
+    "allowJs": false,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "baseUrl": ".",
+    "paths": {
+      "@planner/shared": [
+        "../../packages/shared/src/index.ts"
+      ],
+      "@planner/shared/*": [
+        "../../packages/shared/src/*"
+      ],
+      "@planner/ui": [
+        "../../packages/ui/src/index.ts"
+      ],
+      "@planner/ui/*": [
+        "../../packages/ui/src/*"
+      ],
+      "@planner/supabase": [
+        "../../packages/supabase/src/index.ts"
+      ],
+      "@planner/supabase/*": [
+        "../../packages/supabase/src/*"
+      ]
+    },
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    "../../packages/shared/src/**/*.ts",
+    "../../packages/ui/src/**/*.tsx",
+    "../../packages/ui/src/**/*.ts",
+    "../../packages/supabase/src/**/*.ts",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
