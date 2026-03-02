@@ -15,6 +15,7 @@ import {
 import { useToast } from '../components/Toast';
 import { safeRandomUUID } from '../lib/random';
 import { BoostListingModal } from '../components/BoostListingModal';
+import { COPY } from '../lib/localCopy';
 
 // ===== STEP COMPONENTS =====
 
@@ -290,17 +291,9 @@ export const CreateListing: React.FC = () => {
   };
 
   const handleSave = async () => {
-    console.log('[DEBUG ee0545] handleSave called', { photosCount: photos.length, editId });
     setLoading(true);
-    // #region agent log
-    fetch('http://127.0.0.1:7614/ingest/556d2fa9-8084-4e76-985f-24d23c8680e2',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'ee0545'},body:JSON.stringify({sessionId:'ee0545',location:'CreateListing.tsx:handleSave:entry',message:'handleSave started',data:{photosCount:photos.length,hasEditId:!!editId},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      // #region agent log
-      console.log('[DEBUG ee0545] Auth check completed', { hasUser: !!user, userId: user?.id });
-      fetch('http://127.0.0.1:7614/ingest/556d2fa9-8084-4e76-985f-24d23c8680e2',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'ee0545'},body:JSON.stringify({sessionId:'ee0545',location:'CreateListing.tsx:handleSave:afterAuth',message:'Auth check completed',data:{hasUser:!!user,userId:user?.id},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
       if (!user) throw new Error('Please login first.');
 
       const sanitizedTitle = sanitizePlainText(title);
@@ -356,26 +349,13 @@ export const CreateListing: React.FC = () => {
       Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k]);
 
       let newListingId = editId;
-      // #region agent log
-      console.log('[DEBUG ee0545] Before DB insert/update', { isEdit: !!editId, payloadKeys: Object.keys(payload) });
-      fetch('http://127.0.0.1:7614/ingest/556d2fa9-8084-4e76-985f-24d23c8680e2',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'ee0545'},body:JSON.stringify({sessionId:'ee0545',location:'CreateListing.tsx:handleSave:beforeDbOp',message:'Before DB insert/update',data:{isEdit:!!editId,payloadKeys:Object.keys(payload)},timestamp:Date.now(),hypothesisId:'B'})}).catch(()=>{});
-      // #endregion
       if (editId) {
         const { error: updateError } = await supabase.from('listings').update(payload).eq('id', editId);
-        // #region agent log
-        fetch('http://127.0.0.1:7614/ingest/556d2fa9-8084-4e76-985f-24d23c8680e2',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'ee0545'},body:JSON.stringify({sessionId:'ee0545',location:'CreateListing.tsx:handleSave:afterUpdate',message:'After listing update',data:{updateError:updateError?.message},timestamp:Date.now(),hypothesisId:'B'})}).catch(()=>{});
-        // #endregion
         if (updateError) throw updateError;
         if (deletedPhotoIds.length > 0) await supabase.from('listing_images').delete().in('id', deletedPhotoIds);
-        if (editId) {
-          await logAuditEvent({ action: 'listing_updated', resource_type: 'listing', resource_id: editId, status: 'success' });
-        }
+        await logAuditEvent({ action: 'listing_updated', resource_type: 'listing', resource_id: editId, status: 'success' });
       } else {
         const { data, error: insertError } = await supabase.from('listings').insert(payload).select('id').single();
-        // #region agent log
-        console.log('[DEBUG ee0545] After listing insert', { hasData: !!data, listingId: data?.id, insertError: insertError?.message });
-        fetch('http://127.0.0.1:7614/ingest/556d2fa9-8084-4e76-985f-24d23c8680e2',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'ee0545'},body:JSON.stringify({sessionId:'ee0545',location:'CreateListing.tsx:handleSave:afterInsert',message:'After listing insert',data:{hasData:!!data,listingId:data?.id,insertError:insertError?.message},timestamp:Date.now(),hypothesisId:'B'})}).catch(()=>{});
-        // #endregion
         if (insertError || !data) throw insertError || new Error('Failed to create listing.');
         newListingId = data.id;
         await logAuditEvent({ action: 'listing_created', resource_type: 'listing', resource_id: data.id, status: 'success', metadata: { category: catId, city } });
@@ -383,19 +363,11 @@ export const CreateListing: React.FC = () => {
       setCreatedListingId(newListingId);
 
       const newPhotos = photos.filter(p => p.file);
-      // #region agent log
-      fetch('http://127.0.0.1:7614/ingest/556d2fa9-8084-4e76-985f-24d23c8680e2',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'ee0545'},body:JSON.stringify({sessionId:'ee0545',location:'CreateListing.tsx:handleSave:beforeImageUploads',message:'Starting image uploads',data:{newPhotosCount:newPhotos.length,existingPhotosCount:photos.filter(p=>p.id).length},timestamp:Date.now(),hypothesisId:'C'})}).catch(()=>{});
-      // #endregion
       for (let i = 0; i < newPhotos.length; i++) {
         const photo = newPhotos[i];
+        const displayOrder = photos.indexOf(photo);
         const fileName = `${user.id}/${safeRandomUUID()}.webp`;
-        // #region agent log
-        fetch('http://127.0.0.1:7614/ingest/556d2fa9-8084-4e76-985f-24d23c8680e2',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'ee0545'},body:JSON.stringify({sessionId:'ee0545',location:'CreateListing.tsx:handleSave:beforeUpload',message:`Uploading image ${i+1}/${newPhotos.length}`,data:{fileName,fileSize:photo.file?.size},timestamp:Date.now(),hypothesisId:'C'})}).catch(()=>{});
-        // #endregion
         const { error: uploadError } = await supabase.storage.from('listings').upload(fileName, photo.file!, { contentType: 'image/webp' });
-        // #region agent log
-        fetch('http://127.0.0.1:7614/ingest/556d2fa9-8084-4e76-985f-24d23c8680e2',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'ee0545'},body:JSON.stringify({sessionId:'ee0545',location:'CreateListing.tsx:handleSave:afterUpload',message:`Upload ${i+1} completed`,data:{uploadError:uploadError?.message},timestamp:Date.now(),hypothesisId:'C'})}).catch(()=>{});
-        // #endregion
         if (uploadError) {
           console.warn('Image upload failed, skipping:', uploadError.message);
           continue;
@@ -403,46 +375,27 @@ export const CreateListing: React.FC = () => {
 
         const { data: urlData } = supabase.storage.from('listings').getPublicUrl(fileName);
         if (newListingId && urlData.publicUrl) {
-          // #region agent log
-          fetch('http://127.0.0.1:7614/ingest/556d2fa9-8084-4e76-985f-24d23c8680e2',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'ee0545'},body:JSON.stringify({sessionId:'ee0545',location:'CreateListing.tsx:handleSave:beforeImageInsert',message:'Inserting image record',data:{listingId:newListingId,publicUrl:urlData.publicUrl.substring(0,50)},timestamp:Date.now(),hypothesisId:'D'})}).catch(()=>{});
-          // #endregion
-          await supabase.from('listing_images').insert({ listing_id: newListingId, image_url: urlData.publicUrl, display_order: photos.indexOf(photo) });
-          // #region agent log
-          fetch('http://127.0.0.1:7614/ingest/556d2fa9-8084-4e76-985f-24d23c8680e2',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'ee0545'},body:JSON.stringify({sessionId:'ee0545',location:'CreateListing.tsx:handleSave:afterImageInsert',message:'Image record inserted',data:{},timestamp:Date.now(),hypothesisId:'D'})}).catch(()=>{});
-          // #endregion
+          await supabase.from('listing_images').insert({ listing_id: newListingId, image_url: urlData.publicUrl, display_order: displayOrder });
         } else {
           console.warn('Could not get public URL for uploaded image.');
         }
       }
-      // #region agent log
-      fetch('http://127.0.0.1:7614/ingest/556d2fa9-8084-4e76-985f-24d23c8680e2',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'ee0545'},body:JSON.stringify({sessionId:'ee0545',location:'CreateListing.tsx:handleSave:beforeExistingPhotosUpdate',message:'Updating existing photo orders',data:{existingCount:photos.filter(p=>p.id).length},timestamp:Date.now(),hypothesisId:'D'})}).catch(()=>{});
-      // #endregion
-      for (const photo of photos.filter(p => p.id)) {
-        if (photo.id) { // Guard against undefined id
-          await supabase.from('listing_images').update({ display_order: photos.indexOf(photo) }).eq('id', photo.id);
+      for (let i = 0; i < photos.length; i++) {
+        const photo = photos[i];
+        if (photo.id) {
+          await supabase.from('listing_images').update({ display_order: i }).eq('id', photo.id);
         }
       }
 
       saveContactPreferences(contactPrefs);
       if (userId) clearDraft(userId);
 
-      // #region agent log
-      fetch('http://127.0.0.1:7614/ingest/556d2fa9-8084-4e76-985f-24d23c8680e2',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'ee0545'},body:JSON.stringify({sessionId:'ee0545',location:'CreateListing.tsx:handleSave:success',message:'All operations completed successfully, setting step to 5',data:{createdListingId:newListingId},timestamp:Date.now(),hypothesisId:'E'})}).catch(()=>{});
-      // #endregion
       setStep(5);
     } catch (err: any) {
-      // #region agent log
-      console.log('[DEBUG ee0545] Error caught', { errorMessage: err?.message, errorStack: err?.stack?.substring(0, 200) });
-      fetch('http://127.0.0.1:7614/ingest/556d2fa9-8084-4e76-985f-24d23c8680e2',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'ee0545'},body:JSON.stringify({sessionId:'ee0545',location:'CreateListing.tsx:handleSave:catch',message:'Error caught in handleSave',data:{errorMessage:err?.message,errorStack:err?.stack?.substring(0,200)},timestamp:Date.now(),hypothesisId:'E'})}).catch(()=>{});
-      // #endregion
       const safeError = sanitizeErrorMessage(err);
       showToast(safeError, 'error');
       await logAuditEvent({ action: editId ? 'listing_update_failed' : 'listing_creation_failed', status: 'failed', metadata: { error: safeError } });
     } finally {
-      // #region agent log
-      console.log('[DEBUG ee0545] Finally block reached');
-      fetch('http://127.0.0.1:7614/ingest/556d2fa9-8084-4e76-985f-24d23c8680e2',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'ee0545'},body:JSON.stringify({sessionId:'ee0545',location:'CreateListing.tsx:handleSave:finally',message:'Finally block reached, setting loading to false',data:{},timestamp:Date.now(),hypothesisId:'E'})}).catch(()=>{});
-      // #endregion
       setLoading(false);
     }
   };
@@ -506,7 +459,7 @@ export const CreateListing: React.FC = () => {
                 ) : photos.length === 0 ? (
                   <>
                     <Camera size={48} className="text-warm-300 mb-3 group-hover:text-teal-400 transition-colors" />
-                    <span className="font-heading font-bold text-midnight-700 text-lg">Tap to add photos</span>
+                    <span className="font-heading font-bold text-midnight-700 text-lg">{COPY.CREATE_LISTING.PHOTO_HINT}</span>
                     <span className="font-medium text-warm-400 text-sm mt-1">Up to 8 · AI-optimized automatically</span>
                   </>
                 ) : (
@@ -585,6 +538,12 @@ export const CreateListing: React.FC = () => {
                     )
                   })}
                 </div>
+                {preCategory && ['fresh-catch', 'produce'].includes(preCategory) && (
+                  <p className="text-sm text-teal-600 font-medium mt-2 px-1">{COPY.CREATE_LISTING.CATEGORY_FISH}</p>
+                )}
+                {category === 'Vehicles' && (
+                  <p className="text-sm text-teal-600 font-medium mt-2 px-1">{COPY.CREATE_LISTING.CATEGORY_VEHICLES}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
@@ -638,7 +597,7 @@ export const CreateListing: React.FC = () => {
                   <label className="text-xs font-bold text-warm-400 uppercase tracking-widest">Expected Price (₹)</label>
                   <input
                     type="number"
-                    placeholder="Enter amount"
+                    placeholder={COPY.CREATE_LISTING.PRICE_PLACEHOLDER}
                     value={price}
                     onChange={e => setPrice(e.target.value)}
                     className="w-full p-4 bg-white rounded-2xl border border-warm-200 focus:border-teal-400 focus:ring-4 focus:ring-teal-100 outline-none font-heading font-black text-2xl text-midnight-700 transition-all"
@@ -861,7 +820,7 @@ export const CreateListing: React.FC = () => {
               <div className="text-7xl animate-float">🏝️</div>
               <div className="space-y-2">
                 <h2 className="text-3xl font-heading font-black text-midnight-700">{editId ? 'Listing Updated!' : 'Published!'}</h2>
-                <p className="text-warm-400 font-medium">Your item is now live for the island community.</p>
+                <p className="text-warm-400 font-medium">{COPY.SUCCESS.LISTING_PUBLISHED}</p>
                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-teal-50 text-teal-700 rounded-full text-sm font-bold mt-2 border border-teal-100">
                   <span className="w-2 h-2 bg-teal-500 rounded-full animate-pulse" /> Live Now
                 </div>
