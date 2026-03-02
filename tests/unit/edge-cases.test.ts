@@ -115,10 +115,9 @@ describe('File Upload — Type Spoofing Attacks', () => {
 
   it('rejects zero-byte file (potential upload bypass)', () => {
     const file = new File([], 'empty.jpg', { type: 'image/jpeg' })
-    // Zero-byte files pass current validation — flagging as edge case
+    // Zero-byte files should be rejected to prevent upload bypass edge cases
     const result = validateFileUpload(file)
-    // The file is technically valid (0 bytes < 5MB, correct MIME, valid extension)
-    expect(result.valid).toBe(true)
+    expect(result.valid).toBe(false)
   })
 })
 
