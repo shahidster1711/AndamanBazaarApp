@@ -13,6 +13,7 @@ describeIfDatabase("POST /api/leads", () => {
     } catch (err) {
       dbReady = false;
       console.warn("Skipping lead integration tests; database unavailable:", err);
+      throw err;
     }
   });
 
