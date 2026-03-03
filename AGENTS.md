@@ -47,6 +47,7 @@ This project is a live production system. All changes must comply with the follo
   - Explicit INSERT/UPDATE/DELETE policies
 
 If a change requires bypassing RLS, it must be done via:
+
 - Supabase Edge Function
 - Using service role key
 - With strict validation
@@ -104,6 +105,7 @@ If a change requires bypassing RLS, it must be done via:
 ## 8. Code Change Discipline
 
 **Before any modification:**
+
 - Identify impacted modules
 - Check environment variable dependencies
 - Validate TypeScript types
@@ -111,6 +113,7 @@ If a change requires bypassing RLS, it must be done via:
 - Ensure no breaking API contract
 
 **After any change:**
+
 - List possible runtime failures
 - Provide integration test scenarios
 - Provide rollback strategy
@@ -120,12 +123,14 @@ If a change requires bypassing RLS, it must be done via:
 ## 9. Production Mindset
 
 **Assume:**
+
 - Adversarial users
 - Malicious actors
 - Traffic spikes
 - Partial outages
 
 **Prioritize:**
+
 Security > Data integrity > Correctness > Performance > DX convenience
 
 No shortcuts.
@@ -135,6 +140,7 @@ No shortcuts.
 ## Summary
 
 This document ensures AI assistants:
+
 - Never suggest insecure shortcuts
 - Never expose secrets
 - Never disable RLS
