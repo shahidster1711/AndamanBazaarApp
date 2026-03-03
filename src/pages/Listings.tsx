@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 import { Listing } from '../types';
 import { Search, MapPin, Heart, Sparkles, Filter, X, ChevronDown, ArrowUpDown, Loader2 } from 'lucide-react';
 import { useToast } from '../components/Toast';
-import { getDemoListings, isDemoListing } from '../lib/demoListings';
+import { isDemoListing } from '../lib/demoListings';
 import { COPY } from '../lib/localCopy';
 
 const CATEGORIES = [
@@ -121,14 +121,7 @@ export const Listings: React.FC = () => {
 
       const results = data || [];
       if (reset) {
-        if (results.length < 4) {
-          // Pad with demo listings when real data is sparse
-          const cat = searchParams.get('category') || undefined;
-          const demos = getDemoListings(cat).slice(0, PAGE_SIZE - results.length);
-          setListings([...results, ...demos]);
-        } else {
-          setListings(results);
-        }
+        setListings(results);
       } else {
         setListings(prev => [...prev, ...results]);
       }
@@ -137,7 +130,7 @@ export const Listings: React.FC = () => {
       if (!reset) setPage(prev => prev + 1);
     } catch (err) {
       console.error("Error fetching listings:", err);
-      setListings(getDemoListings());
+      setListings([]);
     } finally {
       setLoading(false);
       setLoadingMore(false);
