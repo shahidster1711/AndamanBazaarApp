@@ -45,3 +45,7 @@ service-account*.json
 reports/
 coverage/
 lighthouse-*.html
+
+# Build artifacts and log files
+build_log.txt
+*.zip

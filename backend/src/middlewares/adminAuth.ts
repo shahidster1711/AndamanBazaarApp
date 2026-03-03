@@ -17,6 +17,8 @@ export const adminAuth = (req: Request, res: Response, next: NextFunction): void
   const credentials = basicAuth(req);
   if (
     credentials &&
+    env.ADMIN_BASIC_USER &&
+    env.ADMIN_BASIC_PASS &&
     credentials.name === env.ADMIN_BASIC_USER &&
     credentials.pass === env.ADMIN_BASIC_PASS
   ) {
