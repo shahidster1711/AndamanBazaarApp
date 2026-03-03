@@ -74,19 +74,24 @@ BEGIN
     
     -- Check hourly rate limit
     IF v_profile.verification_attempts >= p_max_attempts THEN
-        -- Block if too many total failures (across multiple hourly windows)
+        -- Block if too many total failures
         IF v_profile.verification_attempts >= p_max_total_failures THEN
             UPDATE profiles SET 
                 verification_blocked_until = v_now + (p_block_duration_hours || ' hours')::INTERVAL
             WHERE id = p_user_id;
-            
+        
             RETURN QUERY SELECT 
                 FALSE, 
                 (p_block_duration_hours * 3600),
                 'Account temporarily blocked due to excessive verification attempts.'::TEXT;
             RETURN;
         END IF;
-        
+    
+        -- Temporarily block for one hour when hourly limit is hit
+        UPDATE profiles
+        SET verification_blocked_until = v_now + INTERVAL '1 hour'
+        WHERE id = p_user_id;
+    
         RETURN QUERY SELECT 
             FALSE, 
             3600, -- 1 hour
