@@ -109,6 +109,9 @@ global.navigator = {
   },
 }
 
+// Mock alert for DOMPurify/happy-dom compatibility
+global.alert = vi.fn()
+
 // Add a minimal meta description so DOM queries in tests don't fail
 if (!document.querySelector('meta[name="description"]')) {
   const metaDesc = document.createElement('meta')
