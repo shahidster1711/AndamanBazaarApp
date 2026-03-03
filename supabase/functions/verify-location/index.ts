@@ -51,6 +51,7 @@ interface IpGeoResponse {
     isp: string;
 }
 
+<<<<
 function isWithinAndamanBounds(lat: number, lng: number): boolean {
     return (
         lat >= ANDAMAN_BOUNDS.minLat &&
@@ -60,6 +61,7 @@ function isWithinAndamanBounds(lat: number, lng: number): boolean {
     );
 }
 
+<
 function getClientIp(req: Request): string {
     const forwarded = req.headers.get("x-forwarded-for");
     if (forwarded) {
@@ -71,6 +73,7 @@ function getClientIp(req: Request): string {
     }
     return "unknown";
 }
+
 
 async function getIpGeolocation(ip: string): Promise<IpGeoResponse | null> {
     if (ip === "unknown" || ip.startsWith("127.") || ip.startsWith("192.168.") || ip.startsWith("10.")) {
