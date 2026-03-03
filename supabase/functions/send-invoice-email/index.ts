@@ -12,7 +12,7 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SERVICE_ROLE_KEY")!;
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") || "";
 
 const corsHeaders = {
-    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Origin": Deno.env.get("FRONTEND_ORIGIN") || "https://www.andamanbazaar.in",
     "Access-Control-Allow-Headers":
         "authorization, x-client-info, apikey, content-type",
 };

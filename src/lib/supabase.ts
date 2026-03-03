@@ -10,8 +10,12 @@ export const isSupabaseConfigured = () => {
   return supabaseUrl?.startsWith('https://') && supabaseAnonKey?.length > 20;
 };
 
-// Initialize the client with fallbacks to prevent crash on import if env vars are missing
+// Initialize the client — log a warning if env vars are missing instead of using placeholder credentials
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.warn('Supabase environment variables (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY) are not set. Supabase features will not work.');
+}
+
 export const supabase = createClient(
   supabaseUrl || 'https://placeholder.supabase.co',
-  supabaseAnonKey || 'placeholder-key'
+  supabaseAnonKey || 'placeholder-anon-key'
 );

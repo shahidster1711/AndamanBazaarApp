@@ -17,7 +17,7 @@ const TIERS: Record<string, { label: string; emoji: string }> = {
 };
 
 const corsHeaders = {
-    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Origin": Deno.env.get("FRONTEND_ORIGIN") || "https://www.andamanbazaar.in",
     "Access-Control-Allow-Headers":
         "authorization, x-client-info, apikey, content-type",
 };
