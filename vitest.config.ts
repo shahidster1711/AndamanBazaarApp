@@ -6,15 +6,12 @@ export default defineConfig({
   plugins: [react()],
   test: {
     globals: true,
-    environment: 'jsdom',
-    environmentOptions: {
-      happyDOM: {
-        settings: {
-          disableIframePageLoading: true,
-        },
-      },
-    },
+    environment: 'happy-dom',
     setupFiles: ['./tests/setup.ts'],
+    include: [
+      'tests/**/*.test.{ts,tsx}',
+      'tests/**/*.spec.{ts,tsx}',
+    ],
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
@@ -23,9 +20,6 @@ export default defineConfig({
       'tests/security/**',
       'tests/integration/**',
       'tests/accessibility/**',
-      'e2e/**',
-      'backend/**',
-      'frontend/**',
     ],
     coverage: {
       provider: 'v8',

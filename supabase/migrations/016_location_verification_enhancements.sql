@@ -64,9 +64,17 @@ BEGIN
         v_profile.verification_attempts := 0;
     END IF;
     
+    -- Reset hourly attempts if last update was more than 1 hour ago
+    IF v_profile.updated_at IS NOT NULL AND v_profile.updated_at < v_one_hour_ago THEN
+        UPDATE profiles SET 
+            verification_attempts = 0
+        WHERE id = p_user_id;
+        v_profile.verification_attempts := 0;
+    END IF;
+    
     -- Check hourly rate limit
     IF v_profile.verification_attempts >= p_max_attempts THEN
-        -- Block if too many total failures
+        -- Block if too many total failures (across multiple hourly windows)
         IF v_profile.verification_attempts >= p_max_total_failures THEN
             UPDATE profiles SET 
                 verification_blocked_until = v_now + (p_block_duration_hours || ' hours')::INTERVAL
