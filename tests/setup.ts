@@ -112,6 +112,30 @@ global.navigator = {
   },
 }
 
+// CI safety: some runners don't expose IndexedDB in happy-dom
+if (!('indexedDB' in globalThis)) {
+  Object.defineProperty(globalThis, 'indexedDB', {
+    writable: true,
+    value: {
+      open: vi.fn(),
+      deleteDatabase: vi.fn(),
+      databases: vi.fn().mockResolvedValue([]),
+    },
+  })
+}
+
+if (!('IDBKeyRange' in globalThis)) {
+  Object.defineProperty(globalThis, 'IDBKeyRange', {
+    writable: true,
+    value: {
+      only: vi.fn(),
+      lowerBound: vi.fn(),
+      upperBound: vi.fn(),
+      bound: vi.fn(),
+    },
+  })
+}
+
 // Add a minimal meta description so DOM queries in tests don't fail
 if (!document.querySelector('meta[name="description"]')) {
   const metaDesc = document.createElement('meta')
