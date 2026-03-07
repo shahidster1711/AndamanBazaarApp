@@ -2,6 +2,9 @@ import '@testing-library/jest-dom'
 import { cleanup } from '@testing-library/react'
 import { afterEach, vi } from 'vitest'
 
+// Global supabase mock — prevents DNS resolution of mock.supabase.co in CI
+vi.mock('../src/lib/supabase', () => import('../src/lib/__mocks__/supabase'))
+
 // Re-export createMockChain from the __mocks__ file so test files can import it from here
 export { createMockChain } from '../src/lib/__mocks__/supabase'
 

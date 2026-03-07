@@ -95,7 +95,7 @@ export const ListingDetail: React.FC = () => {
       setListing(fullListing);
 
       // 3. Fetch seller separately
-      if (listingData.user_id === currentUser) {
+      if (listingData.user_id) {
         const { data: sellerData } = await supabase
           .from('profiles')
           .select('*')

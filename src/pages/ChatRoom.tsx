@@ -38,16 +38,13 @@ export const ChatRoom: React.FC = () => {
         try {
           const CHAT_SELECT = `*, listing:listings!chats_listing_id_fkey(id, title, price, city, user_id), seller:profiles!chats_seller_id_fkey(id, name, profile_photo_url), buyer:profiles!chats_buyer_id_fkey(id, name, profile_photo_url)`;
 
-          let chatData = null;
-          let chatError = null;
-
-          chatData = await supabase
+          let { data: chatData, error: chatError } = await supabase
             .from('chats')
             .select(CHAT_SELECT)
             .eq('id', id)
             .single();
 
-          if (!chatData) {
+          if (chatError || !chatData) {
             const listing = await supabase
               .from('listings')
               .select('*')
