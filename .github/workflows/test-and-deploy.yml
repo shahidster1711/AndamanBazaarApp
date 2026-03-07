@@ -100,6 +100,75 @@ jobs:
           path: playwright-report/
           retention-days: 14
 
+  # ─── Deploy to VPS via SSH ───────────────────────────────────────────────
+  deploy-to-vps:
+    name: Deploy to VPS (SSH)
+    runs-on: ubuntu-latest
+    needs: [unit-and-security-blocking]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production bundle
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_CASHFREE_ENV: production
+
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            set -e
+            APP_DIR="/opt/andamanbazaar"
+
+            echo "── Pulling latest code ──"
+            cd $APP_DIR
+            git fetch origin main
+            git reset --hard origin/main
+
+            echo "── Building and deploying containers ──"
+            docker compose down --remove-orphans 2>/dev/null || true
+            docker compose build --no-cache
+            docker compose up -d
+
+            echo "── Verifying deployment ──"
+            sleep 5
+            docker compose ps
+            echo "✓ Deployment complete"
+
+      - name: Verify deployment health
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            # Basic health check — verify containers are running
+            RUNNING=$(docker compose -f /opt/andamanbazaar/docker-compose.yml ps --format json 2>/dev/null | grep -c '"running"' || echo "0")
+            if [ "$RUNNING" -eq "0" ]; then
+              echo "::error::No running containers detected after deployment"
+              docker compose -f /opt/andamanbazaar/docker-compose.yml logs --tail=30
+              exit 1
+            fi
+            echo "✓ $RUNNING container(s) running"
+
   e2e-extended-nonblocking:
     name: E2E Extended (Non-Blocking)
     runs-on: ubuntu-latest
