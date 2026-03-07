@@ -4,6 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { User } from '@supabase/supabase-js';
 import { Logo } from './Logo';
 import { OfflineBanner } from './OfflineBanner';
+import { OfflineSyncBanner } from './OfflineSyncBanner';
 import { supabase } from '../lib/supabase';
 import { useNotifications } from '../hooks/useNotifications';
 import {
@@ -51,8 +52,29 @@ export const Layout: React.FC<LayoutProps> = ({ children, user }) => {
 
     const channel = supabase
       .channel('layout_unread_count')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'chats' }, fetchUnread)
-      .subscribe();
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'chats',
+          filter: `or(buyer_id.eq.${user.id},seller_id.eq.${user.id})`,
+        },
+        (payload) => {
+          // Only refetch if unread counts changed
+          if (payload.new && (
+            'buyer_unread_count' in payload.new ||
+            'seller_unread_count' in payload.new
+          )) {
+            fetchUnread();
+          }
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'CHANNEL_ERROR') {
+          console.error('Layout: Error subscribing to chat changes');
+        }
+      });
 
     return () => { supabase.removeChannel(channel); };
   }, [user]);
@@ -63,6 +85,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, user }) => {
   return (
     <div className="min-h-screen flex flex-col bg-warm-50 font-sans text-midnight-700">
       {/* <OfflineBanner /> */}
+      <OfflineSyncBanner userId={user?.id || null} />
 
       {/* ── HEADER ── */}
       <header className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled

@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { ItemHistoryTimeline, ItemHistoryEntry } from '../components/ItemHistoryTimeline';
 import { ReportModal } from '../components/ReportModal';
 import { TrustBadge } from '../components/TrustBadge';
 import { Listing, Profile } from '../types';
@@ -21,6 +22,8 @@ export const ListingDetail: React.FC = () => {
   const [activeImage, setActiveImage] = useState(0);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isBoostModalOpen, setIsBoostModalOpen] = useState(false);
+  const [itemHistory, setItemHistory] = useState<ItemHistoryEntry[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
   const [similarListings, setSimilarListings] = useState<any[]>([]);
   const [loadingSimilar, setLoadingSimilar] = useState(false);
   const { showToast } = useToast();
@@ -80,6 +83,33 @@ export const ListingDetail: React.FC = () => {
           .eq('id', listingData.user_id)
           .single();
         if (sellerData) setSeller(sellerData);
+      }
+
+      // 4. Fetch item history if resale
+      if (listingData.is_resale || listingData.parent_listing_id) {
+        setLoadingHistory(true);
+        try {
+          const { data: historyData, error: historyError } = await supabase
+            .rpc('get_item_chain', { listing_id: id });
+          if (historyError) throw historyError;
+          if (historyData) {
+            setItemHistory(historyData.map((h: any) => ({
+              id: h.id,
+              seller_id: h.user_id,
+              seller_name: h.name || 'Unknown Seller',
+              seller_trust_level: h.trust_level || 'newbie',
+              title: h.title,
+              price: h.price,
+              sold_at: h.created_at,
+              depth: h.depth,
+            })));
+          }
+        } catch (err) {
+          console.warn('Error fetching item history:', err);
+          setItemHistory([]); // Reset history on error
+        } finally {
+          setLoadingHistory(false);
+        }
       }
 
     } catch (err) {
@@ -457,6 +487,16 @@ export const ListingDetail: React.FC = () => {
                 </div>
               </div>
             )}
+
+            {/* Item History Timeline for Resale Items */}
+            {itemHistory.length > 1 && !loadingHistory && (
+              <ItemHistoryTimeline
+                history={itemHistory}
+                currentListingId={listing.id}
+                className="mt-6"
+              />
+            )}
+
             {/* Similar Listings */}
             {similarListings.length > 0 && (
               <div className="space-y-4 pt-4 border-t border-warm-200">

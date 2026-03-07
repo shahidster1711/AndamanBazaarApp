@@ -8,6 +8,7 @@ import { messageSchema, sanitizePlainText } from '../lib/validation';
 import { checkRateLimit, logAuditEvent, sanitizeErrorMessage } from '../lib/security';
 import { useToast } from '../components/Toast';
 import { COPY } from '../lib/localCopy';
+import { BargeScheduleWidget } from '../components/BargeScheduleWidget';
 
 export const ChatRoom: React.FC = () => {
   const { chatId } = useParams();
@@ -276,6 +277,12 @@ export const ChatRoom: React.FC = () => {
   );
 
   const otherParty = currentUser?.id === chat.buyer_id ? chat.seller : chat.buyer;
+  const buyerLocation = chat.buyer?.city || 'Port Blair';
+  const sellerLocation = chat.seller?.city || 'Port Blair';
+
+  const handleBargeTimeSelect = (message: string) => {
+    setInputText(message);
+  };
 
   return (
     <div className="h-screen flex flex-col bg-slate-50">
@@ -302,6 +309,15 @@ export const ChatRoom: React.FC = () => {
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* Barge Schedule Widget for Inter-Island Coordination */}
+        {buyerLocation !== sellerLocation && (
+          <BargeScheduleWidget
+            buyerLocation={buyerLocation}
+            sellerLocation={sellerLocation}
+            onSelectTime={handleBargeTimeSelect}
+            className="mb-4"
+          />
+        )}
         <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 mb-4">
           <p className="text-[10px] font-bold text-blue-700 uppercase tracking-widest text-center">
             Safety Tip: Meet in public places and never share banking details.
