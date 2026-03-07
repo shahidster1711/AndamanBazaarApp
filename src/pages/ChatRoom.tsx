@@ -2,13 +2,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { Chat, Message, Profile } from '../types';
+import { Chat, Message } from '../types';
 import { Send, ChevronLeft, ShieldCheck, Check, CheckCheck } from 'lucide-react';
 import { messageSchema, sanitizePlainText } from '../lib/validation';
 import { checkRateLimit, logAuditEvent, sanitizeErrorMessage } from '../lib/security';
 import { useToast } from '../components/Toast';
 import { COPY } from '../lib/localCopy';
 import { BargeScheduleWidget } from '../components/BargeScheduleWidget';
+import { User } from '@supabase/supabase-js';
 
 export const ChatRoom: React.FC = () => {
   const { chatId } = useParams();
@@ -18,7 +19,7 @@ export const ChatRoom: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(true);
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { showToast } = useToast();
   const [hasMore, setHasMore] = useState(false);
@@ -26,97 +27,98 @@ export const ChatRoom: React.FC = () => {
 
   useEffect(() => {
     const initChat = async () => {
-      const { data: userData } = await (supabase.auth as any).getUser();
-      const user = userData?.user;
-      if (!user) return;
-      setCurrentUser(user);
-
       try {
-        // P4: Single query with joins instead of N+1 separate queries
-        const CHAT_SELECT = `*, listing:listings!chats_listing_id_fkey(id, title, price, city, user_id), seller:profiles!chats_seller_id_fkey(id, name, profile_photo_url), buyer:profiles!chats_buyer_id_fkey(id, name, profile_photo_url)`;
+        const userData = await supabase.auth.getUser();
+        const user = userData.data.user;
 
-        let { data: chatData, error: chatError } = await supabase
-          .from('chats')
-          .select(CHAT_SELECT)
-          .eq('id', id)
-          .single();
+        if (!user) return;
 
-        // If ID is actually a listing ID (from "Chat Now" button), resolve correctly
-        if (chatError || !chatData) {
-          const { data: listing } = await supabase
-            .from('listings')
-            .select('*')
+        setCurrentUser(user);
+
+        try {
+          const CHAT_SELECT = `*, listing:listings!chats_listing_id_fkey(id, title, price, city, user_id), seller:profiles!chats_seller_id_fkey(id, name, profile_photo_url), buyer:profiles!chats_buyer_id_fkey(id, name, profile_photo_url)`;
+
+          let chatData = null;
+          let chatError = null;
+
+          chatData = await supabase
+            .from('chats')
+            .select(CHAT_SELECT)
             .eq('id', id)
             .single();
 
-          if (listing) {
-            // Guard: prevent chatting on own listing
-            if (listing.user_id === user.id) {
-              setLoading(false);
-              return;
-            }
-
-            // Guard: prevent new chats on sold/deleted listings (existing chats still accessible)
-            const { data: existingChat } = await supabase
-              .from('chats')
-              .select(CHAT_SELECT)
-              .eq('listing_id', listing.id)
-              .eq('buyer_id', user.id)
+          if (!chatData) {
+            const listing = await supabase
+              .from('listings')
+              .select('*')
+              .eq('id', id)
               .single();
 
-            if (existingChat) {
-              chatData = existingChat;
-            } else if (listing.status === 'sold' || listing.status === 'deleted' || listing.status === 'expired') {
-              // Can't start new chat on sold/deleted/expired listings
-              navigate('/listings');
-              return;
-            } else {
-              const { data: newBaseChat } = await supabase
+            if (listing.data) {
+              if (listing.data?.user_id === user.id) {
+                setLoading(false);
+                return;
+              }
+
+              const existingChat = await supabase
                 .from('chats')
-                .insert({
-                  listing_id: listing.id,
-                  buyer_id: user.id,
-                  seller_id: listing.user_id
-                })
                 .select(CHAT_SELECT)
+                .eq('listing_id', listing.data.id)
+                .eq('buyer_id', user.id)
                 .single();
-              if (newBaseChat) chatData = newBaseChat;
+
+              if (existingChat.data) {
+                chatData = existingChat.data;
+              } else if (listing.data.status === 'sold' || listing.data.status === 'deleted' || listing.data.status === 'expired') {
+                navigate('/listings');
+                return;
+              } else {
+                const newBaseChat = await supabase
+                  .from('chats')
+                  .insert({
+                    listing_id: listing.data.id,
+                    buyer_id: user.id,
+                    seller_id: listing.data.user_id
+                  })
+                  .select(CHAT_SELECT)
+                  .single();
+                if (newBaseChat.data) chatData = newBaseChat.data;
+              }
             }
           }
-        }
 
-        if (chatData) {
-          setChat(chatData);
+          if (chatData) {
+            setChat(chatData);
 
-          // Initial Message Fetch (paginated — last 50)
-          const { data: messageData, count } = await supabase
-            .from('messages')
-            .select('*', { count: 'exact' })
-            .eq('chat_id', chatData.id)
-            .order('created_at', { ascending: false })
-            .limit(MESSAGES_PER_PAGE);
+            const { data, count } = await supabase
+              .from('messages')
+              .select('*', { count: 'exact' })
+              .eq('chat_id', chatData.id)
+              .order('created_at', { ascending: false })
+              .limit(MESSAGES_PER_PAGE);
 
-          if (messageData) {
-            setMessages(messageData.reverse());
-            setHasMore((count || 0) > MESSAGES_PER_PAGE);
+            if (data) {
+              setMessages(data.reverse());
+              setHasMore((count || 0) > MESSAGES_PER_PAGE);
+            }
+
+            await supabase
+              .from('chats')
+              .update({ [user.id === chatData.buyer_id ? 'buyer_unread_count' : 'seller_unread_count']: 0 })
+              .eq('id', chatData.id);
           }
-
-          // Reset unread count for current user
-          const isBuyer = user.id === chatData.buyer_id;
-          await supabase
-            .from('chats')
-            .update({ [isBuyer ? 'buyer_unread_count' : 'seller_unread_count']: 0 })
-            .eq('id', chatData.id);
+        } catch (err) {
+          console.error('Chat init error:', err);
+        } finally {
+          setLoading(false);
         }
       } catch (err) {
-        console.error('Chat init error:', err);
-      } finally {
-        setLoading(false);
+        console.error('User data error:', err);
       }
     };
 
     initChat();
-  }, [id]);
+  }, [id, navigate]);
 
   useEffect(() => {
     if (!chat) return;
@@ -130,18 +132,18 @@ export const ChatRoom: React.FC = () => {
           table: 'messages',
           filter: `chat_id=eq.${chat.id}`,
         },
-        (payload: any) => {
+        (payload) => {
           if (payload.eventType === 'INSERT') {
-            const newMessage = payload.new as Message;
+            const newMessage = payload.new;
             setMessages((prev) => {
               if (prev.find(m => m.id === newMessage.id)) return prev;
-              return [...prev, newMessage];
+              return [...prev, newMessage as Message];
             });
           } else if (payload.eventType === 'UPDATE') {
-            const updatedMessage = payload.new as Message;
+            const updatedMessage = payload.new;
             setMessages((prev) =>
               prev.map((msg) =>
-                msg.id === updatedMessage.id ? updatedMessage : msg
+                msg.id === updatedMessage.id ? updatedMessage as Message : msg
               )
             );
           }
@@ -174,7 +176,7 @@ export const ChatRoom: React.FC = () => {
     if (!chat || !hasMore || messages.length === 0) return;
     const oldestMessage = messages[0];
     try {
-      const { data: olderMessages } = await supabase
+      const { data } = await supabase
         .from('messages')
         .select('*')
         .eq('chat_id', chat.id)
@@ -182,9 +184,9 @@ export const ChatRoom: React.FC = () => {
         .order('created_at', { ascending: false })
         .limit(MESSAGES_PER_PAGE);
 
-      if (olderMessages && olderMessages.length > 0) {
-        setMessages(prev => [...olderMessages.reverse(), ...prev]);
-        if (olderMessages.length < MESSAGES_PER_PAGE) setHasMore(false);
+      if (data && data.length > 0) {
+        setMessages(prev => [...data.reverse(), ...prev]);
+        if (data.length < MESSAGES_PER_PAGE) setHasMore(false);
       } else {
         setHasMore(false);
       }
@@ -232,7 +234,7 @@ export const ChatRoom: React.FC = () => {
     setInputText('');
 
     try {
-      const { error: msgError } = await supabase
+      const { error } = await supabase
         .from('messages')
         .insert({
           chat_id: chat.id,
@@ -240,7 +242,7 @@ export const ChatRoom: React.FC = () => {
           message_text: sanitizedMessage,
         });
 
-      if (msgError) throw msgError;
+      if (error) throw error;
 
       await markMessagesAsRead(chat.id, currentUser.id);
 

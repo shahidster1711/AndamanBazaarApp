@@ -6,7 +6,26 @@ import { ItemHistoryTimeline, ItemHistoryEntry } from '../components/ItemHistory
 import { ReportModal } from '../components/ReportModal';
 import { TrustBadge } from '../components/TrustBadge';
 import { Listing, Profile } from '../types';
-import { MapPin, Shield, Share2, MessageSquare, Heart, ChevronLeft, AlertCircle, Edit3, Loader2, Tag, Clock, ShieldCheck, Package, Phone, MessageCircle, BadgeCheck, Rocket, Star } from 'lucide-react';
+import { 
+  MapPin, 
+  Shield, 
+  Share2, 
+  MessageSquare, 
+  Heart, 
+  ChevronLeft, 
+  AlertCircle, 
+  Edit3, 
+  Loader2, 
+  Tag, 
+  Clock, 
+  ShieldCheck, 
+  Package, 
+  Phone, 
+  MessageCircle, 
+  BadgeCheck as BadgeCheckIcon, 
+  Rocket, 
+  Star 
+} from 'lucide-react';
 import { useToast } from '../components/Toast';
 import { BoostListingModal } from '../components/BoostListingModal';
 import { COPY } from '../lib/localCopy';
@@ -20,11 +39,11 @@ export const ListingDetail: React.FC = () => {
   const [isFavorited, setIsFavorited] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<string | null>(null);
   const [isBoostModalOpen, setIsBoostModalOpen] = useState(false);
   const [itemHistory, setItemHistory] = useState<ItemHistoryEntry[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
-  const [similarListings, setSimilarListings] = useState<any[]>([]);
+  const [similarListings, setSimilarListings] = useState<(Listing & { images?: { image_url: string }[] })[]>([]);
   const [loadingSimilar, setLoadingSimilar] = useState(false);
   const { showToast } = useToast();
 
@@ -46,7 +65,7 @@ export const ListingDetail: React.FC = () => {
       if (userError) {
         console.warn("Error getting user:", userError);
       }
-      setCurrentUserId(user?.id || null);
+      setCurrentUser(user?.id || null);
 
       // 1. Fetch basic listing data without joins
       const { data: listingData, error: listingError } = await supabase
@@ -76,7 +95,7 @@ export const ListingDetail: React.FC = () => {
       setListing(fullListing);
 
       // 3. Fetch seller separately
-      if (listingData.user_id) {
+      if (listingData.user_id === currentUser) {
         const { data: sellerData } = await supabase
           .from('profiles')
           .select('*')
@@ -127,6 +146,8 @@ export const ListingDetail: React.FC = () => {
         console.warn("Error getting user:", userError);
       }
       if (!user || !id) return;
+      
+      setCurrentUser(user.id);
 
       const { data } = await supabase
         .from('favorites')
@@ -196,7 +217,7 @@ export const ListingDetail: React.FC = () => {
         .order('created_at', { ascending: false })
         .limit(6);
       
-      setSimilarListings(data || []);
+      setSimilarListings(data?.map((item: any) => ({ ...item, images: item.images || [] })) || []);
     } catch (err) {
       console.warn('Failed to fetch similar listings:', err);
     } finally {
@@ -309,7 +330,7 @@ export const ListingDetail: React.FC = () => {
     }
   };
 
-  const isOwner = currentUserId === listing.user_id;
+  const isOwner = currentUser === listing.user_id;
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 animate-slide-up">
@@ -376,7 +397,7 @@ export const ListingDetail: React.FC = () => {
             {/* Sold Banner */}
             {listing.status === 'sold' && (
               <div className="bg-coral-50 border border-coral-200 rounded-2xl p-4 flex items-center gap-3">
-                <BadgeCheck size={20} className="text-coral-600 flex-shrink-0" />
+                <BadgeCheckIcon size={20} className="text-coral-600 flex-shrink-0" />
                 <span className="font-bold text-coral-700 text-sm">This item has already been sold</span>
               </div>
             )}
@@ -583,7 +604,7 @@ export const ListingDetail: React.FC = () => {
                         onClick={handleMarkAsSold}
                         className="w-full bg-warm-100 text-warm-500 font-bold py-3 px-6 rounded-2xl flex items-center justify-center gap-2 hover:bg-warm-200 active:scale-[0.98] transition-all text-sm"
                       >
-                        <BadgeCheck size={16} /> Mark as Sold
+                        <BadgeCheckIcon size={16} /> Mark as Sold
                       </button>
                       <button
                         onClick={() => setIsBoostModalOpen(true)}
@@ -597,7 +618,7 @@ export const ListingDetail: React.FC = () => {
                 </div>
               ) : listing.status === 'sold' ? (
                 <div className="w-full bg-warm-100 text-warm-400 py-3 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 border border-warm-200 cursor-not-allowed">
-                  <BadgeCheck size={16} /> Item Sold
+                  <BadgeCheckIcon size={16} /> Item Sold
                 </div>
               ) : (
                 <Link to={`/chats/${id}`} className="btn-primary w-full text-sm py-3 gap-2">

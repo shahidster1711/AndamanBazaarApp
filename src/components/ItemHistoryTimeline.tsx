@@ -29,10 +29,6 @@ export const ItemHistoryTimeline: React.FC<ItemHistoryTimelineProps> = ({
     if (!history || history.length <= 1) return [];
     return [...history].sort((a, b) => b.depth - a.depth);
   }, [history]);
-  
-  const currentIndex = useMemo(() => {
-    return sortedHistory.findIndex(h => h.id === currentListingId);
-  }, [sortedHistory, currentListingId]);
 
   // Early return if no valid history
   if (!history || history.length <= 1 || sortedHistory.length === 0) {
@@ -79,7 +75,6 @@ export const ItemHistoryTimeline: React.FC<ItemHistoryTimelineProps> = ({
         <div className="space-y-6">
           {sortedHistory.map((entry, index) => {
             const isCurrent = entry.id === currentListingId;
-            const isFirst = index === sortedHistory.length - 1;
             const isLast = index === 0;
 
             return (

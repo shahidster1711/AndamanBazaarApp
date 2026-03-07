@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Ship, Clock, Calendar, ExternalLink, MapPin, Send } from 'lucide-react';
+import { Ship, Clock, ExternalLink, MapPin, Send } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useBargeSchedule, NextDeparture, suggestPickupTimes } from '../lib/bargeUtils';
 

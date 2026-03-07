@@ -3,13 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { User } from '@supabase/supabase-js';
 import { Logo } from './Logo';
-import { OfflineBanner } from './OfflineBanner';
 import { OfflineSyncBanner } from './OfflineSyncBanner';
 import { supabase } from '../lib/supabase';
 import { useNotifications } from '../hooks/useNotifications';
 import {
   Home, Search, PlusCircle, MessageCircle, User as UserIcon,
-  BadgeCheck, Bell
+  BadgeCheck
 } from 'lucide-react';
 
 interface LayoutProps {
