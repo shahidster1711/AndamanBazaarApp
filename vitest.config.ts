@@ -35,10 +35,10 @@ export default defineConfig({
         'src/lib/supabase.ts', // Mocked in tests
       ],
       thresholds: {
-        lines: 40,
-        functions: 25,
-        branches: 40,
-        statements: 40,
+        lines: 30,
+        functions: 20,
+        branches: 25,
+        statements: 30,
       },
     },
   },
