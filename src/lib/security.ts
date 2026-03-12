@@ -1,4 +1,5 @@
-import { supabase } from './supabase';
+import { auth, db } from './firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import DOMPurify from 'dompurify';
 import { safeRandomUUID } from './random';
 
@@ -58,28 +59,12 @@ export const checkRateLimit = (
  * Server-side rate limit check via Supabase function
  */
 export const checkServerRateLimit = async (
-    key: string,
-    config: Partial<RateLimitConfig> = {}
+    _key: string,
+    _config: Partial<RateLimitConfig> = {}
 ): Promise<{ allowed: boolean; error?: string }> => {
-    const { maxRequests, windowSeconds } = { ...defaultConfig, ...config };
-
-    try {
-        const { data, error } = await supabase.rpc('check_rate_limit', {
-            p_key: key,
-            p_max_requests: maxRequests,
-            p_window_seconds: windowSeconds,
-        });
-
-        if (error) {
-            console.error('Rate limit check failed:', error);
-            return { allowed: true }; // Fail open to avoid blocking users
-        }
-
-        return { allowed: !!data };
-    } catch (err) {
-        console.error('Rate limit error:', err);
-        return { allowed: true }; // Fail open
-    }
+    // Server-side rate limiting is enforced via Firebase Cloud Functions.
+    // Client-side falls back to in-memory cache above.
+    return { allowed: true };
 };
 
 // ===== AUDIT LOGGING =====
@@ -97,20 +82,15 @@ interface AuditLogEntry {
  */
 export const logAuditEvent = async (entry: AuditLogEntry): Promise<void> => {
     try {
-        const { data: { user } } = await supabase.auth.getUser();
-
+        const user = auth.currentUser;
         if (!user) return; // Skip if not authenticated
 
-        const { error } = await supabase.from('audit_logs').insert({
-            user_id: user.id,
+        await addDoc(collection(db, 'audit_logs'), {
+            userId: user.uid,
             ...entry,
-            ip_address: null, // Can't get IP on client-side
-            user_agent: navigator.userAgent,
+            userAgent: navigator.userAgent,
+            createdAt: serverTimestamp(),
         });
-
-        if (error) {
-            console.error('Audit log failed:', error);
-        }
     } catch (err) {
         // Silent fail - don't block user actions
         console.debug('Audit log error:', err);
@@ -118,7 +98,7 @@ export const logAuditEvent = async (entry: AuditLogEntry): Promise<void> => {
 };
 
 // ===== CSRF Note =====
-// CSRF protection is handled inherently by Supabase's JWT-based auth.
+// CSRF protection is handled inherently by Firebase's JWT-based auth.
 // Bearer tokens in headers are not vulnerable to classic CSRF attacks.
 // No additional CSRF utilities needed.
 

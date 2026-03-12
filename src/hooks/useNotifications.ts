@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import { auth, db } from '../lib/firebase';
+import { collection, query, where, onSnapshot, doc, getDoc } from 'firebase/firestore';
 
 export const useNotifications = () => {
   const location = useLocation();
@@ -18,97 +19,88 @@ export const useNotifications = () => {
     if (!('Notification' in window)) return;
 
     let isActive = true;
-    let messagesChannel: ReturnType<typeof supabase.channel> | null = null;
-    let chatsChannel: ReturnType<typeof supabase.channel> | null = null;
-
-    const primeChatIds = async (userId: string) => {
-      const { data: chats } = await supabase
-        .from('chats')
-        .select('id, buyer_id, seller_id')
-        .or(`buyer_id.eq.${userId},seller_id.eq.${userId}`);
-
-      if (!isActive) return;
-
-      chatIdsRef.current = new Set((chats || []).map((c: any) => c.id));
-    };
+    const unsubscribers: (() => void)[] = [];
 
     const getSenderName = async (senderId: string) => {
       const cached = senderNameCacheRef.current.get(senderId);
       if (cached) return cached;
 
-      const { data } = await supabase
-        .from('profiles')
-        .select('name')
-        .eq('id', senderId)
-        .single();
-
-      const name = data?.name || 'Someone';
-      senderNameCacheRef.current.set(senderId, name);
-      return name;
+      try {
+        const snap = await getDoc(doc(db, 'users', senderId));
+        const name = snap.exists() ? (snap.data().name || 'Someone') : 'Someone';
+        senderNameCacheRef.current.set(senderId, name);
+        return name;
+      } catch {
+        return 'Someone';
+      }
     };
 
-    const setup = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+    const setup = () => {
+      const user = auth.currentUser;
       if (!user || !isActive) return;
 
-      await primeChatIds(user.id);
-      if (!isActive) return;
+      // Subscribe to buyer-side chats
+      const buyerChatsQ = query(
+        collection(db, 'chats'),
+        where('buyerId', '==', user.uid)
+      );
+      const sellerChatsQ = query(
+        collection(db, 'chats'),
+        where('sellerId', '==', user.uid)
+      );
 
-      chatsChannel = supabase
-        .channel(`notifications_chats:${user.id}`)
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'chats', filter: `buyer_id=eq.${user.id}` },
-          () => primeChatIds(user.id)
-        )
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'chats', filter: `seller_id=eq.${user.id}` },
-          () => primeChatIds(user.id)
-        )
-        .subscribe();
+      const handleChatsSnap = (snap: any) => {
+        if (!isActive) return;
+        snap.docs.forEach((d: any) => chatIdsRef.current.add(d.id));
+      };
 
-      messagesChannel = supabase
-        .channel(`notifications_messages:${user.id}`)
-        .on(
-          'postgres_changes',
-          { event: 'INSERT', schema: 'public', table: 'messages' },
-          async (payload) => {
-            const msg: any = payload.new;
+      unsubscribers.push(onSnapshot(buyerChatsQ, handleChatsSnap));
+      unsubscribers.push(onSnapshot(sellerChatsQ, handleChatsSnap));
 
-            if (!isActive) return;
-            if (!msg?.chat_id || !msg?.sender_id) return;
-            if (msg.sender_id === user.id) return;
-            if (!chatIdsRef.current.has(msg.chat_id)) return;
+      // Subscribe to new messages across user's chats
+      const messagesQ = query(
+        collection(db, 'messages'),
+        where('recipientId', '==', user.uid)
+      );
 
-            const isChatOpen = location.pathname === `/chats/${msg.chat_id}`;
-            if (isChatOpen && document.visibilityState === 'visible') return;
+      unsubscribers.push(onSnapshot(messagesQ, async (snap) => {
+        if (!isActive) return;
+        for (const change of snap.docChanges()) {
+          if (change.type !== 'added') continue;
+          const msg = change.doc.data();
+          if (!msg?.chatId || !msg?.senderId) continue;
+          if (msg.senderId === user.uid) continue;
+          if (!chatIdsRef.current.has(msg.chatId)) continue;
 
-            if (Notification.permission !== 'granted') return;
+          const isChatOpen = location.pathname === `/chats/${msg.chatId}`;
+          if (isChatOpen && document.visibilityState === 'visible') continue;
+          if (Notification.permission !== 'granted') continue;
 
-            const senderName = await getSenderName(msg.sender_id);
-            const body = msg.message_text || 'New message';
+          const senderName = await getSenderName(msg.senderId);
+          const body = msg.content || 'New message';
 
-            try {
-              new Notification(`New message from ${senderName}`, {
-                body,
-                icon: '/logo192.png',
-                tag: msg.chat_id,
-              });
-            } catch {
-              // ignore
-            }
+          try {
+            new Notification(`New message from ${senderName}`, {
+              body,
+              icon: '/logo192.png',
+              tag: msg.chatId,
+            });
+          } catch {
+            // ignore
           }
-        )
-        .subscribe();
+        }
+      }));
     };
 
-    setup();
+    // Wait for auth state to resolve
+    const unsubAuth = auth.onAuthStateChanged((user) => {
+      if (user && isActive) setup();
+    });
 
     return () => {
       isActive = false;
-      if (messagesChannel) supabase.removeChannel(messagesChannel);
-      if (chatsChannel) supabase.removeChannel(chatsChannel);
+      unsubAuth();
+      unsubscribers.forEach(fn => fn());
     };
   }, [location.pathname]);
 };

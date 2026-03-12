@@ -1,15 +1,14 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
-import { Chat, Message } from '../types';
+import { auth, db } from '../lib/firebase';
+import { collection, doc, getDoc, getDocs, addDoc, updateDoc, onSnapshot, query, orderBy, limit, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { Chat, Message, Profile } from '../types';
 import { Send, ChevronLeft, ShieldCheck, Check, CheckCheck } from 'lucide-react';
 import { messageSchema, sanitizePlainText } from '../lib/validation';
 import { checkRateLimit, logAuditEvent, sanitizeErrorMessage } from '../lib/security';
 import { useToast } from '../components/Toast';
 import { COPY } from '../lib/localCopy';
-import { BargeScheduleWidget } from '../components/BargeScheduleWidget';
-import { User } from '@supabase/supabase-js';
 
 export const ChatRoom: React.FC = () => {
   const { chatId } = useParams();
@@ -19,7 +18,7 @@ export const ChatRoom: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(true);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { showToast } = useToast();
   const [hasMore, setHasMore] = useState(false);
@@ -27,128 +26,106 @@ export const ChatRoom: React.FC = () => {
 
   useEffect(() => {
     const initChat = async () => {
+      const user = auth.currentUser;
+      if (!user) return;
+      setCurrentUser({ id: user.uid });
+
       try {
-        const userData = await supabase.auth.getUser();
-        const user = userData.data.user;
+        let chatDoc: any = null;
 
-        if (!user) return;
+        // Try to load chat by ID first
+        const chatSnap = await getDoc(doc(db, 'chats', id!));
+        if (chatSnap.exists()) {
+          chatDoc = { id: chatSnap.id, ...chatSnap.data() };
+        } else {
+          // If ID is a listing ID (from "Chat Now" button)
+          const listingSnap = await getDoc(doc(db, 'listings', id!));
+          if (listingSnap.exists()) {
+            const listing = { id: listingSnap.id, ...listingSnap.data() } as any;
 
-        setCurrentUser(user);
+            // Guard: prevent chatting on own listing
+            if (listing.userId === user.uid) { setLoading(false); return; }
 
-        try {
-          const CHAT_SELECT = `*, listing:listings!chats_listing_id_fkey(id, title, price, city, user_id), seller:profiles!chats_seller_id_fkey(id, name, profile_photo_url), buyer:profiles!chats_buyer_id_fkey(id, name, profile_photo_url)`;
-
-          let { data: chatData, error: chatError } = await supabase
-            .from('chats')
-            .select(CHAT_SELECT)
-            .eq('id', id)
-            .single();
-
-          if (chatError || !chatData) {
-            const listing = await supabase
-              .from('listings')
-              .select('*')
-              .eq('id', id)
-              .single();
-
-            if (listing.data) {
-              if (listing.data?.user_id === user.id) {
-                setLoading(false);
-                return;
-              }
-
-              const existingChat = await supabase
-                .from('chats')
-                .select(CHAT_SELECT)
-                .eq('listing_id', listing.data.id)
-                .eq('buyer_id', user.id)
-                .single();
-
-              if (existingChat.data) {
-                chatData = existingChat.data;
-              } else if (listing.data.status === 'sold' || listing.data.status === 'deleted' || listing.data.status === 'expired') {
-                navigate('/listings');
-                return;
-              } else {
-                const newBaseChat = await supabase
-                  .from('chats')
-                  .insert({
-                    listing_id: listing.data.id,
-                    buyer_id: user.id,
-                    seller_id: listing.data.user_id
-                  })
-                  .select(CHAT_SELECT)
-                  .single();
-                if (newBaseChat.data) chatData = newBaseChat.data;
-              }
-            }
-          }
-
-          if (chatData) {
-            setChat(chatData);
-
-            const { data, count } = await supabase
-              .from('messages')
-              .select('*', { count: 'exact' })
-              .eq('chat_id', chatData.id)
-              .order('created_at', { ascending: false })
-              .limit(MESSAGES_PER_PAGE);
-
-            if (data) {
-              setMessages(data.reverse());
-              setHasMore((count || 0) > MESSAGES_PER_PAGE);
+            if (['sold', 'deleted', 'expired'].includes(listing.status)) {
+              navigate('/listings'); return;
             }
 
-            await supabase
-              .from('chats')
-              .update({ [user.id === chatData.buyer_id ? 'buyer_unread_count' : 'seller_unread_count']: 0 })
-              .eq('id', chatData.id);
+            // Create new chat
+            const newChatRef = await addDoc(collection(db, 'chats'), {
+              listingId: listing.id,
+              buyerId: user.uid,
+              sellerId: listing.userId,
+              buyerUnreadCount: 0,
+              sellerUnreadCount: 0,
+              createdAt: serverTimestamp(),
+              lastMessageAt: serverTimestamp(),
+            });
+
+            chatDoc = {
+              id: newChatRef.id,
+              listingId: listing.id,
+              buyerId: user.uid,
+              sellerId: listing.userId,
+              listing,
+            };
           }
-        } catch (err) {
-          console.error('Chat init error:', err);
-        } finally {
-          setLoading(false);
+        }
+
+        if (chatDoc) {
+          // Enrich with listing + user profiles
+          const [listingSnap, sellerSnap, buyerSnap] = await Promise.all([
+            chatDoc.listing ? null : getDoc(doc(db, 'listings', chatDoc.listingId)).catch(() => null),
+            getDoc(doc(db, 'users', chatDoc.sellerId)).catch(() => null),
+            getDoc(doc(db, 'users', chatDoc.buyerId)).catch(() => null),
+          ]);
+
+          chatDoc.listing = chatDoc.listing || (listingSnap?.exists() ? { id: listingSnap.id, ...listingSnap.data() } : null);
+          chatDoc.seller = sellerSnap?.exists() ? { id: sellerSnap.id, ...sellerSnap.data() } : null;
+          chatDoc.buyer = buyerSnap?.exists() ? { id: buyerSnap.id, ...buyerSnap.data() } : null;
+
+          setChat(chatDoc);
+
+          // Initial messages fetch
+          const msgSnap = await getDocs(
+            query(collection(db, 'chats', chatDoc.id, 'messages'), orderBy('createdAt', 'desc'), limit(MESSAGES_PER_PAGE))
+          );
+          const msgs = msgSnap.docs.map(d => ({ id: d.id, ...d.data() })).reverse() as any[];
+          setMessages(msgs);
+          setHasMore(msgSnap.docs.length === MESSAGES_PER_PAGE);
+
+          // Reset unread count
+          const isBuyer = user.uid === chatDoc.buyerId;
+          await updateDoc(doc(db, 'chats', chatDoc.id), {
+            [isBuyer ? 'buyerUnreadCount' : 'sellerUnreadCount']: 0,
+          });
         }
       } catch (err) {
-        console.error('User data error:', err);
+        console.error('Chat init error:', err);
+      } finally {
+        setLoading(false);
       }
     };
 
     initChat();
-  }, [id, navigate]);
+  }, [id]);
 
   useEffect(() => {
     if (!chat) return;
-    const channel = supabase
-      .channel(`chat_messages:${chat.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'messages',
-          filter: `chat_id=eq.${chat.id}`,
-        },
-        (payload) => {
-          if (payload.eventType === 'INSERT') {
-            const newMessage = payload.new;
-            setMessages((prev) => {
-              if (prev.find(m => m.id === newMessage.id)) return prev;
-              return [...prev, newMessage as Message];
-            });
-          } else if (payload.eventType === 'UPDATE') {
-            const updatedMessage = payload.new;
-            setMessages((prev) =>
-              prev.map((msg) =>
-                msg.id === updatedMessage.id ? updatedMessage as Message : msg
-              )
-            );
-          }
-        }
-      )
-      .subscribe();
+    const msgsRef = collection(db, 'chats', chat.id, 'messages');
+    const msgsQ = query(msgsRef, orderBy('createdAt', 'asc'));
 
-    return () => { supabase.removeChannel(channel); };
+    const unsub = onSnapshot(msgsQ, (snap) => {
+      snap.docChanges().forEach(change => {
+        const msg = { id: change.doc.id, ...change.doc.data() } as any;
+        if (change.type === 'added') {
+          setMessages(prev => prev.find(m => m.id === msg.id) ? prev : [...prev, msg]);
+        } else if (change.type === 'modified') {
+          setMessages(prev => prev.map(m => m.id === msg.id ? msg : m));
+        }
+      });
+    });
+
+    return unsub;
   }, [chat]);
 
   useEffect(() => {
@@ -157,13 +134,20 @@ export const ChatRoom: React.FC = () => {
     }
   }, [messages]);
 
-  const markMessagesAsRead = async (chatId: string, userId: string) => {
+  const markMessagesAsRead = async (chatId: string, _userId: string) => {
     try {
-      await supabase
-        .from('messages')
-        .update({ is_read: true })
-        .eq('chat_id', chatId)
-        .neq('sender_id', userId);
+      const user = auth.currentUser;
+      if (!user) return;
+      const unreadSnap = await getDocs(
+        query(collection(db, 'chats', chatId, 'messages'), orderBy('createdAt', 'asc'))
+      );
+      const batch = writeBatch(db);
+      unreadSnap.docs.forEach(d => {
+        if (d.data().senderId !== user.uid && !d.data().isRead) {
+          batch.update(d.ref, { isRead: true });
+        }
+      });
+      await batch.commit();
     } catch (error) {
       console.error('Error marking messages as read:', error);
     }
@@ -171,19 +155,14 @@ export const ChatRoom: React.FC = () => {
 
   const loadMoreMessages = async () => {
     if (!chat || !hasMore || messages.length === 0) return;
-    const oldestMessage = messages[0];
     try {
-      const { data } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('chat_id', chat.id)
-        .lt('created_at', oldestMessage.created_at)
-        .order('created_at', { ascending: false })
-        .limit(MESSAGES_PER_PAGE);
-
-      if (data && data.length > 0) {
-        setMessages(prev => [...data.reverse(), ...prev]);
-        if (data.length < MESSAGES_PER_PAGE) setHasMore(false);
+      const olderSnap = await getDocs(
+        query(collection(db, 'chats', chat.id, 'messages'), orderBy('createdAt', 'desc'), limit(MESSAGES_PER_PAGE))
+      );
+      const older = olderSnap.docs.map(d => ({ id: d.id, ...d.data() })).reverse() as any[];
+      if (older.length > 0) {
+        setMessages(prev => [...older.filter(m => !prev.find(p => p.id === m.id)), ...prev]);
+        if (older.length < MESSAGES_PER_PAGE) setHasMore(false);
       } else {
         setHasMore(false);
       }
@@ -231,15 +210,14 @@ export const ChatRoom: React.FC = () => {
     setInputText('');
 
     try {
-      const { error } = await supabase
-        .from('messages')
-        .insert({
-          chat_id: chat.id,
-          sender_id: currentUser.id,
-          message_text: sanitizedMessage,
-        });
-
-      if (error) throw error;
+      await addDoc(collection(db, 'chats', chat.id, 'messages'), {
+        chatId: chat.id,
+        senderId: currentUser.id,
+        recipientId: currentUser.id === (chat as any).buyerId ? (chat as any).sellerId : (chat as any).buyerId,
+        content: sanitizedMessage,
+        isRead: false,
+        createdAt: serverTimestamp(),
+      });
 
       await markMessagesAsRead(chat.id, currentUser.id);
 
@@ -276,12 +254,6 @@ export const ChatRoom: React.FC = () => {
   );
 
   const otherParty = currentUser?.id === chat.buyer_id ? chat.seller : chat.buyer;
-  const buyerLocation = chat.buyer?.city || 'Port Blair';
-  const sellerLocation = chat.seller?.city || 'Port Blair';
-
-  const handleBargeTimeSelect = (message: string) => {
-    setInputText(message);
-  };
 
   return (
     <div className="h-screen flex flex-col bg-slate-50">
@@ -308,15 +280,6 @@ export const ChatRoom: React.FC = () => {
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {/* Barge Schedule Widget for Inter-Island Coordination */}
-        {buyerLocation !== sellerLocation && (
-          <BargeScheduleWidget
-            buyerLocation={buyerLocation}
-            sellerLocation={sellerLocation}
-            onSelectTime={handleBargeTimeSelect}
-            className="mb-4"
-          />
-        )}
         <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 mb-4">
           <p className="text-[10px] font-bold text-blue-700 uppercase tracking-widest text-center">
             Safety Tip: Meet in public places and never share banking details.

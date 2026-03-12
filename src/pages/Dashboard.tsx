@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { auth, db } from '../lib/firebase';
+import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 export const Dashboard: React.FC = () => {
@@ -17,65 +18,64 @@ export const Dashboard: React.FC = () => {
     const fetchStats = async () => {
       setLoading(true);
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = auth.currentUser;
         if (!user) return;
 
         // 1. Fetch Profile Data
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('successful_sales, trust_level')
-          .eq('id', user.id)
-          .single();
+        const profileSnap = await getDocs(
+          query(collection(db, 'users'), where('__name__', '==', user.uid))
+        );
+        const profile = profileSnap.docs[0]?.data();
 
         // 2. Fetch User Listings for Counts
-        const { data: listings } = await supabase
-          .from('listings')
-          .select('id, views_count, status, created_at')
-          .eq('user_id', user.id);
+        const listingsSnap = await getDocs(
+          query(collection(db, 'listings'), where('userId', '==', user.uid))
+        );
+        const listings = listingsSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
 
-        if (listings) {
-          const active = listings.filter(l => l.status === 'active').length;
-          const totalViews = listings.reduce((sum, l) => sum + (l.views_count || 0), 0);
+        if (listings.length >= 0) {
+          const active = listings.filter((l: any) => l.status === 'active').length;
+          const totalViews = listings.reduce((sum: number, l: any) => sum + (l.viewsCount || 0), 0);
 
           // Calculate response time from actual chats
           let responseTimeStr = '—';
           try {
-            const { data: userChats } = await supabase
-              .from('chats')
-              .select('id, seller_id, created_at')
-              .eq('seller_id', user.id)
-              .limit(20);
+            const chatsSnap = await getDocs(
+              query(collection(db, 'chats'), where('sellerId', '==', user.uid), limit(20))
+            );
+            const userChats = chatsSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
 
-            if (userChats && userChats.length > 0) {
-              const chatIds = userChats.map(c => c.id);
-              const { data: firstReplies } = await supabase
-                .from('messages')
-                .select('chat_id, sender_id, created_at')
-                .in('chat_id', chatIds)
-                .eq('sender_id', user.id)
-                .order('created_at', { ascending: true });
-
-              if (firstReplies && firstReplies.length > 0) {
-                // Get first seller reply per chat
-                const firstReplyByChat = new Map<string, string>();
-                firstReplies.forEach(m => {
-                  if (!firstReplyByChat.has(m.chat_id)) firstReplyByChat.set(m.chat_id, m.created_at);
-                });
-
-                let totalMs = 0;
-                let count = 0;
-                userChats.forEach(chat => {
-                  const replyTime = firstReplyByChat.get(chat.id);
-                  if (replyTime) {
-                    const diff = new Date(replyTime).getTime() - new Date(chat.created_at).getTime();
-                    if (diff > 0) { totalMs += diff; count++; }
-                  }
-                });
-
-                if (count > 0) {
-                  const avgMins = Math.round(totalMs / count / 60000);
-                  responseTimeStr = avgMins < 60 ? `${avgMins} MIN${avgMins !== 1 ? 'S' : ''}` : `${Math.round(avgMins / 60)} HR${Math.round(avgMins / 60) !== 1 ? 'S' : ''}`;
+            if (userChats.length > 0) {
+              const chatIds = userChats.map((c: any) => c.id);
+              // Fetch first seller replies from messages subcollections
+              const firstReplyByChat = new Map<string, number>();
+              await Promise.all(chatIds.map(async (chatId: string) => {
+                const msgSnap = await getDocs(
+                  query(collection(db, 'chats', chatId, 'messages'),
+                    where('senderId', '==', user.uid),
+                    orderBy('createdAt', 'asc'),
+                    limit(1))
+                );
+                if (!msgSnap.empty) {
+                  const ts = msgSnap.docs[0].data().createdAt;
+                  firstReplyByChat.set(chatId, ts?.toMillis?.() || 0);
                 }
+              }));
+
+              let totalMs = 0;
+              let count = 0;
+              userChats.forEach((chat: any) => {
+                const replyTime = firstReplyByChat.get(chat.id);
+                const chatCreated = chat.createdAt?.toMillis?.() || 0;
+                if (replyTime && chatCreated) {
+                  const diff = replyTime - chatCreated;
+                  if (diff > 0) { totalMs += diff; count++; }
+                }
+              });
+
+              if (count > 0) {
+                const avgMins = Math.round(totalMs / count / 60000);
+                responseTimeStr = avgMins < 60 ? `${avgMins} MIN${avgMins !== 1 ? 'S' : ''}` : `${Math.round(avgMins / 60)} HR${Math.round(avgMins / 60) !== 1 ? 'S' : ''}`;
               }
             }
           } catch { /* non-critical */ }

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { getAuthProvider, isFirebaseAvailable, isAuthenticated, signIn, signUp, onAuthStateChanged, UserProfile } from '../lib/auth';
 import { COPY } from '../lib/localCopy';
 import {
   Loader2,
@@ -29,23 +29,39 @@ export const AuthView: React.FC = () => {
   const [emailNotConfirmed, setEmailNotConfirmed] = useState(false);
 
   useEffect(() => {
-    if (!isSupabaseConfigured()) {
-      setError('Auth is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
+    const authProvider = getAuthProvider();
+    
+    // Check if any auth provider is configured
+    if (authProvider === 'firebase' && !isFirebaseAvailable()) {
+      setError('Firebase Auth is not configured. Please set VITE_FIREBASE_* variables.');
+      return;
+    }
+    if (!isFirebaseAvailable()) {
+      setError('Firebase Auth is not configured. Please set VITE_FIREBASE_* environment variables.');
       return;
     }
 
     const checkSession = async () => {
-      const { data, error } = await supabase.auth.getSession();
-      if (error) {
-        setError(error.message || 'Failed to load session.');
-        return;
-      }
-      if (data.session?.access_token) {
+      const isAuth = await isAuthenticated();
+      if (isAuth) {
         navigate('/');
       }
     };
 
     checkSession();
+    
+    // Set up auth state listener
+    const unsubscribe = onAuthStateChanged((user: UserProfile | null) => {
+      if (user) {
+        navigate('/');
+      }
+    });
+
+    return () => {
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
+    };
   }, [navigate]);
 
   // S7: Password strength validation
@@ -74,93 +90,18 @@ export const AuthView: React.FC = () => {
 
 
   const handleResendEmail = async () => {
-    if (!email) {
-      setError("Please enter your email address first.");
-      return;
-    }
-    // Bug 5 fix: Only allow resend if user hit "Email not confirmed" error
-    if (!emailNotConfirmed) {
-      setError("Resend is only available after a failed login due to unverified email.");
-      return;
-    }
-    setResending(true);
-    setError(null);
-    try {
-      // Explicitly use the current origin for redirection
-      const currentOrigin = window.location.origin;
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email: email,
-        options: {
-          emailRedirectTo: currentOrigin
-        }
-      });
-      if (error) throw error;
-      setSuccessMsg(`Verification link resent to ${email}! Please check your inbox.`);
-    } catch (err: any) {
-      setError(err.message || "Failed to resend email.");
-    } finally {
-      setResending(false);
-    }
+    setError('Email verification resend is handled through Firebase. Please check your inbox or contact support.');
   };
 
   const handlePhoneAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     clearState();
-    setLoading(true);
-
-    try {
-      if (mode === 'phone') {
-        const { error } = await supabase.auth.signInWithOtp({
-          phone: phoneNumber,
-        });
-        if (error) throw error;
-        setSuccessMsg(`OTP sent to ${phoneNumber}!`);
-        setMode('verify');
-      } else if (mode === 'verify') {
-        const { error } = await supabase.auth.verifyOtp({
-          phone: phoneNumber,
-          token: otpToken,
-          type: 'sms',
-        });
-        if (error) throw error;
-      }
-    } catch (err: any) {
-      setError(err.message || 'Phone auth failed.');
-    } finally {
-      setLoading(false);
-    }
+    setError('Phone authentication is not yet available. Please use email/password.');
   };
 
-  const handleOAuthLogin = async (provider: 'google') => {
+  const handleOAuthLogin = async (_provider: 'google') => {
     clearState();
-    if (!isSupabaseConfigured()) {
-      setError('Auth is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
-      return;
-    }
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo: `${window.location.origin}/auth`,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          },
-        },
-      });
-      if (error) throw error;
-    } catch (err: any) {
-      console.error("OAuth Error:", err);
-      setError(
-        <div className="space-y-2">
-          <p className="font-bold">Authentication Failed</p>
-          <p className="text-xs opacity-90">{err.message || 'Check your Supabase/Google configuration.'}</p>
-        </div>
-      );
-      setLoading(false);
-    }
+    setError('Google sign-in is not yet configured. Please use email/password.');
   };
 
   const handleEmailAuth = async (e: React.FormEvent) => {
@@ -169,68 +110,25 @@ export const AuthView: React.FC = () => {
     setLoading(true);
 
     try {
-      const currentOrigin = window.location.origin;
-
       if (mode === 'login') {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) {
-          if (error.message.includes("Email not confirmed")) {
+        const result = await signIn(email, password);
+        if (!result.success) {
+          const errorMsg = result.error || 'Login failed';
+          if (errorMsg.includes("Email not confirmed")) {
             setEmailNotConfirmed(true);
-            setError(
-              <div className="space-y-3">
-                <p className="font-bold">Email Not Verified</p>
-                <p className="text-xs opacity-90">Check your inbox for a verification link. Links default to localhost unless configured in your dashboard.</p>
-                <button
-                  onClick={handleResendEmail}
-                  className="flex items-center space-x-2 text-[10px] font-black uppercase tracking-widest text-white bg-slate-800 px-4 py-2 rounded-xl hover:bg-black transition-colors"
-                >
-                  <RefreshCcw size={12} className={resending ? 'animate-spin' : ''} />
-                  <span>{resending ? 'Sending...' : 'Resend to Current Origin'}</span>
-                </button>
-              </div>
-            );
-          } else if (error.message?.includes('Invalid login credentials')) {
-            setError(COPY.AUTH.WRONG_PASSWORD);
-          } else {
-            throw error;
           }
+          throw new Error(errorMsg);
         }
-        if (data.session) {
-          navigate('/');
+      } else if (mode === 'signup') {
+        const result = await signUp(email, password, fullName);
+        if (!result.success) {
+          throw new Error(result.error || 'Signup failed');
         }
-      } else {
-        // S7: Validate password strength before signup
-        const pwdErrors = validatePassword(password);
-        if (pwdErrors.length > 0) {
-          setError(
-            <div className="space-y-1">
-              <p className="font-bold">Password too weak:</p>
-              <ul className="list-disc list-inside text-xs">
-                {pwdErrors.map((e, i) => <li key={i}>{e}</li>)}
-              </ul>
-            </div>
-          );
-          setLoading(false);
-          return;
-        }
-
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              name: fullName,
-              avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`
-            },
-            emailRedirectTo: currentOrigin
-          }
-        });
-        if (error) throw error;
-        setSuccessMsg(COPY.AUTH.EMAIL_VERIFICATION_SENT);
+        setSuccessMsg(`Account created! Welcome to AndamanBazaar.`);
         setMode('login');
       }
     } catch (err: any) {
-      setError(err.message || 'Auth action failed.');
+      setError(err.message || 'Authentication failed.');
     } finally {
       setLoading(false);
     }

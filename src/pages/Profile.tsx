@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { supabase } from '../lib/supabase';
+import { auth, db, storage } from '../lib/firebase';
+import { collection, doc, getDoc, getDocs, query, where, orderBy, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Profile as ProfileType, Listing } from '../types';
 import { Link, useNavigate } from 'react-router-dom';
 import { ReportModal } from '../components/ReportModal';
@@ -89,15 +91,17 @@ export const Profile: React.FC = () => {
         return;
       }
 
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) { navigate('/auth'); return; }
 
-      const { data: profileData, error: profileError } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-      if (profileError) throw profileError;
-      setProfile(profileData);
+      const profileSnap = await getDoc(doc(db, 'users', user.uid));
+      if (!profileSnap.exists()) throw new Error('Profile not found');
+      setProfile({ id: profileSnap.id, ...profileSnap.data() } as any);
 
-      const { data: statsData, error: statsError } = await supabase.from('listings').select('status').eq('user_id', user.id);
-      if (statsError) throw statsError;
+      const statsSnap = await getDocs(
+        query(collection(db, 'listings'), where('userId', '==', user.uid))
+      );
+      const statsData = statsSnap.docs.map(d => d.data());
 
       const newStats = { active: 0, sold: 0 };
       statsData.forEach((l: any) => {
@@ -116,7 +120,7 @@ export const Profile: React.FC = () => {
   const handleSaveProfile = async () => {
     setIsSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) throw new Error('User not authenticated');
 
       const sanitizedName = sanitizePlainText(editName);
@@ -137,17 +141,19 @@ export const Profile: React.FC = () => {
           return;
         }
         const fileExt = avatarFile.name.split('.').pop();
-        const fileName = `${user.id}/avatar_${Date.now()}.${fileExt}`;
-        const { error: uploadError } = await supabase.storage.from('avatars').upload(fileName, avatarFile, { upsert: true });
-        if (uploadError) throw uploadError;
-        const { data } = supabase.storage.from('avatars').getPublicUrl(fileName);
-        if (data.publicUrl) {
-          avatarUrl = data.publicUrl;
-        }
+        const fileName = `avatars/${user.uid}/avatar_${Date.now()}.${fileExt}`;
+        const storageRef = ref(storage, fileName);
+        await uploadBytes(storageRef, avatarFile);
+        avatarUrl = await getDownloadURL(storageRef);
       }
 
-      const { error: updateError } = await supabase.from('profiles').update({ name: sanitizedName, city: validationResult.data.city, phone_number: validationResult.data.phone_number, profile_photo_url: avatarUrl }).eq('id', user.id);
-      if (updateError) throw updateError;
+      await updateDoc(doc(db, 'users', user.uid), {
+        name: sanitizedName,
+        city: validationResult.data.city,
+        phoneNumber: validationResult.data.phone_number,
+        profilePhotoUrl: avatarUrl,
+        updatedAt: serverTimestamp(),
+      });
 
       await fetchProfileAndStats();
       showToast(COPY.SUCCESS.SETTINGS_SAVED, 'success');
@@ -179,9 +185,7 @@ export const Profile: React.FC = () => {
   };
 
   const fetchUserListings = async (pageIndex: number) => {
-    const { data: { user } } = bypassAuth
-      ? ({ data: { user: { id: 'e2e-user' } } } as any)
-      : await supabase.auth.getUser();
+    const user = bypassAuth ? { uid: 'e2e-user' } : auth.currentUser;
     if (!user) return;
 
     if (bypassAuth) {
@@ -192,22 +196,22 @@ export const Profile: React.FC = () => {
 
     if (pageIndex > 0) setLoadingMore(true);
     try {
-      const from = pageIndex * PROFILE_PAGE_SIZE;
-      const to = from + PROFILE_PAGE_SIZE - 1;
-      const { data, error } = await supabase
-        .from('listings')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('status', activeTab)
-        .order('created_at', { ascending: false })
-        .range(from, to);
-      if (error) throw error;
+      const snap = await getDocs(
+        query(
+          collection(db, 'listings'),
+          where('userId', '==', user.uid),
+          where('status', '==', activeTab),
+          orderBy('createdAt', 'desc')
+        )
+      );
+      const data = snap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
+      const paged = data.slice(pageIndex * PROFILE_PAGE_SIZE, (pageIndex + 1) * PROFILE_PAGE_SIZE);
       if (pageIndex === 0) {
-        setListings(data || []);
+        setListings(paged);
       } else {
-        setListings(prev => [...prev, ...(data || [])]);
+        setListings(prev => [...prev, ...paged]);
       }
-      setHasMoreListings((data || []).length === PROFILE_PAGE_SIZE);
+      setHasMoreListings(paged.length === PROFILE_PAGE_SIZE);
       setListingPage(pageIndex);
     } catch (err) {
       console.error('Error fetching user listings:', err);
@@ -217,9 +221,7 @@ export const Profile: React.FC = () => {
   };
 
   const fetchSavedItems = async (pageIndex: number) => {
-    const { data: { user } } = bypassAuth
-      ? ({ data: { user: { id: 'e2e-user' } } } as any)
-      : await supabase.auth.getUser();
+    const user = bypassAuth ? { uid: 'e2e-user' } : auth.currentUser;
     if (!user) return;
 
     if (bypassAuth) {
@@ -230,37 +232,31 @@ export const Profile: React.FC = () => {
 
     if (pageIndex > 0) setLoadingMore(true);
     try {
-      const from = pageIndex * PROFILE_PAGE_SIZE;
-      const to = from + PROFILE_PAGE_SIZE - 1;
+      const favSnap = await getDocs(
+        query(collection(db, 'favorites'), where('userId', '==', user.uid))
+      );
+      const allFavs = favSnap.docs.map(d => d.data());
+      const paged = allFavs.slice(pageIndex * PROFILE_PAGE_SIZE, (pageIndex + 1) * PROFILE_PAGE_SIZE);
 
-      // 1. Fetch favorites (paginated)
-      const { data: favoritedData, error: favError } = await supabase
-        .from('favorites')
-        .select('listing_id, id')
-        .eq('user_id', user.id)
-        .range(from, to);
-
-      if (favError) throw favError;
-      if (!favoritedData || favoritedData.length === 0) {
+      if (paged.length === 0) {
         if (pageIndex === 0) setListings([]);
         setHasMoreListings(false);
         return;
       }
 
-      // 2. Fetch corresponding listings
-      const listingIds = favoritedData.map(f => f.listing_id);
-      const { data: listingData, error: listError } = await supabase
-        .from('listings')
-        .select('*')
-        .in('id', listingIds);
+      const listingSnaps = await Promise.all(
+        paged.map(f => getDoc(doc(db, 'listings', f.listingId)))
+      );
+      const listingData = listingSnaps
+        .filter(s => s.exists())
+        .map(s => ({ id: s.id, ...s.data() })) as any[];
 
-      if (listError) throw listError;
       if (pageIndex === 0) {
-        setListings(listingData || []);
+        setListings(listingData);
       } else {
-        setListings(prev => [...prev, ...(listingData || [])]);
+        setListings(prev => [...prev, ...listingData]);
       }
-      setHasMoreListings(favoritedData.length === PROFILE_PAGE_SIZE);
+      setHasMoreListings(paged.length === PROFILE_PAGE_SIZE);
       setListingPage(pageIndex);
     } catch (err) {
       console.error('Error fetching saved items:', err);
@@ -272,18 +268,20 @@ export const Profile: React.FC = () => {
   const handleUnfavorite = async (id: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = auth.currentUser;
     if (!user) return;
-    const { error } = await supabase.from('favorites').delete().eq('user_id', user.id).eq('listing_id', id);
-    if (!error) setListings(prev => prev.filter(l => l.id !== id));
+    const favSnap = await getDocs(
+      query(collection(db, 'favorites'), where('userId', '==', user.uid), where('listingId', '==', id))
+    );
+    await Promise.all(favSnap.docs.map(d => deleteDoc(d.ref)));
+    setListings(prev => prev.filter(l => l.id !== id));
   };
 
   const handleMarkAsSold = async (id: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     try {
-      const { error } = await supabase.from('listings').update({ status: 'sold' }).eq('id', id);
-      if (error) throw error;
+      await updateDoc(doc(db, 'listings', id), { status: 'sold' });
       setListings(prev => prev.filter(l => l.id !== id));
       fetchProfileAndStats();
       setActiveMenuId(null);
@@ -293,8 +291,10 @@ export const Profile: React.FC = () => {
   const handleDeleteListing = async () => {
     if (!deleteConfirmationId) return;
     try {
-      const { error } = await supabase.from('listings').update({ status: 'deleted', deleted_at: new Date().toISOString() }).eq('id', deleteConfirmationId);
-      if (error) throw error;
+      await updateDoc(doc(db, 'listings', deleteConfirmationId), {
+        status: 'deleted',
+        deletedAt: serverTimestamp(),
+      });
       setListings(prev => prev.filter(l => l.id !== deleteConfirmationId));
       fetchProfileAndStats();
       setDeleteConfirmationId(null);
@@ -307,8 +307,19 @@ export const Profile: React.FC = () => {
     e.preventDefault();
     e.stopPropagation();
     try {
-      const { data, error } = await supabase.rpc('bump_listing', { p_listing_id: id });
-      if (error) throw error;
+      const user = auth.currentUser;
+      if (!user) return;
+      const idToken = await user.getIdToken();
+      const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
+      const response = await fetch(
+        `https://us-central1-${projectId}.cloudfunctions.net/bumpListing`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+          body: JSON.stringify({ listing_id: id }),
+        }
+      );
+      const data = await response.json();
       if (data?.success) {
         showToast('Bumped! Teri listing ab top pe hai 🚀', 'success');
         setListings([]);

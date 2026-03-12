@@ -1,7 +1,12 @@
-import { supabase } from './supabase';
+import { auth as firebaseAuth, signIn as firebaseSignIn, signUp as firebaseSignUp, signOutUser as firebaseSignOut, onAuthStateChange } from './firebase';
 import { logAuditEvent, sanitizeErrorMessage } from './security';
 
 // ===== AUTHENTICATION UTILITIES =====
+
+/**
+ * Authentication provider types
+ */
+export type AuthProvider = 'firebase';
 
 /**
  * Result type for authentication operations
@@ -12,77 +17,134 @@ export interface AuthResult {
 }
 
 /**
- * Securely log out the current user
- * Clears the Supabase session and logs the action for audit trail
- * 
- * @returns Promise with success status and optional error message
- * 
- * @example
- * ```typescript
- * const result = await logout();
- * if (result.success) {
- *   navigate('/auth');
- * } else {
- *   alert(result.error);
- * }
- * ```
+ * User profile interface
  */
-export const logout = async (): Promise<AuthResult> => {
-    try {
-        // Log the logout action before signing out
-        await logAuditEvent({
-            action: 'user_logout',
-            status: 'success',
-            metadata: { timestamp: new Date().toISOString() }
-        });
-
-        // Sign out from Supabase
-        const { error } = await supabase.auth.signOut();
-
-        if (error) {
-            throw error;
-        }
-
-        return { success: true };
-    } catch (err: any) {
-        const safeError = sanitizeErrorMessage(err);
-
-        // Log failed logout attempt
-        await logAuditEvent({
-            action: 'user_logout',
-            status: 'failed',
-            metadata: { error: safeError }
-        });
-
-        return {
-            success: false,
-            error: safeError || 'Failed to logout. Please try again.'
-        };
-    }
-};
+export interface UserProfile {
+    id: string;
+    email: string;
+    name: string;
+    phone?: string;
+    avatar?: string;
+    role: string;
+    isActive: boolean;
+    isBanned: boolean;
+    locationVerified: boolean;
+    stats: {
+        listingCount: number;
+        soldCount: number;
+        favoriteCount: number;
+        chatCount: number;
+    };
+}
 
 /**
- * Check if a user is currently authenticated
- * @returns Promise resolving to true if user is logged in
+ * Get current authentication provider based on environment
  */
-export const isAuthenticated = async (): Promise<boolean> => {
+export const getAuthProvider = (): AuthProvider => 'firebase';
+
+/**
+ * Check if Firebase is configured
+ */
+export const isFirebaseAvailable = (): boolean => {
     try {
-        const { data: { session } } = await supabase.auth.getSession();
-        return !!session;
+        return !!import.meta.env.VITE_FIREBASE_API_KEY && !!import.meta.env.VITE_FIREBASE_PROJECT_ID;
     } catch {
         return false;
     }
 };
 
 /**
+ * Check if Supabase is configured (always false - removed)
+ */
+export const isSupabaseAvailable = (): boolean => false;
+
+/**
+ * Get current user from the appropriate provider
+ */
+export const getCurrentUser = async (): Promise<UserProfile | null> => {
+    try {
+        const user = firebaseAuth.currentUser;
+        if (user) {
+            const { getUserProfile } = await import('./firebase');
+            const profile = await getUserProfile(user.uid);
+            return profile as UserProfile | null;
+        }
+    } catch (error) {
+        console.error('Error getting current user:', error);
+    }
+    return null;
+};
+
+/**
+ * Check if a user is currently authenticated
+ */
+export const isAuthenticated = async (): Promise<boolean> => {
+    return !!firebaseAuth.currentUser;
+};
+
+/**
  * Get the current user's ID
- * @returns Promise resolving to user ID or null
  */
 export const getCurrentUserId = async (): Promise<string | null> => {
+    return firebaseAuth.currentUser?.uid || null;
+};
+
+/**
+ * Sign in with email and password
+ */
+export const signIn = async (email: string, password: string): Promise<AuthResult> => {
     try {
-        const { data: { user } } = await supabase.auth.getUser();
-        return user?.id || null;
-    } catch {
-        return null;
+        await firebaseSignIn(email, password);
+        await logAuditEvent({ action: 'user_login', status: 'success', metadata: { provider: 'firebase', email } });
+        return { success: true };
+    } catch (err: any) {
+        const safeError = sanitizeErrorMessage(err);
+        await logAuditEvent({ action: 'user_login', status: 'failed', metadata: { email, error: safeError } });
+        return { success: false, error: safeError || 'Failed to sign in. Please check your credentials.' };
     }
+};
+
+/**
+ * Sign up with email and password
+ */
+export const signUp = async (email: string, password: string, name?: string): Promise<AuthResult> => {
+    try {
+        await firebaseSignUp(email, password, name);
+        await logAuditEvent({ action: 'user_signup', status: 'success', metadata: { provider: 'firebase', email } });
+        return { success: true };
+    } catch (err: any) {
+        const safeError = sanitizeErrorMessage(err);
+        await logAuditEvent({ action: 'user_signup', status: 'failed', metadata: { email, error: safeError } });
+        return { success: false, error: safeError || 'Failed to sign up. Please try again.' };
+    }
+};
+
+/**
+ * Securely log out the current user
+ */
+export const logout = async (): Promise<AuthResult> => {
+    try {
+        await logAuditEvent({ action: 'user_logout', status: 'success', metadata: { timestamp: new Date().toISOString() } });
+        await firebaseSignOut();
+        return { success: true };
+    } catch (err: any) {
+        const safeError = sanitizeErrorMessage(err);
+        await logAuditEvent({ action: 'user_logout', status: 'failed', metadata: { error: safeError } });
+        return { success: false, error: safeError || 'Failed to logout. Please try again.' };
+    }
+};
+
+/**
+ * Subscribe to auth state changes
+ */
+export const onAuthStateChanged = (callback: (user: UserProfile | null) => void) => {
+    return onAuthStateChange(async (firebaseUser) => {
+        if (firebaseUser) {
+            const { getUserProfile } = await import('./firebase');
+            const profile = await getUserProfile(firebaseUser.uid);
+            callback(profile as UserProfile | null);
+        } else {
+            callback(null);
+        }
+    });
 };

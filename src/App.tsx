@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { HelmetProvider } from 'react-helmet-async';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { supabase, isSupabaseConfigured } from './lib/supabase';
+import { auth as firebaseAuth, db } from './lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 import { Home } from './pages/Home';
 import { Listings } from './pages/Listings';
@@ -25,20 +28,10 @@ import { NotFound } from './pages/NotFound';
 import { Layout } from './components/Layout';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ToastProvider } from './components/Toast';
-import { retryAsync, isTransientError } from './lib/security';
 
 type LayoutUser = React.ComponentProps<typeof Layout>['user'];
 type User = NonNullable<LayoutUser>;
-type AuthSession = { user: User } | null;
-type AuthClientCompat = typeof supabase.auth & {
-  getSession: () => Promise<{ data: { session: AuthSession }; error: any }>;
-  onAuthStateChange: (
-    callback: (event: string, session: AuthSession) => void
-  ) => { data: { subscription: { unsubscribe: () => void } } };
-};
-
 const App: React.FC = () => {
-  const auth = supabase.auth as AuthClientCompat;
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const bypassAuth =
@@ -51,81 +44,37 @@ const App: React.FC = () => {
       setLoading(false);
       return;
     }
-    if (!isSupabaseConfigured()) {
-      setLoading(false);
-      return;
-    }
 
-    const ensureProfileExists = async (user: User) => {
+    const ensureProfileExists = async (firebaseUser: any) => {
       try {
-        const profileResponse = await retryAsync(async () => {
-          const response = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('id', user.id)
-            .single();
-          if (response.error && isTransientError(response.error)) {
-            throw response.error;
-          }
-          return response;
-        }, { label: 'profiles.select', maxAttempts: 3 });
-
-        if (profileResponse.error && profileResponse.error.code === 'PGRST116') {
-          const insertResponse = await retryAsync(async () => {
-            const response = await supabase.from('profiles').insert({
-              id: user.id,
-              email: user.email,
-              name: user.user_metadata?.name || 'Island User',
-              profile_photo_url: user.user_metadata?.avatar_url || '',
-              phone_number: user.phone || null,
-            });
-            if (response.error && isTransientError(response.error)) {
-              throw response.error;
-            }
-            return response;
-          }, { label: 'profiles.insert', maxAttempts: 3 });
-
-          if (insertResponse.error) {
-            console.error('Profile insert failed:', insertResponse.error);
-          }
-        } else if (profileResponse.error) {
-          console.error('Profile lookup failed:', profileResponse.error);
+        const profileRef = doc(db, 'users', firebaseUser.uid);
+        const profileSnap = await getDoc(profileRef);
+        if (!profileSnap.exists()) {
+          await setDoc(profileRef, {
+            uid: firebaseUser.uid,
+            email: firebaseUser.email || '',
+            name: firebaseUser.displayName || 'Island User',
+            profilePhotoUrl: firebaseUser.photoURL || '',
+            createdAt: serverTimestamp(),
+          }, { merge: true });
         }
       } catch (err) {
         console.error('Profile fallback error:', err);
       }
     };
 
-    const getSession = async () => {
-      if (!isSupabaseConfigured()) return;
-
-      try {
-        const { data: { session }, error } = await auth.getSession();
-        if (error) throw error;
-
-        const currentUser = session?.user ?? null;
-        setUser(currentUser);
-        if (currentUser) await ensureProfileExists(currentUser);
-      } catch (err) {
-        console.error('Session retry failed:', err);
-      } finally {
-        setLoading(false);
+    const unsubscribe = onAuthStateChanged(firebaseAuth, async (firebaseUser) => {
+      if (firebaseUser) {
+        const mapped = { id: firebaseUser.uid, email: firebaseUser.email || '' } as unknown as User;
+        setUser(mapped);
+        await ensureProfileExists(firebaseUser);
+      } else {
+        setUser(null);
       }
-    };
-
-    getSession();
-
-    const { data: { subscription } } = auth.onAuthStateChange((event, session) => {
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
-      if (currentUser && event === 'SIGNED_IN') {
-        ensureProfileExists(currentUser);
-      }
+      setLoading(false);
     });
 
-    return () => {
-      subscription.unsubscribe();
-    };
+    return () => unsubscribe();
   }, [bypassAuth]);
 
   const RequireAuth = ({ children, user, loading }: { children: React.ReactNode, user: User | null, loading: boolean }) => {
@@ -141,8 +90,9 @@ const App: React.FC = () => {
 
   return (
     <ErrorBoundary>
-      <ToastProvider>
-        <BrowserRouter>
+      <HelmetProvider>
+        <ToastProvider>
+          <BrowserRouter>
           <Layout user={user}>
             <Routes>
               <Route path="/" element={<Home />} />
@@ -168,7 +118,8 @@ const App: React.FC = () => {
           </Layout>
         </BrowserRouter>
       </ToastProvider>
-    </ErrorBoundary>
+    </HelmetProvider>
+  </ErrorBoundary>
   );
 
 };

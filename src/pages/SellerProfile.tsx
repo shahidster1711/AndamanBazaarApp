@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import { db } from '../lib/firebase';
+import { collection, query, where, getDocs, doc, getDoc, orderBy } from 'firebase/firestore';
 import { TrustBadge } from '../components/TrustBadge';
 import { useToast } from '../components/Toast';
+import { Seo } from '../components/Seo';
 import { 
   MapPin, 
   Mail, 
@@ -63,30 +65,33 @@ export const SellerProfile: React.FC = () => {
 
   const fetchSellerProfile = async () => {
     try {
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', sellerId)
-        .single();
+      const profileSnap = await getDoc(doc(db, 'users', sellerId!));
+      if (!profileSnap.exists()) throw new Error('Seller not found');
+      const profile = profileSnap.data();
 
-      if (profileError) throw profileError;
-
-      // Fetch seller stats
-      const { data: listingsData } = await supabase
-        .from('listings')
-        .select('status')
-        .eq('user_id', sellerId);
+      const listingsSnap = await getDocs(
+        query(collection(db, 'listings'), where('userId', '==', sellerId))
+      );
+      const listingsData = listingsSnap.docs.map(d => d.data());
 
       const stats = {
-        total_listings: listingsData?.length || 0,
-        active_listings: listingsData?.filter(l => l.status === 'active').length || 0,
-        sold_listings: listingsData?.filter(l => l.status === 'sold').length || 0,
+        total_listings: listingsData.length,
+        active_listings: listingsData.filter(l => l.status === 'active').length,
+        sold_listings: listingsData.filter(l => l.status === 'sold').length,
         avg_response_time: 'Usually responds within 2 hours'
       };
 
       setSeller({
-        ...profile,
-        stats
+        id: profileSnap.id,
+        full_name: profile.name || 'Island Seller',
+        avatar_url: profile.profilePhotoUrl || null,
+        bio: profile.bio || null,
+        location: profile.city || null,
+        phone: profile.phoneNumber || null,
+        email: profile.email || '',
+        trust_level: profile.trustLevel || 'newbie',
+        created_at: profile.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+        stats,
       });
     } catch (error) {
       console.error('Error fetching seller profile:', error);
@@ -98,17 +103,23 @@ export const SellerProfile: React.FC = () => {
 
   const fetchSellerListings = async () => {
     try {
-      const { data, error } = await supabase
-        .from('listings')
-        .select(`
-          id, title, price, city, created_at, status, views_count,
-          images:listing_images(image_url)
-        `)
-        .eq('user_id', sellerId)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setListings(data || []);
+      const snap = await getDocs(
+        query(collection(db, 'listings'), where('userId', '==', sellerId), orderBy('createdAt', 'desc'))
+      );
+      const data = snap.docs.map(d => {
+        const l = d.data();
+        return {
+          id: d.id,
+          title: l.title,
+          price: l.price,
+          city: l.city,
+          created_at: l.createdAt?.toDate?.()?.toISOString() || '',
+          status: l.status,
+          views_count: l.viewsCount || 0,
+          images: (l.imageUrls || []).map((url: string) => ({ image_url: url })),
+        } as Listing;
+      });
+      setListings(data);
     } catch (error) {
       console.error('Error fetching seller listings:', error);
     }
@@ -141,7 +152,13 @@ export const SellerProfile: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-warm-50">
+    <>
+      <Seo 
+        title={`${seller.full_name}'s Profile`} 
+        description={`View all listings from ${seller.full_name}, a seller based in ${seller.location || 'the Andaman Islands'}.`}
+        imageUrl={seller.avatar_url || undefined}
+      />
+      <div className="min-h-screen bg-warm-50">
       {/* Header */}
       <div className="bg-white border-b border-warm-200">
         <div className="max-w-4xl mx-auto px-4 py-4">
@@ -334,5 +351,6 @@ export const SellerProfile: React.FC = () => {
         )}
       </div>
     </div>
+    </>
   );
 };

@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { auth, db } from '../lib/firebase';
+import { collection, query, orderBy, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, where } from 'firebase/firestore';
 import {
     CheckCircle2,
     Circle,
@@ -27,25 +28,20 @@ export const Todos: React.FC = () => {
 
     const fetchTodos = async () => {
         try {
-            const { data, error } = await supabase
-                .from('todos')
-                .select('*')
-                .order('created_at', { ascending: false });
-
-            if (error) {
-                // If the table doesn't exist yet, we'll show a helpful message
-                console.error('Error fetching todos:', error.message);
-                if (error.code === '42P01') {
-                    showToast('The "todos" table does not exist in your database yet.', 'error');
-                } else {
-                    showToast('Failed to fetch todos: ' + error.message, 'error');
-                }
-                return;
-            }
-
-            setTodos(data || []);
+            const user = auth.currentUser;
+            if (!user) { setLoading(false); return; }
+            const snap = await getDocs(
+                query(collection(db, 'todos'), where('userId', '==', user.uid), orderBy('createdAt', 'desc'))
+            );
+            setTodos(snap.docs.map(d => ({
+                id: d.id,
+                title: d.data().title,
+                is_completed: d.data().isCompleted,
+                created_at: d.data().createdAt?.toDate?.()?.toISOString() || '',
+            })));
         } catch (err: any) {
             console.error('Error fetching todos:', err.message);
+            showToast('Failed to fetch todos: ' + err.message, 'error');
         } finally {
             setLoading(false);
         }
@@ -58,21 +54,20 @@ export const Todos: React.FC = () => {
     const handleAddTodo = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newTodo.trim()) return;
+        const user = auth.currentUser;
+        if (!user) return;
 
         setAdding(true);
         try {
-            const { data, error } = await supabase
-                .from('todos')
-                .insert([{ title: newTodo.trim(), is_completed: false }])
-                .select();
-
-            if (error) throw error;
-
-            if (data) {
-                setTodos([data[0], ...todos]);
-                setNewTodo('');
-                showToast('Task added successfully', 'success');
-            }
+            const docRef = await addDoc(collection(db, 'todos'), {
+                title: newTodo.trim(),
+                isCompleted: false,
+                userId: user.uid,
+                createdAt: serverTimestamp(),
+            });
+            setTodos([{ id: docRef.id, title: newTodo.trim(), is_completed: false, created_at: new Date().toISOString() }, ...todos]);
+            setNewTodo('');
+            showToast('Task added successfully', 'success');
         } catch (err: any) {
             showToast('Failed to add task: ' + err.message, 'error');
         } finally {
@@ -82,13 +77,7 @@ export const Todos: React.FC = () => {
 
     const toggleTodo = async (id: string, isCompleted: boolean) => {
         try {
-            const { error } = await supabase
-                .from('todos')
-                .update({ is_completed: !isCompleted })
-                .eq('id', id);
-
-            if (error) throw error;
-
+            await updateDoc(doc(db, 'todos', id), { isCompleted: !isCompleted });
             setTodos(todos.map(t => t.id === id ? { ...t, is_completed: !isCompleted } : t));
         } catch (err: any) {
             showToast('Failed to update task: ' + err.message, 'error');
@@ -97,13 +86,7 @@ export const Todos: React.FC = () => {
 
     const deleteTodo = async (id: string) => {
         try {
-            const { error } = await supabase
-                .from('todos')
-                .delete()
-                .eq('id', id);
-
-            if (error) throw error;
-
+            await deleteDoc(doc(db, 'todos', id));
             setTodos(todos.filter(t => t.id !== id));
             showToast('Task deleted', 'success');
         } catch (err: any) {

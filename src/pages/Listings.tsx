@@ -1,13 +1,15 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import { auth, db } from '../lib/firebase';
+import { collection, query, where, orderBy, getDocs, addDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { Listing } from '../types';
 import { TrustBadge } from '../components/TrustBadge';
 import { Search, MapPin, Heart, Sparkles, Filter, X, ChevronDown, ArrowUpDown, Loader2 } from 'lucide-react';
 import { useToast } from '../components/Toast';
 import { isDemoListing } from '../lib/demoListings';
 import { COPY } from '../lib/localCopy';
+import { Seo } from '../components/Seo';
 
 const CATEGORIES = [
   { label: '🌊 All', slug: 'all' },
@@ -66,65 +68,6 @@ export const Listings: React.FC = () => {
   // Infinite scroll observer
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  const buildQuery = useCallback((offset: number) => {
-    let query = supabase
-      .from('listings')
-      .select(`
-        id, title, price, city, created_at, is_featured, views_count, images:listing_images(image_url),
-        seller:profiles(user_id, trust_level, full_name, avatar_url)
-      `)
-      .eq('status', 'active');
-
-    const q = searchParams.get('q');
-    const cat = searchParams.get('category');
-    const area = searchParams.get('area');
-    const verified = searchParams.get('verified');
-
-    if (cat && cat !== 'all') {
-      query = query.eq('category_id', cat);
-    }
-
-    if (area) {
-      query = query.eq('city', area);
-    }
-
-    if (q) {
-      query = query.or(`title.ilike.%${q}%,description.ilike.%${q}%`);
-    }
-
-    if (verified === 'true') {
-      query = query.eq('is_location_verified', true);
-    }
-
-    // Price filters
-    if (minPrice && !isNaN(Number(minPrice))) {
-      query = query.gte('price', Number(minPrice));
-    }
-    if (maxPrice && !isNaN(Number(maxPrice))) {
-      query = query.lte('price', Number(maxPrice));
-    }
-
-    // Sorting
-    switch (sortBy) {
-      case 'price_low':
-        query = query.order('price', { ascending: true });
-        break;
-      case 'price_high':
-        query = query.order('price', { ascending: false });
-        break;
-      case 'most_viewed':
-        query = query.order('views_count', { ascending: false, nullsFirst: false });
-        break;
-      case 'newest':
-      default:
-        query = query.order('created_at', { ascending: false });
-        break;
-    }
-
-    query = query.range(offset, offset + PAGE_SIZE - 1);
-    return query;
-  }, [searchParams, sortBy, minPrice, maxPrice]);
-
   const fetchListings = useCallback(async (reset = true) => {
     if (reset) {
       setLoading(true);
@@ -134,28 +77,56 @@ export const Listings: React.FC = () => {
     }
 
     try {
-      const offset = reset ? 0 : (page + 1) * PAGE_SIZE;
-      const { data, error } = await buildQuery(offset);
+      const q = searchParams.get('q')?.toLowerCase();
+      const cat = searchParams.get('category');
+      const area = searchParams.get('area');
+      const verified = searchParams.get('verified');
 
-      if (error) throw error;
+      // Build Firestore query constraints
+      const constraints: any[] = [where('status', '==', 'active')];
+      if (cat && cat !== 'all') constraints.push(where('categoryId', '==', cat));
+      if (area) constraints.push(where('city', '==', area));
+      if (verified === 'true') constraints.push(where('isLocationVerified', '==', true));
 
-      const results = data || [];
-      if (reset) {
-        setListings(results);
-      } else {
-        setListings(prev => [...prev, ...results]);
+      // Apply server-side sort where possible
+      switch (sortBy) {
+        case 'price_low': constraints.push(orderBy('price', 'asc')); break;
+        case 'price_high': constraints.push(orderBy('price', 'desc')); break;
+        case 'most_viewed': constraints.push(orderBy('viewsCount', 'desc')); break;
+        default: constraints.push(orderBy('createdAt', 'desc')); break;
       }
 
-      setHasMore(results.length === PAGE_SIZE);
+      const snap = await getDocs(query(collection(db, 'listings'), ...constraints));
+      let results = snap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
+
+      // Client-side filters (text search, price range)
+      if (q) results = results.filter(l =>
+        l.title?.toLowerCase().includes(q) || l.description?.toLowerCase().includes(q)
+      );
+      if (minPrice && !isNaN(Number(minPrice)))
+        results = results.filter(l => (l.price ?? 0) >= Number(minPrice));
+      if (maxPrice && !isNaN(Number(maxPrice)))
+        results = results.filter(l => (l.price ?? 0) <= Number(maxPrice));
+
+      const offset = reset ? 0 : (page + 1) * PAGE_SIZE;
+      const paged = results.slice(offset, offset + PAGE_SIZE);
+
+      if (reset) {
+        setListings(paged);
+      } else {
+        setListings(prev => [...prev, ...paged]);
+      }
+
+      setHasMore(results.length > offset + PAGE_SIZE);
       if (!reset) setPage(prev => prev + 1);
     } catch (err) {
-      console.error("Error fetching listings:", err);
+      console.error('Error fetching listings:', err);
       setListings([]);
     } finally {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [buildQuery, page]);
+  }, [searchParams, sortBy, minPrice, maxPrice, page]);
 
   useEffect(() => {
     fetchListings(true);
@@ -191,18 +162,12 @@ export const Listings: React.FC = () => {
   }, [showSortDropdown]);
 
   const fetchFavorites = async () => {
-    const { data: userData } = await (supabase.auth as any).getUser();
-    const user = userData?.user;
+    const user = auth.currentUser;
     if (!user) return;
-
-    const { data } = await supabase
-      .from('favorites')
-      .select('listing_id')
-      .eq('user_id', user.id);
-
-    if (data) {
-      setFavorites(new Set(data.map(f => f.listing_id)));
-    }
+    const snap = await getDocs(
+      query(collection(db, 'favorites'), where('userId', '==', user.uid))
+    );
+    setFavorites(new Set(snap.docs.map(d => d.data().listingId as string)));
   };
 
   const handleCategorySelect = (slug: string) => {
@@ -255,8 +220,7 @@ export const Listings: React.FC = () => {
     e.preventDefault();
     e.stopPropagation();
 
-    const { data: userData } = await (supabase.auth as any).getUser();
-    const user = userData?.user;
+    const user = auth.currentUser;
     if (!user) {
       showToast('Sign in to save items to your favorites.', 'info');
       return;
@@ -264,18 +228,30 @@ export const Listings: React.FC = () => {
 
     const isFav = favorites.has(listingId);
     if (isFav) {
-      await supabase.from('favorites').delete().eq('user_id', user.id).eq('listing_id', listingId);
+      const snap = await getDocs(
+        query(collection(db, 'favorites'), where('userId', '==', user.uid), where('listingId', '==', listingId))
+      );
+      await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
       setFavorites(prev => { const n = new Set(prev); n.delete(listingId); return n; });
     } else {
-      await supabase.from('favorites').insert({ user_id: user.id, listing_id: listingId });
+      await addDoc(collection(db, 'favorites'), {
+        userId: user.uid,
+        listingId,
+        createdAt: serverTimestamp(),
+      });
       setFavorites(prev => { const n = new Set(prev); n.add(listingId); return n; });
     }
   };
 
   const hasActiveFilters = minPrice || maxPrice || sortBy !== 'newest' || showVerifiedOnly || activeArea;
 
+  const pageTitle = searchQuery ? `Search results for "${searchQuery}"` : activeCategory ? `Listings in ${activeCategory}` : 'Browse All Listings';
+  const pageDescription = `Find local goods, services, and produce for sale in the Andaman & Nicobar Islands. ${searchQuery ? `Results for ${searchQuery}.` : ''}`;
+
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
+    <>
+      <Seo title={pageTitle} description={pageDescription} />
+      <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="mb-12 space-y-8">
         {/* Search Bar */}
         <form onSubmit={handleSearchSubmit} className="max-w-3xl mx-auto relative group">
@@ -465,6 +441,7 @@ export const Listings: React.FC = () => {
         </div>
       )}
     </div>
+    </>
   );
 };
 

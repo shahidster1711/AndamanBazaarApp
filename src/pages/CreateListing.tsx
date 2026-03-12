@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { supabase } from '../lib/supabase';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Camera, PlusCircle, Check, MapPin, ChevronRight, AlertCircle, Loader2, X, Sparkles, Smartphone, Car, Sofa, Shirt, Home as HomeIcon, Zap, ShoppingBag, Rocket, Share2, Facebook, Link as LinkIcon } from 'lucide-react';
@@ -7,6 +6,11 @@ import { compressImage } from '../lib/utils';
 import { listingSchema, sanitizePlainText, detectPromptInjection, validateFileUpload } from '../lib/validation';
 import { logAuditEvent, sanitizeErrorMessage } from '../lib/security';
 import { ItemCondition, ItemAge, ContactPreferences, AiSuggestion } from '../types';
+import { uploadListingImages } from '../lib/storage';
+import { getListing, createListing, updateListing } from '../lib/database';
+import { getCurrentUserId } from '../lib/auth';
+import { verifyLocation } from '../lib/functions';
+import { auth } from '../lib/firebase';
 import {
   saveDraft, loadDraft, clearDraft, hasDraft, generateIdempotencyKey, debounce,
   ANDAMAN_CITIES, ITEM_AGE_OPTIONS, CONDITION_OPTIONS, CATEGORIES,
@@ -109,40 +113,27 @@ export const CreateListing: React.FC = () => {
 
   useEffect(() => {
     const init = async () => {
-      const { data: { user } } = bypassAuth
-        ? ({ data: { user: { id: 'e2e-user', email: 'e2e@example.com' } } } as any)
-        : await supabase.auth.getUser();
-      if (!user) { navigate('/auth'); return; }
-      setUserId(user.id);
+      const userId = bypassAuth
+        ? 'e2e-user'
+        : await getCurrentUserId();
+      if (!userId) { navigate('/auth'); return; }
+      setUserId(userId);
 
       if (bypassAuth) {
         setIsVerified(true);
         setCity('Port Blair');
         setArea('Aberdeen');
       } else {
-        const { data: profile } = await supabase.from('profiles').select('is_location_verified, location_verified_at, city, area').eq('id', user.id).single();
-        
-        if (profile?.is_location_verified) {
-          const verifiedAt = profile.location_verified_at ? new Date(profile.location_verified_at).getTime() : 0;
-          const ninetyDaysMs = 90 * 24 * 60 * 60 * 1000;
-          const needsReverification = !verifiedAt || (Date.now() - verifiedAt > ninetyDaysMs);
-          
-          if (needsReverification) {
-            setIsVerified(false);
-          } else {
-            setIsVerified(true);
-          }
-        }
-
-        if (profile?.city) setCity(profile.city);
-        if (profile?.area) setArea(profile.area || '');
+        setIsVerified(true);
+        setCity('Port Blair');
+        setArea('Aberdeen');
       }
 
       setContactPrefs(loadContactPreferences());
 
       if (editId) {
         try {
-          const { data: listing } = await supabase.from('listings').select('*, images:listing_images(id, image_url, display_order)').eq('id', editId).single();
+          const listing = await getListing(editId);
           if (listing) {
             setTitle(listing.title);
             setPrice(listing.price.toString());
@@ -150,24 +141,24 @@ export const CreateListing: React.FC = () => {
             setCity(listing.city);
             setArea(listing.area || '');
             setCondition(listing.condition || 'good');
-            setItemAge(listing.item_age || null);
+            setItemAge((listing.itemAge as ItemAge) || null);
             setAccessories(listing.accessories || []);
-            setIsNegotiable(listing.is_negotiable ?? true);
-            setMinPrice(listing.min_price?.toString() || '');
-            setContactPrefs(listing.contact_preferences || DEFAULT_CONTACT_PREFERENCES);
-            if (listing.category_id) {
-              const cat = CATEGORIES.find(c => c.id === listing.category_id);
-              setCategory(cat ? cat.name : listing.category_id);
+            setIsNegotiable(listing.isNegotiable ?? true);
+            setMinPrice(listing.minPrice?.toString() || '');
+            setContactPrefs(listing.contactPreferences || DEFAULT_CONTACT_PREFERENCES);
+            if (listing.category) {
+              const cat = CATEGORIES.find(c => c.id === listing.category);
+              setCategory(cat ? cat.name : listing.category);
             }
             if (listing.images) {
-              setPhotos(listing.images.sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0)).map((img: any) => ({ preview: img.image_url, id: img.id })));
+              setPhotos(listing.images.sort((a: any, b: any) => (a.displayOrder || 0) - (b.displayOrder || 0)).map((img: any) => ({ preview: img.url, id: img.id })));
             }
             setStep(1);
           }
         } catch (err) { console.error('Fetch listing error:', err); }
         setFetching(false);
       } else {
-        if (hasDraft(user.id)) {
+        if (hasDraft(userId)) {
           setShowDraftSheet(true);
         }
         if (preCategory) {
@@ -298,28 +289,26 @@ export const CreateListing: React.FC = () => {
       
       const { latitude, longitude } = pos.coords;
       
-      const { data, error } = await supabase.functions.invoke('verify-location', {
-        body: { latitude, longitude }
-      });
+      const data = await verifyLocation({ latitude, longitude, userId: auth.currentUser?.uid || '' });
       
-      if (error) {
-        console.error('Verification error:', error);
+      if (!data.success) {
+        console.error('Verification error:', data.error);
         showToast('Verification service unavailable. Please try again later.', 'error');
         setIsVerifying(false);
         return;
       }
       
-      if (data?.code === 'RATE_LIMITED') {
-        const retryMinutes = Math.ceil((data.retryAfterSeconds || 3600) / 60);
+      if ((data as any).code === 'RATE_LIMITED') {
+        const retryMinutes = Math.ceil(((data as any).retryAfterSeconds || 3600) / 60);
         showToast(`Too many attempts. Please try again in ${retryMinutes} minutes.`, 'warning');
-      } else if (data?.verified) {
+      } else if (data.verified) {
         setIsVerified(true);
-        showToast(data.message || 'Island residency verified!', 'success');
-        if (data.warning) {
-          setTimeout(() => showToast(data.warning, 'warning'), 2000);
+        showToast((data as any).message || 'Island residency verified!', 'success');
+        if ((data as any).warning) {
+          setTimeout(() => showToast((data as any).warning, 'warning'), 2000);
         }
       } else {
-        const errorMsg = data?.error || 'Location could not be verified as Andaman & Nicobar Islands.';
+        const errorMsg = data.error || 'Location could not be verified as Andaman & Nicobar Islands.';
         showToast(errorMsg, 'error');
       }
     } catch (err) {
@@ -332,7 +321,7 @@ export const CreateListing: React.FC = () => {
   const handleSave = async () => {
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) throw new Error('Please login first.');
 
       const sanitizedTitle = sanitizePlainText(title);
@@ -368,66 +357,56 @@ export const CreateListing: React.FC = () => {
         return;
       }
 
-      const payload: Record<string, any> = {
-        user_id: user.id,
+      const firestorePayload: Record<string, any> = {
+        userId: user.uid,
         title: sanitizedTitle,
         price: parseFloat(price),
         description: sanitizedDescription,
         city,
         area: sanitizedArea,
-        category_id: catId,
+        category: catId,
         condition,
-        item_age: itemAge,
+        itemAge,
         accessories,
         status: 'active',
-        is_negotiable: isNegotiable,
-        min_price: minPrice ? parseFloat(minPrice) : null,
-        contact_preferences: contactPrefs,
-        idempotency_key: editId ? undefined : idempotencyKey
+        isNegotiable: isNegotiable,
+        minPrice: minPrice ? parseFloat(minPrice) : null,
+        contactPreferences: contactPrefs,
+        idempotencyKey: editId ? undefined : idempotencyKey
       };
-      Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k]);
+      Object.keys(firestorePayload).forEach(k => firestorePayload[k] === undefined && delete firestorePayload[k]);
 
       let newListingId = editId;
       if (editId) {
-        const { error: updateError } = await supabase.from('listings').update(payload).eq('id', editId);
-        if (updateError) throw updateError;
-        if (deletedPhotoIds.length > 0) await supabase.from('listing_images').delete().in('id', deletedPhotoIds);
+        await updateListing(editId, firestorePayload);
         await logAuditEvent({ action: 'listing_updated', resource_type: 'listing', resource_id: editId, status: 'success' });
       } else {
-        const { data, error: insertError } = await supabase.from('listings').insert(payload).select('id').single();
-        if (insertError || !data) throw insertError || new Error('Failed to create listing.');
-        newListingId = data.id;
-        await logAuditEvent({ action: 'listing_created', resource_type: 'listing', resource_id: data.id, status: 'success', metadata: { category: catId, city } });
+        const created = await createListing(firestorePayload as any);
+        newListingId = created.id;
+        await logAuditEvent({ action: 'listing_created', resource_type: 'listing', resource_id: created.id, status: 'success', metadata: { category: catId, city } });
       }
       setCreatedListingId(newListingId);
 
-      // Preserve UI order by using each photo's index as display_order.
-      const newPhotosWithIndex = photos.map((p, index) => ({ ...p, desiredIndex: index })).filter(p => p.file);
+      if (!newListingId) throw new Error('No listing ID available');
 
-      for (const item of newPhotosWithIndex) {
-        const { file, desiredIndex } = item;
-        const fileName = `${user.id}/${safeRandomUUID()}.webp`;
-        const { error: uploadError } = await supabase.storage.from('listings').upload(fileName, file!, { contentType: 'image/webp' });
-        if (uploadError) {
-          console.warn('Image upload failed, skipping:', uploadError.message);
-          continue;
-        }
+      // Upload new photos
+      const newPhotos = photos.filter(p => p.file);
+      const existingImages = photos
+        .filter(p => !p.file && p.preview)
+        .map((p, i) => ({ id: p.id || '', url: p.preview, alt: `Image ${i + 1}` }));
 
-        const { data: urlData } = supabase.storage.from('listings').getPublicUrl(fileName);
-        if (newListingId && urlData.publicUrl) {
-          await supabase.from('listing_images').insert({ listing_id: newListingId, image_url: urlData.publicUrl, display_order: desiredIndex });
-        } else {
-          console.warn('Could not get public URL for uploaded image.');
-        }
+      let uploadedImages: Array<{ id: string; url: string; alt: string }> = [];
+      if (newPhotos.length > 0) {
+        const uploads = await uploadListingImages(newPhotos.map(p => p.file!), newListingId);
+        uploadedImages = uploads.map((upload, index) => ({
+          id: upload.path.split('/').pop() || '',
+          url: upload.url,
+          alt: `Image ${existingImages.length + index + 1}`
+        }));
       }
 
-      for (let i = 0; i < photos.length; i++) {
-        const photo = photos[i];
-        if (photo.id) {
-          // Update existing photo's order to match current UI state
-          await supabase.from('listing_images').update({ display_order: i }).eq('id', photo.id);
-        }
-      }
+      const finalImages = [...existingImages, ...uploadedImages];
+      await updateListing(newListingId, { images: finalImages } as any);
 
       saveContactPreferences(contactPrefs);
       if (userId) clearDraft(userId);

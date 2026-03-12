@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import { auth, db } from '../lib/firebase';
+import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
 import { isDemoListing } from '../lib/demoListings';
 import { useToast } from '../components/Toast';
 import { COPY } from '../lib/localCopy';
+import { Seo } from '../components/Seo';
 import { TrustBadge } from '../components/TrustBadge';
 import {
   Search, ArrowRight, Loader2, Heart, MapPin, Flame,
@@ -54,6 +56,214 @@ interface Listing {
     avatar_url: string;
   }[] | null;
 }
+
+// ============================================================
+//  SUB-COMPONENTS
+// ============================================================
+
+interface ListingCardProps {
+  listing: Listing;
+  saved: boolean;
+  onSave: (id: string, e: React.MouseEvent) => void;
+  timeAgo?: string;
+  style?: React.CSSProperties;
+}
+
+const ListingCard: React.FC<ListingCardProps> = ({ listing, saved, onSave, timeAgo, style }) => {
+  const imageUrl = listing.images?.length
+    ? listing.images[0].image_url
+    : `https://picsum.photos/seed/${listing.id}/400/400`;
+  const isDemo = listing.is_demo || isDemoListing(listing.id);
+
+  const handleClick = (e: React.MouseEvent) => {
+    if (isDemo) {
+      e.preventDefault();
+    }
+  };
+
+  return (
+    <Link
+      to={isDemo ? '#' : `/listings/${listing.id}`}
+      className="listing-card animate-fade-in-up"
+      style={style}
+      onClick={handleClick}
+    >
+      {/* Image */}
+      <div className="relative aspect-square overflow-hidden bg-warm-100 m-2 rounded-2xl">
+        <img
+          src={imageUrl}
+          alt={listing.title}
+          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+          loading="lazy"
+        />
+        {/* Save/Heart Button */}
+        <button
+          onClick={e => onSave(listing.id, e)}
+          className={`absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center shadow-glass transition-all duration-200 active:scale-90 ${saved ? 'bg-coral-500' : 'bg-white/90 backdrop-blur-sm'}`}
+          aria-label={saved ? 'Unsave listing' : 'Save listing'}
+        >
+          <Heart
+            size={14}
+            className={saved ? 'text-white fill-white' : 'text-warm-400'}
+          />
+        </button>
+        {listing.city && (
+          <div className="absolute top-2 left-2 bg-white/95 backdrop-blur-sm px-2 py-1 rounded-full flex items-center gap-1 text-[9px] font-bold text-midnight-700 uppercase tracking-wide shadow-sm">
+            <MapPin size={10} className="text-ocean-600" style={{ color: '#006D77' }} />
+            {listing.city}
+          </div>
+        )}
+        {/* Trust Badge */}
+        {listing.seller && listing.seller.length > 0 && listing.seller[0].trust_level && listing.seller[0].trust_level !== 'newbie' && (
+          <div className="absolute bottom-2 left-2 flex items-center gap-2">
+            <TrustBadge level={listing.seller[0].trust_level} size="sm" showLabel={false} />
+            <Link 
+              to={`/seller/${listing.seller[0].user_id}`}
+              onClick={(e) => e.stopPropagation()}
+              className="text-[10px] text-warm-600 hover:text-teal-600 transition-colors bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full"
+            >
+              {listing.seller[0].full_name}
+            </Link>
+          </div>
+        )}
+        {/* Featured Badge */}
+        {listing.is_featured && (
+          <div className={`absolute ${listing.seller && listing.seller.length > 0 && listing.seller[0].trust_level && listing.seller[0].trust_level !== 'newbie' ? 'top-2 right-2' : 'top-2 left-2'} bg-sandy-gradient text-midnight-700 text-[8px] font-black uppercase px-2 py-0.5 rounded-full`}>
+            ✦ Featured
+          </div>
+        )}
+        {/* Demo Badge */}
+        {isDemo && (
+          <div className="absolute bottom-2 right-2 bg-warm-800/60 backdrop-blur-sm text-white/90 text-[7px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full z-10">
+            Demo
+          </div>
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="px-3 pb-3 flex-1 flex flex-col justify-between gap-1">
+        <h3 className="text-[12px] font-semibold text-midnight-700 line-clamp-2 leading-tight pr-2">
+          {listing.title}
+        </h3>
+        <div className="flex items-center justify-between mt-1">
+          <span className="font-bold text-midnight-800 text-sm">
+            ₹{listing.price?.toLocaleString('en-IN') ?? '0'}
+          </span>
+          <div className="w-6 h-6 rounded-full bg-gray-50 flex items-center justify-center border border-gray-100">
+            <ArrowRight size={10} className="text-gray-500" />
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+};
+
+interface HorizontalCardProps {
+  listing: Listing;
+  rank: number;
+  saved: boolean;
+  onSave: (id: string, e: React.MouseEvent) => void;
+}
+
+const HorizontalListingCard: React.FC<HorizontalCardProps> = ({ listing, rank, saved, onSave }) => {
+  const imageUrl = listing.images?.length
+    ? listing.images[0].image_url
+    : `https://picsum.photos/seed/${listing.id}/300/300`;
+  const isDemo = listing.is_demo || isDemoListing(listing.id);
+
+  const handleClick = (e: React.MouseEvent) => {
+    if (isDemo) {
+      e.preventDefault();
+    }
+  };
+
+  return (
+    <Link to={isDemo ? '#' : `/listings/${listing.id}`} className="w-44 flex-shrink-0 listing-card group" onClick={handleClick}>
+      <div className="relative aspect-square overflow-hidden bg-warm-100 m-2 rounded-2xl">
+        <img src={imageUrl} alt={listing.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
+        {/* Location badge */}
+        {listing.city && (
+          <div className="absolute top-2 left-2 bg-white/95 backdrop-blur-sm px-2 py-1 rounded-full flex items-center gap-1 text-[9px] font-bold text-midnight-700 uppercase tracking-wide shadow-sm">
+            <MapPin size={10} className="text-ocean-600" style={{ color: '#006D77' }} />
+            {listing.city}
+          </div>
+        )}
+
+        {/* Trust Badge or AndamanBazaar badge */}
+        <div className="absolute bottom-2 left-2 right-2 bg-white/90 backdrop-blur-md rounded-xl p-2 flex items-center gap-2">
+          {listing.seller && listing.seller.length > 0 && listing.seller[0].trust_level && listing.seller[0].trust_level !== 'newbie' ? (
+            <div className="flex items-center gap-2 flex-1">
+              <TrustBadge level={listing.seller[0].trust_level} size="sm" />
+              <Link 
+                to={`/seller/${listing.seller[0].user_id}`}
+                onClick={(e) => e.stopPropagation()}
+                className="text-[10px] text-warm-600 hover:text-teal-600 transition-colors truncate"
+              >
+                {listing.seller[0].full_name}
+              </Link>
+            </div>
+          ) : (
+            <>
+              <div className="w-6 h-6 rounded-md bg-blue-500 flex items-center justify-center flex-shrink-0">
+                <BadgeCheck size={12} className="text-white" />
+              </div>
+              <div className="flex-1">
+                <div className="text-[10px] font-bold">Andaman<span className="text-blue-500">Bazaar</span></div>
+                <div className="text-[7px] text-gray-500 tracking-widest uppercase">Local . Trusted</div>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Demo Badge */}
+        {isDemo && (
+          <div className="absolute top-2 right-10 bg-warm-800/60 backdrop-blur-sm text-white/90 text-[7px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full z-10">
+            Demo
+          </div>
+        )}
+
+        <button
+          onClick={e => onSave(listing.id, e)}
+          className={`absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center shadow-glass transition-all ${saved ? 'bg-coral-500' : 'bg-white/90 backdrop-blur-sm'}`}
+          title={saved ? 'Unsave listing' : 'Save listing'}
+          aria-label={saved ? 'Unsave listing' : 'Save listing'}
+        >
+          <Heart size={12} className={saved ? 'text-white fill-white' : 'text-warm-400'} />
+        </button>
+      </div>
+      <div className="px-3 pb-3 pt-1">
+        <h4 className="text-[13px] font-semibold text-midnight-700 line-clamp-1 leading-tight mb-1">{listing.title}</h4>
+        <div className="flex items-center justify-between">
+          <span className="font-bold text-midnight-800 text-sm">₹{listing.price?.toLocaleString('en-IN')}</span>
+          <div className="w-6 h-6 rounded-full bg-gray-50 flex items-center justify-center border border-gray-100">
+            <ArrowRight size={10} className="text-gray-500" />
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+};
+
+const ListingCardSkeleton = () => (
+  <div className="premium-card overflow-hidden">
+    <div className="m-2 aspect-square rounded-2xl skeleton" />
+    <div className="px-3 pb-3 space-y-2">
+      <div className="h-3 skeleton w-3/4" />
+      <div className="h-4 skeleton w-1/4" />
+    </div>
+  </div>
+);
+
+const HorizontalCardSkeleton = () => (
+  <div className="w-44 flex-shrink-0 listing-card">
+    <div className="aspect-square m-2 rounded-2xl skeleton" />
+    <div className="px-3 pb-3 space-y-2">
+      <div className="h-3 skeleton w-5/6" />
+      <div className="h-4 skeleton w-1/3" />
+    </div>
+  </div>
+);
+
 
 // ============================================================
 //  MAIN HOME COMPONENT
@@ -107,18 +317,15 @@ export const Home: React.FC = () => {
   const fetchFeatured = async () => {
     setLoadingFeatured(true);
     try {
-      const { data } = await supabase
-        .from('listings')
-        .select(`
-          id, title, price, city, is_featured, views_count, images:listing_images(image_url),
-          seller:profiles(user_id, trust_level, full_name, avatar_url)
-        `)
-        .eq('status', 'active')
-        .eq('is_featured', true)
-        .order('created_at', { ascending: false })
-        .limit(10);
-      const real = data || [];
-      setFeaturedListings(real);
+      const snap = await getDocs(
+        query(collection(db, 'listings'),
+          where('status', '==', 'active'),
+          where('isFeatured', '==', true),
+          orderBy('createdAt', 'desc'),
+          limit(10)
+        )
+      );
+      setFeaturedListings(snap.docs.map(d => ({ id: d.id, ...d.data() })) as any[]);
     } catch (err) {
       console.error('Featured fetch error:', err);
       setFeaturedListings([]);
@@ -130,17 +337,14 @@ export const Home: React.FC = () => {
   const fetchTrending = async () => {
     setLoadingTrending(true);
     try {
-      const { data } = await supabase
-        .from('listings')
-        .select(`
-          id, title, price, city, is_featured, views_count, images:listing_images(image_url),
-          seller:profiles(user_id, trust_level, full_name, avatar_url)
-        `)
-        .eq('status', 'active')
-        .order('views_count', { ascending: false })
-        .limit(6);
-      const real = data || [];
-      setTrendingListings(real);
+      const snap = await getDocs(
+        query(collection(db, 'listings'),
+          where('status', '==', 'active'),
+          orderBy('viewsCount', 'desc'),
+          limit(6)
+        )
+      );
+      setTrendingListings(snap.docs.map(d => ({ id: d.id, ...d.data() })) as any[]);
     } catch (err) {
       console.error('Trending fetch error:', err);
       setTrendingListings([]);
@@ -153,22 +357,17 @@ export const Home: React.FC = () => {
     if (pageIndex === 0) setLoadingRecent(true);
     else setLoadingMore(true);
     try {
-      const from = pageIndex * RECENT_PAGE_SIZE;
-      const to = from + RECENT_PAGE_SIZE - 1;
-      const { data } = await supabase
-        .from('listings')
-        .select(`
-          id, title, price, city, is_featured, created_at, images:listing_images(image_url),
-          seller:profiles(user_id, trust_level, full_name, avatar_url)
-        `)
-        .eq('status', 'active')
-        .order('created_at', { ascending: false })
-        .range(from, to);
-      const real = data || [];
-      if (data) {
-        setRecentListings(prev => pageIndex === 0 ? data : [...prev, ...data]);
-      }
-      setHasMore(real.length === RECENT_PAGE_SIZE);
+      const snap = await getDocs(
+        query(collection(db, 'listings'),
+          where('status', '==', 'active'),
+          orderBy('createdAt', 'desc'),
+          limit((pageIndex + 1) * RECENT_PAGE_SIZE)
+        )
+      );
+      const all = snap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
+      const paged = all.slice(pageIndex * RECENT_PAGE_SIZE);
+      setRecentListings(prev => pageIndex === 0 ? all.slice(0, RECENT_PAGE_SIZE) : [...prev, ...paged]);
+      setHasMore(all.length === (pageIndex + 1) * RECENT_PAGE_SIZE);
       setPage(pageIndex);
     } catch (err) {
       console.error('Recent fetch error:', err);
@@ -187,9 +386,7 @@ export const Home: React.FC = () => {
   const toggleSave = useCallback(async (id: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    // Bug 6 fix: check auth before saving
-    const { data: userData } = await (supabase.auth as any).getUser();
-    const user = userData?.user;
+    const user = auth.currentUser;
     if (!user) {
       showToast('Sign in to save items to your favorites.', 'info');
       return;
@@ -221,7 +418,12 @@ export const Home: React.FC = () => {
   const { h, m, ss } = formatTimer(flashTime);
 
   return (
-    <div className="min-h-screen bg-warm-50 pb-28 md:pb-12">
+    <>
+      <Seo 
+        title="Andaman's Local Marketplace" 
+        description="Buy and sell used goods, fresh produce, and local services in the Andaman & Nicobar Islands. Your community marketplace."
+      />
+      <div className="min-h-screen bg-warm-50 pb-28 md:pb-12">
 
       {/* ── HERO — IMMERSIVE OCEAN ── */}
       <section className="relative overflow-hidden wave-divider bg-gradient-ocean-deep">
@@ -392,7 +594,7 @@ export const Home: React.FC = () => {
                   <div className="empty-state py-12 px-8 text-center rounded-3xl border-2 border-dashed border-warm-200 bg-warm-50 min-w-[280px]">
                     <h3 className="font-heading font-bold text-midnight-700 mb-1">🛍️ No listings yet</h3>
                     <p className="text-sm text-warm-400 mb-4">Be the first to list something in your island!</p>
-                    <Link to="/create" className="btn-primary text-sm py-2.5 inline-block">
+                    <Link to="/post" className="btn-primary text-sm py-2.5 inline-block">
                       Post a Free Listing
                     </Link>
                   </div>
@@ -431,7 +633,7 @@ export const Home: React.FC = () => {
                   <div className="empty-state py-12 px-8 text-center rounded-3xl border-2 border-dashed border-warm-200 bg-warm-50 min-w-[280px]">
                     <h3 className="font-heading font-bold text-midnight-700 mb-1">🛍️ No listings yet</h3>
                     <p className="text-sm text-warm-400 mb-4">Be the first to list something in your island!</p>
-                    <Link to="/create" className="btn-primary text-sm py-2.5 inline-block">
+                    <Link to="/post" className="btn-primary text-sm py-2.5 inline-block">
                       Post a Free Listing
                     </Link>
                   </div>
@@ -493,7 +695,7 @@ export const Home: React.FC = () => {
                 <div className="col-span-full empty-state py-16 text-center rounded-3xl border-2 border-dashed border-warm-200 bg-warm-50">
                   <h3 className="font-heading font-bold text-midnight-700 text-lg mb-2">🛍️ No listings yet</h3>
                   <p className="text-sm text-warm-400 mb-4">Be the first to list something in your island!</p>
-                  <Link to="/create" className="btn-primary text-sm py-2.5 inline-block">
+                  <Link to="/post" className="btn-primary text-sm py-2.5 inline-block">
                     Post a Free Listing
                   </Link>
                 </div>
@@ -558,213 +760,6 @@ export const Home: React.FC = () => {
       </section>
 
     </div>
+    </>
   );
 };
-
-// ============================================================
-//  SUB-COMPONENTS
-// ============================================================
-
-interface ListingCardProps {
-  listing: Listing;
-  saved: boolean;
-  onSave: (id: string, e: React.MouseEvent) => void;
-  timeAgo?: string;
-  style?: React.CSSProperties;
-}
-
-const ListingCard: React.FC<ListingCardProps> = ({ listing, saved, onSave, timeAgo, style }) => {
-  const imageUrl = listing.images?.length
-    ? listing.images[0].image_url
-    : `https://picsum.photos/seed/${listing.id}/400/400`;
-  const isDemo = listing.is_demo || isDemoListing(listing.id);
-
-  const handleClick = (e: React.MouseEvent) => {
-    if (isDemo) {
-      e.preventDefault();
-    }
-  };
-
-  return (
-    <Link
-      to={isDemo ? '#' : `/listings/${listing.id}`}
-      className="listing-card animate-fade-in-up"
-      style={style}
-      onClick={handleClick}
-    >
-      {/* Image */}
-      <div className="relative aspect-square overflow-hidden bg-warm-100 m-2 rounded-2xl">
-        <img
-          src={imageUrl}
-          alt={listing.title}
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-          loading="lazy"
-        />
-        {/* Save/Heart Button */}
-        <button
-          onClick={e => onSave(listing.id, e)}
-          className={`absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center shadow-glass transition-all duration-200 active:scale-90 ${saved ? 'bg-coral-500' : 'bg-white/90 backdrop-blur-sm'
-            }`}
-          aria-label={saved ? 'Unsave listing' : 'Save listing'}
-        >
-          <Heart
-            size={14}
-            className={saved ? 'text-white fill-white' : 'text-warm-400'}
-          />
-        </button>
-        {listing.city && (
-          <div className="absolute top-2 left-2 bg-white/95 backdrop-blur-sm px-2 py-1 rounded-full flex items-center gap-1 text-[9px] font-bold text-midnight-700 uppercase tracking-wide shadow-sm">
-            <MapPin size={10} className="text-ocean-600" style={{ color: '#006D77' }} />
-            {listing.city}
-          </div>
-        )}
-        {/* Trust Badge */}
-        {listing.seller && listing.seller.length > 0 && listing.seller[0].trust_level && listing.seller[0].trust_level !== 'newbie' && (
-          <div className="absolute bottom-2 left-2 flex items-center gap-2">
-            <TrustBadge level={listing.seller[0].trust_level} size="sm" showLabel={false} />
-            <Link 
-              to={`/seller/${listing.seller[0].user_id}`}
-              onClick={(e) => e.stopPropagation()}
-              className="text-[10px] text-warm-600 hover:text-teal-600 transition-colors bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full"
-            >
-              {listing.seller[0].full_name}
-            </Link>
-          </div>
-        )}
-        {/* Featured Badge */}
-        {listing.is_featured && (
-          <div className={`absolute ${listing.seller && listing.seller.length > 0 && listing.seller[0].trust_level && listing.seller[0].trust_level !== 'newbie' ? 'top-2 right-2' : 'top-2 left-2'} bg-sandy-gradient text-midnight-700 text-[8px] font-black uppercase px-2 py-0.5 rounded-full`}>
-            ✦ Featured
-          </div>
-        )}
-        {/* Demo Badge */}
-        {isDemo && (
-          <div className="absolute bottom-2 right-2 bg-warm-800/60 backdrop-blur-sm text-white/90 text-[7px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full z-10">
-            Demo
-          </div>
-        )}
-      </div>
-
-      {/* Content */}
-      <div className="px-3 pb-3 flex-1 flex flex-col justify-between gap-1">
-        <h3 className="text-[12px] font-semibold text-midnight-700 line-clamp-2 leading-tight pr-2">
-          {listing.title}
-        </h3>
-        <div className="flex items-center justify-between mt-1">
-          <span className="font-bold text-midnight-800 text-sm">
-            ₹{listing.price?.toLocaleString('en-IN') ?? '0'}
-          </span>
-          <div className="w-6 h-6 rounded-full bg-gray-50 flex items-center justify-center border border-gray-100">
-            <ArrowRight size={10} className="text-gray-500" />
-          </div>
-        </div>
-      </div>
-    </Link>
-  );
-};
-
-interface HorizontalCardProps {
-  listing: Listing;
-  rank: number;
-  saved: boolean;
-  onSave: (id: string, e: React.MouseEvent) => void;
-}
-
-const HorizontalListingCard: React.FC<HorizontalCardProps> = ({ listing, rank, saved, onSave }) => {
-  const imageUrl = listing.images?.length
-    ? listing.images[0].image_url
-    : `https://picsum.photos/seed/${listing.id}/300/300`;
-  const isDemo = listing.is_demo || isDemoListing(listing.id);
-
-  const handleClick = (e: React.MouseEvent) => {
-    if (isDemo) {
-      e.preventDefault();
-    }
-  };
-
-  return (
-    <Link to={isDemo ? '#' : `/listings/${listing.id}`} className="w-44 flex-shrink-0 listing-card group" onClick={handleClick}>
-      <div className="relative aspect-square overflow-hidden bg-warm-100 m-2 rounded-2xl">
-        <img src={imageUrl} alt={listing.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
-        {/* Location badge */}
-        {listing.city && (
-          <div className="absolute top-2 left-2 bg-white/95 backdrop-blur-sm px-2 py-1 rounded-full flex items-center gap-1 text-[9px] font-bold text-midnight-700 uppercase tracking-wide shadow-sm">
-            <MapPin size={10} className="text-ocean-600" style={{ color: '#006D77' }} />
-            {listing.city}
-          </div>
-        )}
-
-        {/* Trust Badge or AndamanBazaar badge */}
-        <div className="absolute bottom-2 left-2 right-2 bg-white/90 backdrop-blur-md rounded-xl p-2 flex items-center gap-2">
-          {listing.seller && listing.seller.length > 0 && listing.seller[0].trust_level && listing.seller[0].trust_level !== 'newbie' ? (
-            <div className="flex items-center gap-2 flex-1">
-              <TrustBadge level={listing.seller[0].trust_level} size="sm" />
-              <Link 
-                to={`/seller/${listing.seller[0].user_id}`}
-                onClick={(e) => e.stopPropagation()}
-                className="text-[10px] text-warm-600 hover:text-teal-600 transition-colors truncate"
-              >
-                {listing.seller[0].full_name}
-              </Link>
-            </div>
-          ) : (
-            <>
-              <div className="w-6 h-6 rounded-md bg-blue-500 flex items-center justify-center flex-shrink-0">
-                <BadgeCheck size={12} className="text-white" />
-              </div>
-              <div className="flex-1">
-                <div className="text-[10px] font-bold">Andaman<span className="text-blue-500">Bazaar</span></div>
-                <div className="text-[7px] text-gray-500 tracking-widest uppercase">Local . Trusted</div>
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Demo Badge */}
-        {isDemo && (
-          <div className="absolute top-2 right-10 bg-warm-800/60 backdrop-blur-sm text-white/90 text-[7px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full z-10">
-            Demo
-          </div>
-        )}
-
-        <button
-          onClick={e => onSave(listing.id, e)}
-          className={`absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center shadow-glass transition-all ${saved ? 'bg-coral-500' : 'bg-white/90 backdrop-blur-sm'}`}
-          title={saved ? 'Unsave listing' : 'Save listing'}
-          aria-label={saved ? 'Unsave listing' : 'Save listing'}
-        >
-          <Heart size={12} className={saved ? 'text-white fill-white' : 'text-warm-400'} />
-        </button>
-      </div>
-      <div className="px-3 pb-3 pt-1">
-        <h4 className="text-[13px] font-semibold text-midnight-700 line-clamp-1 leading-tight mb-1">{listing.title}</h4>
-        <div className="flex items-center justify-between">
-          <span className="font-bold text-midnight-800 text-sm">₹{listing.price?.toLocaleString('en-IN')}</span>
-          <div className="w-6 h-6 rounded-full bg-gray-50 flex items-center justify-center border border-gray-100">
-            <ArrowRight size={10} className="text-gray-500" />
-          </div>
-        </div>
-      </div>
-    </Link>
-  );
-};
-
-const ListingCardSkeleton = () => (
-  <div className="premium-card overflow-hidden">
-    <div className="m-2 aspect-square rounded-2xl skeleton" />
-    <div className="px-3 pb-3 space-y-2">
-      <div className="h-3 skeleton w-3/4" />
-      <div className="h-3 skeleton w-1/2" />
-    </div>
-  </div>
-);
-
-const HorizontalCardSkeleton = () => (
-  <div className="w-44 flex-shrink-0 premium-card overflow-hidden">
-    <div className="m-2 aspect-square rounded-2xl skeleton" />
-    <div className="px-3 pb-3 space-y-2">
-      <div className="h-3 skeleton w-3/4" />
-      <div className="h-3 skeleton w-1/2" />
-    </div>
-  </div>
-);

@@ -1,19 +1,19 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { User } from '@supabase/supabase-js';
 import { Logo } from './Logo';
-import { OfflineSyncBanner } from './OfflineSyncBanner';
-import { supabase } from '../lib/supabase';
+import { OfflineBanner } from './OfflineBanner';
 import { useNotifications } from '../hooks/useNotifications';
+import { getUserChats, subscribeToUserChats } from '../lib/database';
+import { getCurrentUser } from '../lib/auth';
 import {
   Home, Search, PlusCircle, MessageCircle, User as UserIcon,
-  BadgeCheck
+  BadgeCheck, Bell
 } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
-  user: User | null;
+  user: any | null;
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children, user }) => {
@@ -32,50 +32,28 @@ export const Layout: React.FC<LayoutProps> = ({ children, user }) => {
     if (!user) return;
 
     const fetchUnread = async () => {
-      const { data: chats } = await supabase
-        .from('chats')
-        .select('id, buyer_id, seller_id, buyer_unread_count, seller_unread_count')
-        .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`);
-
-      if (chats) {
-        let count = 0;
-        chats.forEach(chat => {
-          if (chat.buyer_id === user.id) count += chat.buyer_unread_count || 0;
-          if (chat.seller_id === user.id) count += chat.seller_unread_count || 0;
-        });
-        setUnreadCount(count);
+      try {
+        const chats = await getUserChats(user.id);
+        if (chats) {
+          let count = 0;
+          chats.forEach((chat: any) => {
+            if (chat.buyerId === user.id) count += chat.buyerUnreadCount || 0;
+            if (chat.sellerId === user.id) count += chat.sellerUnreadCount || 0;
+          });
+          setUnreadCount(count);
+        }
+      } catch (error) {
+        console.error('Error fetching unread count:', error);
       }
     };
 
     fetchUnread();
 
-    const channel = supabase
-      .channel('layout_unread_count')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'chats',
-          filter: `or(buyer_id.eq.${user.id},seller_id.eq.${user.id})`,
-        },
-        (payload) => {
-          // Only refetch if unread counts changed
-          if (payload.new && (
-            'buyer_unread_count' in payload.new ||
-            'seller_unread_count' in payload.new
-          )) {
-            fetchUnread();
-          }
-        }
-      )
-      .subscribe((status) => {
-        if (status === 'CHANNEL_ERROR') {
-          console.error('Layout: Error subscribing to chat changes');
-        }
-      });
+    const unsubscribe = subscribeToUserChats(user.id, fetchUnread);
 
-    return () => { supabase.removeChannel(channel); };
+    return () => { 
+      if (unsubscribe) unsubscribe();
+    };
   }, [user]);
 
   const isActive = (path: string) =>
@@ -84,7 +62,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, user }) => {
   return (
     <div className="min-h-screen flex flex-col bg-warm-50 font-sans text-midnight-700">
       {/* <OfflineBanner /> */}
-      <OfflineSyncBanner userId={user?.id || null} />
 
       {/* ── HEADER ── */}
       <header className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled

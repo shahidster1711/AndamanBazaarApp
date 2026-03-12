@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import { db } from '../lib/firebase';
+import { auth } from '../lib/firebase';
+import { collection, getDocs, getCountFromServer, query, where, orderBy, updateDoc, doc } from 'firebase/firestore';
 import { Report, AppRole } from '../types';
 import {
   ShieldAlert, Users, FileText, CheckCircle, XCircle,
@@ -30,20 +32,19 @@ export const Admin: React.FC = () => {
 
   const checkAdminAccess = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) {
         navigate('/auth');
         return;
       }
 
-      const { data: roles } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .eq('role', 'admin')
-        .single();
+      const rolesSnap = await getDocs(
+        query(collection(db, 'user_roles'),
+          where('userId', '==', user.uid),
+          where('role', '==', 'admin'))
+      );
 
-      if (!roles) {
+      if (rolesSnap.empty) {
         showToast('Access denied. Admin privileges required.', 'error');
         navigate('/');
         return;
@@ -60,35 +61,22 @@ export const Admin: React.FC = () => {
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      // Fetch all stats and reports in parallel
-      const [
-        { count: totalListings },
-        { count: activeListings },
-        { count: pendingReports },
-        { count: totalUsers },
-        { data: reportsData, error }
-      ] = await Promise.all([
-        supabase.from('listings').select('*', { count: 'exact', head: true }),
-        supabase.from('listings').select('*', { count: 'exact', head: true }).eq('status', 'active'),
-        supabase.from('reports').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
-        supabase.from('profiles').select('*', { count: 'exact', head: true }),
-        supabase.from('reports').select(`
-          *,
-          reporter:reporter_id(name, email),
-          listing:listing_id(title, status, user_id)
-        `).order('created_at', { ascending: false })
+      const [totalSnap, activeSnap, pendingSnap, usersSnap, reportsSnap] = await Promise.all([
+        getCountFromServer(collection(db, 'listings')),
+        getCountFromServer(query(collection(db, 'listings'), where('status', '==', 'active'))),
+        getCountFromServer(query(collection(db, 'reports'), where('status', '==', 'pending'))),
+        getCountFromServer(collection(db, 'users')),
+        getDocs(query(collection(db, 'reports'), orderBy('createdAt', 'desc'))),
       ]);
 
       setStats({
-        totalListings: totalListings || 0,
-        activeListings: activeListings || 0,
-        pendingReports: pendingReports || 0,
-        totalUsers: totalUsers || 0
+        totalListings: totalSnap.data().count,
+        activeListings: activeSnap.data().count,
+        pendingReports: pendingSnap.data().count,
+        totalUsers: usersSnap.data().count,
       });
 
-      if (error) throw error;
-      setReports(reportsData || []);
-
+      setReports(reportsSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any);
     } catch (err) {
       console.error('Error fetching admin data:', err);
       showToast('Failed to load dashboard data', 'error');
@@ -99,12 +87,7 @@ export const Admin: React.FC = () => {
 
   const updateReportStatus = async (reportId: string, newStatus: string) => {
     try {
-      const { error } = await supabase
-        .from('reports')
-        .update({ status: newStatus })
-        .eq('id', reportId);
-
-      if (error) throw error;
+      await updateDoc(doc(db, 'reports', reportId), { status: newStatus });
 
       setReports(prev => prev.map(r => 
         r.id === reportId ? { ...r, status: newStatus as any } : r
