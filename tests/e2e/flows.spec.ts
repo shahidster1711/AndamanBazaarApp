@@ -221,8 +221,8 @@ test.describe('Accessibility Tests', () => {
     // Run axe-core accessibility scan
     const violations = await page.evaluate(() => {
       return new Promise((resolve) => {
-        if (window.axe) {
-          window.axe.run().then(resolve)
+        if ((window as any).axe) {
+          (window as any).axe.run().then(resolve)
         } else {
           resolve([])
         }
@@ -343,7 +343,7 @@ test.describe('Performance Tests', () => {
       return new Promise((resolve) => {
         new PerformanceObserver((list) => {
           const entries = list.getEntries()
-          resolve(entries[0].processingStart - entries[0].startTime)
+          resolve((entries[0] as any).processingStart - entries[0].startTime)
         }).observe({ entryTypes: ['first-input'] })
       })
     })

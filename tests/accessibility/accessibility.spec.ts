@@ -383,8 +383,8 @@ test.describe('Automated Accessibility Testing', () => {
     })
     
     const results = await page.evaluate(async () => {
-      if (window.axe) {
-        return await window.axe.run()
+      if ((window as any).axe) {
+        return await (window as any).axe.run()
       }
       return { violations: [] }
     })
