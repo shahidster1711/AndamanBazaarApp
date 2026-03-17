@@ -52,6 +52,18 @@ service cloud.firestore {
                     request.resource.data.isBanned == resource.data.isBanned &&
                     request.resource.data.isActive == resource.data.isActive;
       
+      // Allow self-registration: authenticated user may create their own document
+      // with strictly validated defaults — cannot self-assign admin/moderator roles
+      allow create: if isOwner(userId) &&
+                    request.resource.data.keys().hasAll([
+                      'id', 'email', 'name', 'role', 'isActive', 'isBanned',
+                      'locationVerified', 'contactPreferences', 'stats',
+                      'createdAt', 'updatedAt', 'lastActiveAt'
+                    ]) &&
+                    request.resource.data.id == request.auth.uid &&
+                    request.resource.data.role == 'user' &&
+                    request.resource.data.isBanned == false &&
+                    request.resource.data.isActive == true;
       allow create: if isAdmin();
       allow delete: if false;
     }
