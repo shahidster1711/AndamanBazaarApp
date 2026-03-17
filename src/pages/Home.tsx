@@ -1,13 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { auth, db } from '../lib/firebase';
-import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
+import { collection, query, where, orderBy, limit, getDocs, Timestamp } from 'firebase/firestore';
 import { isDemoListing } from '../lib/demoListings';
 import { useToast } from '../components/Toast';
 import { COPY } from '../lib/localCopy';
 import { Seo } from '../components/Seo';
 import { TrustBadge } from '../components/TrustBadge';
 import { FreshnessBadge } from '../components/FreshnessBadge';
+import { BoostBadge } from '../components/BoostBadge';
+import { UrgentBadge } from '../components/UrgentBadge';
+import { FeaturedSection } from '../components/FeaturedSection';
 import {
   Search, ArrowRight, Loader2, Heart, MapPin, Flame,
   Fish, Leaf, Shell, Compass,
@@ -63,6 +66,11 @@ interface Listing {
   // Optional fields present in some listings / demo data
   area?: string;
   is_official?: boolean;
+  // Boost fields
+  isBoosted?: boolean;
+  boostTier?: 'spark' | 'boost' | 'power';
+  boostExpiresAt?: any; // Firestore Timestamp
+  is_urgent?: boolean;
 }
 
 // ============================================================
@@ -151,14 +159,26 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, saved, onSave, timeA
             </Link>
           </div>
         )}
+        {/* Boost Badge */}
+        {listing.isBoosted && listing.boostTier && (
+          <div className="absolute bottom-2 right-2 z-10">
+            <BoostBadge tier={listing.boostTier} size="sm" />
+          </div>
+        )}
+        {/* Urgent Badge */}
+        {listing.is_urgent && (
+          <div className="absolute top-2 right-2 z-10">
+            <UrgentBadge size="sm" />
+          </div>
+        )}
         {/* Featured Badge */}
-        {listing.is_featured && (
+        {listing.is_featured && !listing.isBoosted && (
           <div className={`absolute ${listing.seller && listing.seller.length > 0 && listing.seller[0].trust_level && listing.seller[0].trust_level !== 'newbie' ? 'top-2 right-2' : 'top-2 left-2'} bg-sandy-gradient text-midnight-700 text-3xs font-black uppercase px-2 py-0.5 rounded-full`}>
             ✦ Featured
           </div>
         )}
         {/* Demo Badge */}
-        {isDemo && (
+        {isDemo && !listing.isBoosted && (
           <div className="absolute bottom-2 right-2 bg-warm-800/60 backdrop-blur-sm text-white/90 text-3xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full z-10">
             Demo
           </div>
@@ -331,6 +351,9 @@ export const Home: React.FC = () => {
   const [featuredListings, setFeaturedListings] = useState<Listing[]>([]);
   const [trendingListings, setTrendingListings] = useState<Listing[]>([]);
   const [recentListings, setRecentListings] = useState<Listing[]>([]);
+  const [boostedListings, setBoostedListings] = useState<Listing[]>([]);
+  const [urgentListings, setUrgentListings] = useState<Listing[]>([]);
+  const [loadingUrgent, setLoadingUrgent] = useState(false);
   const [loadingFeatured, setLoadingFeatured] = useState(true);
   const [loadingTrending, setLoadingTrending] = useState(true);
   const [loadingRecent, setLoadingRecent] = useState(true);
@@ -349,6 +372,8 @@ export const Home: React.FC = () => {
   useEffect(() => {
     fetchFeatured();
     fetchTrending();
+    fetchBoosted();
+    fetchUrgentListings();
     fetchRecent(0);
   }, []);
 
@@ -405,6 +430,44 @@ export const Home: React.FC = () => {
       setTrendingListings([]);
     } finally {
       setLoadingTrending(false);
+    }
+  };
+
+  const fetchBoosted = async () => {
+    try {
+      const snap = await getDocs(
+        query(collection(db, 'listings'),
+          where('status', '==', 'active'),
+          where('isBoosted', '==', true),
+          where('boostExpiresAt', '>', Timestamp.now()),
+          orderBy('boostExpiresAt', 'desc'),
+          limit(6)
+        )
+      );
+      setBoostedListings(snap.docs.map(d => ({ id: d.id, ...d.data() })) as any[]);
+    } catch (err) {
+      console.error('Boosted fetch error:', err);
+      setBoostedListings([]);
+    }
+  };
+
+  const fetchUrgentListings = async () => {
+    setLoadingUrgent(true);
+    try {
+      const snap = await getDocs(
+        query(collection(db, 'listings'),
+          where('status', '==', 'active'),
+          where('is_urgent', '==', true),
+          orderBy('createdAt', 'desc'),
+          limit(6)
+        )
+      );
+      setUrgentListings(snap.docs.map(d => ({ id: d.id, ...d.data() })) as any[]);
+    } catch (err) {
+      console.error('Urgent fetch error:', err);
+      setUrgentListings([]);
+    } finally {
+      setLoadingUrgent(false);
     }
   };
 
@@ -524,6 +587,9 @@ export const Home: React.FC = () => {
                       <Search size={18} className="text-white/50" />
                     </div>
                     <input
+                      id="home-search-input"
+                      name="q"
+                      aria-label="Search listings"
                       type="text"
                       value={searchQuery}
                       onChange={e => setSearchQuery(e.target.value)}
@@ -631,29 +697,31 @@ export const Home: React.FC = () => {
       )}
 
       {/* ── FEATURED LISTINGS ── */}
+      <FeaturedSection
+        listings={featuredListings as any[]}
+        loading={loadingFeatured}
+        savedListings={savedListings}
+        onSave={toggleSave}
+      />
+
+      {/* ── URGENT DEALS ── */}
+      {urgentListings.length > 0 && (
       <section className="px-4 mb-10">
         <div className="app-container">
           <div className="section-header px-0 reveal">
             <div>
               <h2 className="font-heading font-extrabold text-xl text-midnight-700 tracking-tight flex items-center gap-2">
-                Featured <span className="text-amber-500">Picks</span>
+                ⚡ <span className="text-red-600">Urgent</span> Deals
               </h2>
-              <p className="text-xs text-warm-400 font-medium mt-1">Example Listings</p>
+              <p className="text-xs text-warm-400 font-medium mt-1">Must go fast! Great local offers</p>
             </div>
+            <Link to="/listings?urgent=true" className="section-link text-red-600 font-bold">See All <ArrowRight size={14} /></Link>
           </div>
           <div className="overflow-x-auto hide-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
             <div className="flex gap-4 w-max pb-2">
-              {loadingFeatured
+              {loadingUrgent
                 ? [1, 2, 3].map(n => <HorizontalCardSkeleton key={n} />)
-                : featuredListings.length === 0 ? (
-                  <div className="empty-state py-12 px-8 text-center rounded-3xl border-2 border-dashed border-warm-200 bg-warm-50 min-w-[280px]">
-                    <h3 className="font-heading font-bold text-midnight-700 mb-1">🛍️ No listings yet</h3>
-                    <p className="text-sm text-warm-400 mb-4">Be the first to list something in your island!</p>
-                    <Link to="/post" className="btn-primary text-sm py-2.5 inline-block">
-                      Post a Free Listing
-                    </Link>
-                  </div>
-                ) : featuredListings.map((listing, i) => (
+                : urgentListings.map((listing, i) => (
                   <HorizontalListingCard
                     key={listing.id}
                     listing={listing}
@@ -667,6 +735,7 @@ export const Home: React.FC = () => {
           </div>
         </div>
       </section>
+      )}
 
       {/* ── TRENDING ON THE ISLANDS ── */}
       <section className="px-4 mb-10">
@@ -686,8 +755,8 @@ export const Home: React.FC = () => {
                 ? [1, 2, 3].map(n => <HorizontalCardSkeleton key={n} />)
                 : trendingListings.length === 0 ? (
                   <div className="empty-state py-12 px-8 text-center rounded-3xl border-2 border-dashed border-warm-200 bg-warm-50 min-w-[280px]">
-                    <h3 className="font-heading font-bold text-midnight-700 mb-1">🛍️ No listings yet</h3>
-                    <p className="text-sm text-warm-400 mb-4">Be the first to list something in your island!</p>
+                    <h3 className="font-heading font-bold text-midnight-700 mb-1">🔥 No trending items</h3>
+                    <p className="text-sm text-warm-400 mb-4">Post something amazing to get featured here!</p>
                     <Link to="/post" className="btn-primary text-sm py-2.5 inline-block">
                       Post a Free Listing
                     </Link>
@@ -733,7 +802,7 @@ export const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* ── FRESH ARRIVALS GRID ── */}
+      {/* ── FRESH ARRIVALS GRID (boosted listings first) ── */}
       <section className="px-4 mb-10">
         <div className="app-container">
           <div className="section-header reveal">
@@ -746,24 +815,30 @@ export const Home: React.FC = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {loadingRecent
               ? [1, 2, 3, 4].map(n => <ListingCardSkeleton key={n} />)
-              : recentListings.length === 0 ? (
-                <div className="col-span-full empty-state py-16 text-center rounded-3xl border-2 border-dashed border-warm-200 bg-warm-50">
-                  <h3 className="font-heading font-bold text-midnight-700 text-lg mb-2">🛍️ No listings yet</h3>
-                  <p className="text-sm text-warm-400 mb-4">Be the first to list something in your island!</p>
-                  <Link to="/post" className="btn-primary text-sm py-2.5 inline-block">
-                    Post a Free Listing
-                  </Link>
-                </div>
-              ) : recentListings.map((listing, i) => (
-                <ListingCard
-                  key={listing.id}
-                  listing={listing}
-                  saved={savedListings.has(listing.id)}
-                  onSave={toggleSave}
-                  timeAgo={formatTimeAgo(listing.created_at)}
-                  style={{ animationDelay: `${i * 50}ms` }}
-                />
-              ))
+              : (() => {
+                  // Merge boosted listings at the top, then non-boosted recent
+                  const boostedIds = new Set(boostedListings.map(l => l.id));
+                  const nonBoosted = recentListings.filter(l => !boostedIds.has(l.id));
+                  const merged = [...boostedListings, ...nonBoosted];
+                  return merged.length === 0 ? (
+                    <div className="col-span-full empty-state py-16 text-center rounded-3xl border-2 border-dashed border-warm-200 bg-warm-50">
+                      <h3 className="font-heading font-bold text-midnight-700 text-lg mb-2">✨ No fresh arrivals</h3>
+                      <p className="text-sm text-warm-400 mb-4">Be the first to post your local goods today!</p>
+                      <Link to="/post" className="btn-primary text-sm py-2.5 inline-block">
+                        Post a Free Listing
+                      </Link>
+                    </div>
+                  ) : merged.map((listing, i) => (
+                    <ListingCard
+                      key={listing.id}
+                      listing={listing}
+                      saved={savedListings.has(listing.id)}
+                      onSave={toggleSave}
+                      timeAgo={formatTimeAgo(listing.created_at)}
+                      style={{ animationDelay: `${i * 50}ms` }}
+                    />
+                  ));
+                })()
             }
           </div>
           {

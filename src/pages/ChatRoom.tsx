@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { auth, db } from '../lib/firebase';
 import { collection, doc, getDoc, getDocs, addDoc, updateDoc, onSnapshot, query, orderBy, limit, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { Chat, Message } from '../types';
-import { Send, ChevronLeft, ShieldCheck, Check, CheckCheck, MoreVertical, Flag, Ban, Info } from 'lucide-react';
+import { Send, ChevronLeft, ShieldCheck, Check, CheckCheck, MoreVertical, Flag, Ban, Info, IndianRupee, ThumbsUp, ThumbsDown, X } from 'lucide-react';
 import { messageSchema, sanitizePlainText } from '../lib/validation';
 import { checkRateLimit, logAuditEvent, sanitizeErrorMessage } from '../lib/security';
 import { useToast } from '../components/Toast';
@@ -30,6 +30,10 @@ export const ChatRoom: React.FC = () => {
   const [showMenu, setShowMenu] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Offer mode
+  const [showOfferInput, setShowOfferInput] = useState(false);
+  const [offerAmount, setOfferAmount] = useState('');
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -268,6 +272,97 @@ export const ChatRoom: React.FC = () => {
     }
   };
 
+  const handleSendOffer = async () => {
+    const amount = parseFloat(offerAmount);
+    if (!amount || amount <= 0 || !chat || !currentUser) return;
+
+    const rateLimitCheck = checkRateLimit(`${currentUser.id}:send_offer`, {
+      maxRequests: 5,
+      windowSeconds: 60
+    });
+
+    if (!rateLimitCheck.allowed) {
+      showToast(`Please wait ${rateLimitCheck.retryAfter}s before making another offer.`, 'warning');
+      return;
+    }
+
+    // Client-side minPrice nudge
+    const listingPrice = (chat as any).listing?.price;
+    const minPrice = (chat as any).listing?.minPrice;
+    if (minPrice && amount < minPrice) {
+      showToast('Your offer is below the seller\'s minimum. Try a higher amount.', 'info');
+    }
+
+    setOfferAmount('');
+    setShowOfferInput(false);
+
+    try {
+      const buyerId = chat.buyerId ?? chat.buyer_id;
+      const sellerId = chat.sellerId ?? chat.seller_id;
+
+      await addDoc(collection(db, 'chats', chat.id, 'messages'), {
+        chatId: chat.id,
+        senderId: currentUser.id,
+        recipientId: currentUser.id === buyerId ? sellerId : buyerId,
+        content: `Offer: ₹${amount.toLocaleString('en-IN')}`,
+        type: 'offer',
+        offerAmount: amount,
+        offerStatus: 'pending',
+        isRead: false,
+        createdAt: serverTimestamp(),
+      });
+
+      await logAuditEvent({
+        action: 'offer_sent',
+        resource_type: 'offer',
+        status: 'success',
+        metadata: { chat_id: chat.id, amount }
+      });
+    } catch (err) {
+      console.error('Error sending offer:', err);
+      showToast('Offer failed to send. Please try again.', 'error');
+    }
+  };
+
+  const handleOfferResponse = async (messageId: string, response: 'accepted' | 'rejected', offerAmt: number) => {
+    if (!chat || !currentUser) return;
+    try {
+      const msgRef = doc(db, 'chats', chat.id, 'messages', messageId);
+      await updateDoc(msgRef, { offerStatus: response });
+
+      const buyerId = chat.buyerId ?? chat.buyer_id;
+      const sellerId = chat.sellerId ?? chat.seller_id;
+
+      // Send system message
+      const statusEmoji = response === 'accepted' ? '🎉' : '❌';
+      const statusText = response === 'accepted'
+        ? `${statusEmoji} Offer of ₹${offerAmt.toLocaleString('en-IN')} accepted! Meet up to exchange.`
+        : `${statusEmoji} Offer of ₹${offerAmt.toLocaleString('en-IN')} declined.`;
+
+      await addDoc(collection(db, 'chats', chat.id, 'messages'), {
+        chatId: chat.id,
+        senderId: 'system',
+        recipientId: currentUser.id === buyerId ? buyerId : sellerId,
+        content: statusText,
+        type: 'system',
+        isRead: false,
+        createdAt: serverTimestamp(),
+      });
+
+      showToast(response === 'accepted' ? 'Offer accepted!' : 'Offer declined', response === 'accepted' ? 'success' : 'info');
+
+      await logAuditEvent({
+        action: `offer_${response}`,
+        resource_type: 'offer',
+        status: 'success',
+        metadata: { chat_id: chat.id, message_id: messageId, amount: offerAmt }
+      });
+    } catch (err) {
+      console.error('Error responding to offer:', err);
+      showToast('Could not respond to offer.', 'error');
+    }
+  };
+
   const handleBlock = async () => {
     if (!currentUser || !chat) return;
     if (!confirm('Are you sure you want to block this user? You will no longer receive messages from them.')) return;
@@ -361,6 +456,7 @@ export const ChatRoom: React.FC = () => {
               <button 
                 onClick={() => setShowMenu(!showMenu)} 
                 className="p-2 hover:bg-warm-100 rounded-full transition-colors text-warm-500"
+                aria-label="More options"
               >
                 <MoreVertical size={20} />
               </button>
@@ -406,18 +502,89 @@ export const ChatRoom: React.FC = () => {
         </div>
 
         {messages.map((msg) => {
-          const isMe = msg.sender_id === currentUser?.id;
+          const isMe = (msg.sender_id || msg.senderId) === currentUser?.id;
+          const msgType = msg.type || 'text';
+          const offerAmt = msg.offerAmount;
+          const offerStatus = msg.offerStatus;
+
+          // System messages
+          if (msgType === 'system' || msg.senderId === 'system') {
+            return (
+              <div key={msg.id} className="flex justify-center animate-in fade-in duration-300">
+                <div className="px-4 py-2 bg-warm-100 rounded-full border border-warm-200">
+                  <p className="text-xs font-bold text-warm-600 text-center">{msg.content || msg.message_text}</p>
+                </div>
+              </div>
+            );
+          }
+
+          // Offer messages
+          if (msgType === 'offer') {
+            const buyerId = chat.buyerId ?? chat.buyer_id;
+            const sellerId = chat.sellerId ?? chat.seller_id;
+            const isSeller = currentUser?.id === sellerId;
+            const canRespond = isSeller && offerStatus === 'pending' && !isMe;
+
+            return (
+              <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 duration-300`}>
+                <div className={`max-w-[80%] rounded-2xl shadow-md border-2 overflow-hidden ${
+                  offerStatus === 'accepted' ? 'border-green-300 bg-green-50' :
+                  offerStatus === 'rejected' ? 'border-red-200 bg-red-50 opacity-70' :
+                  isMe ? 'border-teal-300 bg-teal-50' : 'border-amber-300 bg-amber-50'
+                }`}>
+                  <div className="px-4 py-3">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-warm-500 mb-1">
+                      {isMe ? 'Your Offer' : 'Offer Received'}
+                    </p>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-2xl font-black text-midnight-700">₹{offerAmt?.toLocaleString('en-IN')}</span>
+                      {offerStatus !== 'pending' && (
+                        <span className={`text-xs font-black uppercase tracking-widest ml-2 px-2 py-0.5 rounded-full ${
+                          offerStatus === 'accepted' ? 'bg-green-200 text-green-700' : 'bg-red-200 text-red-700'
+                        }`}>
+                          {offerStatus}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {canRespond && (
+                    <div className="flex border-t border-warm-200">
+                      <button
+                        onClick={() => handleOfferResponse(msg.id, 'accepted', offerAmt || 0)}
+                        className="flex-1 py-3 flex items-center justify-center gap-2 text-green-700 font-bold text-sm hover:bg-green-100 transition-colors border-r border-warm-200"
+                      >
+                        <ThumbsUp size={16} /> Accept
+                      </button>
+                      <button
+                        onClick={() => handleOfferResponse(msg.id, 'rejected', offerAmt || 0)}
+                        className="flex-1 py-3 flex items-center justify-center gap-2 text-red-600 font-bold text-sm hover:bg-red-100 transition-colors"
+                      >
+                        <ThumbsDown size={16} /> Decline
+                      </button>
+                    </div>
+                  )}
+                  <div className="px-4 py-1.5 bg-black/5">
+                    <p className="text-[8px] font-black uppercase tracking-widest text-warm-500 text-right">
+                      {msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
+          // Regular text messages
           return (
             <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 duration-300`}>
               <div className={`max-w-[75%] px-4 py-3 rounded-2xl shadow-sm ${isMe ? 'bg-teal-600 text-white rounded-tr-none' : 'bg-white text-midnight-700 rounded-tl-none border border-warm-200'
                 }`}>
-                <p className="text-sm font-medium leading-relaxed">{msg.message_text}</p>
+                <p className="text-sm font-medium leading-relaxed">{msg.content || msg.message_text}</p>
                 <div className="flex items-center justify-end space-x-1 mt-1 opacity-60">
                   <p className="text-[8px] font-black uppercase tracking-widest">
-                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                   </p>
                   {isMe && (
-                    msg.is_read ? (
+                    (msg.is_read || msg.isRead) ? (
                       <CheckCheck size={12} className="text-emerald-500" />
                     ) : (
                       <Check size={12} />
@@ -433,7 +600,44 @@ export const ChatRoom: React.FC = () => {
 
       <div className="p-4 bg-white border-t safe-bottom">
         {nudgeType && <SafetyNudge type={nudgeType} onDismiss={() => setNudgeType(null)} />}
-        <div className="flex items-center space-x-3">
+        {showOfferInput && (
+          <div className="flex items-center gap-2 mb-3 p-3 bg-amber-50 rounded-2xl border border-amber-200 animate-in slide-in-from-bottom-2 duration-200">
+            <IndianRupee size={18} className="text-amber-600 flex-shrink-0" />
+            <input
+              type="number"
+              placeholder="Enter your offer"
+              value={offerAmount}
+              onChange={(e) => setOfferAmount(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSendOffer()}
+              autoFocus
+              className="flex-1 bg-white rounded-xl px-3 py-2 text-sm font-bold text-midnight-700 border border-amber-200 focus:border-amber-400 focus:ring-2 focus:ring-amber-100 outline-none"
+            />
+            <button
+              onClick={handleSendOffer}
+              disabled={!offerAmount || parseFloat(offerAmount) <= 0}
+              className="px-4 py-2 bg-amber-500 text-white rounded-xl text-xs font-black uppercase tracking-wider disabled:opacity-40 hover:bg-amber-600 transition-colors"
+            >
+              Send
+            </button>
+            <button
+              onClick={() => { setShowOfferInput(false); setOfferAmount(''); }}
+              className="p-1.5 text-warm-400 hover:text-warm-600 transition-colors"
+              aria-label="Cancel offer"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        )}
+        <div className="flex items-center space-x-2">
+          {!showOfferInput && (
+            <button
+              onClick={() => setShowOfferInput(true)}
+              className="p-3 bg-amber-50 text-amber-600 rounded-2xl border-2 border-amber-200 hover:bg-amber-100 transition-colors flex-shrink-0"
+              title="Make an offer"
+            >
+              <IndianRupee size={20} />
+            </button>
+          )}
           <div className="flex-1 bg-warm-100 rounded-[24px] flex items-center px-5 py-3 border-2 border-warm-200 focus-within:border-teal-500 focus-within:bg-white transition-all">
             <input
               type="text"

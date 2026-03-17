@@ -5,13 +5,14 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Profile as ProfileType, Listing } from '../types';
 import { Link, useNavigate } from 'react-router-dom';
 import { ReportModal } from '../components/ReportModal';
-import { Edit3, CheckCircle, Rocket, Share2, Trash2, MoreVertical, Heart, Globe, ShoppingBag, Calendar, Camera, Eye, Save, X, Loader2, MapPin, ShieldCheck, Award, LogOut, MessageCircle, Star, ArrowUpDown } from 'lucide-react';
+import { Edit3, CheckCircle, Rocket, Share2, Trash2, MoreVertical, Heart, Globe, ShoppingBag, Calendar, Camera, Eye, Save, X, Loader2, MapPin, ShieldCheck, Award, LogOut, MessageCircle, Star, ArrowUpDown, RefreshCw } from 'lucide-react';
 import { TrustBadge } from '../components/TrustBadge';
 import { profileUpdateSchema, validateFileUpload, sanitizePlainText } from '../lib/validation';
 import { logAuditEvent, sanitizeErrorMessage } from '../lib/security';
 import { logout } from '../lib/auth';
 import { useToast } from '../components/Toast';
 import { BoostListingModal } from '../components/BoostListingModal';
+import { BoostNudge } from '../components/BoostNudge';
 import { COPY } from '../lib/localCopy';
 
 export const Profile: React.FC = () => {
@@ -560,20 +561,40 @@ export const Profile: React.FC = () => {
                 </div>
               </div>
 
+              {activeTab === 'active' && item.status === 'active' && (
+                <BoostNudge
+                  listingId={item.id}
+                  listingTitle={item.title}
+                  hoursSinceCreated={item.created_at ? (Date.now() - new Date(item.created_at).getTime()) / (1000 * 60 * 60) : 0}
+                  chatCount={0}
+                  viewCount={item.views_count || 0}
+                  onBoostClick={() => setBoostingListing({ id: item.id, title: item.title })}
+                  className="mt-3 mx-1"
+                />
+              )}
+
               {activeTab !== 'saved' && (
-                <div className="grid grid-cols-4 gap-2 pt-3 border-t border-warm-100">
+                <div className={`grid ${item.status === 'sold' ? 'grid-cols-3' : 'grid-cols-4'} gap-2 pt-3 mt-3 border-t border-warm-100`}>
                   <button onClick={() => navigate(`/post?edit=${item.id}`)} className="py-2 px-2 rounded-lg border border-warm-200 text-warm-600 font-medium text-xs hover:bg-warm-50 transition-colors">
                     Edit
                   </button>
-                  <button onClick={e => item.id && handleBumpListing(item.id, e)} disabled={item.status !== 'active'} className="py-2 px-2 rounded-lg border border-teal-200 text-teal-600 font-medium text-xs hover:bg-teal-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1">
-                    <ArrowUpDown size={12} /> Bump
-                  </button>
-                  <button onClick={e => item.id && handleMarkAsSold(item.id, e)} disabled={item.status === 'sold'} className="py-2 px-2 rounded-lg border border-warm-200 text-warm-600 font-medium text-xs hover:bg-warm-50 transition-colors disabled:opacity-50">
-                    Mark Sold
-                  </button>
-                  <button onClick={() => item.id && setBoostingListing({ id: item.id, title: item.title })} disabled={item.status !== 'active'} className="py-2 px-2 rounded-lg bg-coral-500 text-white font-semibold text-xs shadow-md shadow-coral-500/20 hover:opacity-90 transition-opacity flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-warm-300 disabled:shadow-none">
-                    <Rocket size={14} /> {item.is_featured ? 'Extend' : 'Boost'}
-                  </button>
+                  {item.status === 'sold' ? (
+                    <button onClick={() => navigate(`/post?relist=${item.id}`)} className="py-2 px-2 rounded-lg bg-teal-600 text-white font-semibold text-xs shadow-md shadow-teal-600/20 hover:opacity-90 transition-opacity flex items-center justify-center gap-1 col-span-2">
+                      <RefreshCw size={14} /> Relist as New
+                    </button>
+                  ) : (
+                    <>
+                      <button onClick={e => item.id && handleBumpListing(item.id, e)} disabled={item.status !== 'active'} className="py-2 px-2 rounded-lg border border-teal-200 text-teal-600 font-medium text-xs hover:bg-teal-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1">
+                        <ArrowUpDown size={12} /> Bump
+                      </button>
+                      <button onClick={e => item.id && handleMarkAsSold(item.id, e)} disabled={item.status === 'sold'} className="py-2 px-2 rounded-lg border border-warm-200 text-warm-600 font-medium text-xs hover:bg-warm-50 transition-colors disabled:opacity-50">
+                        Mark Sold
+                      </button>
+                      <button onClick={() => item.id && setBoostingListing({ id: item.id, title: item.title })} disabled={item.status !== 'active'} className="py-2 px-2 rounded-lg bg-coral-500 text-white font-semibold text-xs shadow-md shadow-coral-500/20 hover:opacity-90 transition-opacity flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-warm-300 disabled:shadow-none">
+                        <Rocket size={14} /> {(item as any).isBoosted ? 'Extend' : 'Boost'}
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
             </div>

@@ -249,6 +249,8 @@ export const AuthView: React.FC = () => {
               <button
                 onClick={handleResendEmail}
                 disabled={resending || !email || !emailNotConfirmed}
+                title="Resend verification email"
+                aria-label="Resend verification email"
                 className="text-[10px] font-black text-ocean-700 uppercase tracking-widest hover:underline disabled:opacity-30"
               >
                 {resending ? 'Resending link...' : "Didn't receive verification email?"}

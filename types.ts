@@ -96,6 +96,7 @@ export interface Listing {
   // Draft
   draft_step?: number;
   idempotency_key?: string;
+  is_urgent?: boolean; // Label as urgent for faster sale
 
   // AI
   ai_metadata?: AiMetadata;
@@ -156,9 +157,17 @@ export interface Message {
   chat_id: string;
   sender_id: string;
   message_text: string;
+  content?: string; // Standard field name
   image_url?: string;
   is_read: boolean;
   created_at: string;
+  // New Offer Fields
+  type?: 'text' | 'offer' | 'system';
+  offerAmount?: number;
+  offerStatus?: 'pending' | 'accepted' | 'rejected';
+  // Firebase compatibility
+  senderId?: string;
+  isRead?: boolean;
 }
 
 // ===== Draft Types =====
@@ -183,6 +192,7 @@ export interface DraftListing {
   contact_preferences: ContactPreferences;
   image_previews: string[];
   idempotency_key: string;
+  is_urgent?: boolean;
   updated_at: number;
 }
 

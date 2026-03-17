@@ -142,6 +142,49 @@ export const createBoostOrder = paymentsRuntime.https.onRequest(async (req, res)
       return;
     }
 
+    // ── Anti-abuse: rate limit (max 5 orders per hour per user) ─
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    const recentOrdersSnap = await admin.firestore()
+      .collection('listingBoosts')
+      .where('userId', '==', uid)
+      .where('createdAt', '>=', admin.firestore.Timestamp.fromDate(oneHourAgo))
+      .get();
+
+    if (recentOrdersSnap.size >= 5) {
+      logger.warn('Rate limit hit on boost orders', { uid, count: recentOrdersSnap.size });
+      res.status(429).json({ error: 'Too many boost attempts. Please try again in an hour.' });
+      return;
+    }
+
+    // ── Anti-abuse: max 3 active boosts per user globally ────
+    const activeBoostsGlobalSnap = await admin.firestore()
+      .collection('listingBoosts')
+      .where('userId', '==', uid)
+      .where('status', '==', 'paid')
+      .where('boostExpiresAt', '>', admin.firestore.Timestamp.now())
+      .get();
+
+    if (activeBoostsGlobalSnap.size >= 3) {
+      res.status(400).json({ error: 'You can have at most 3 active boosts at a time. Wait for one to expire.' });
+      return;
+    }
+
+    // ── Anti-abuse: 24h cooldown after failed/expired boost ──
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const recentFailedSnap = await admin.firestore()
+      .collection('listingBoosts')
+      .where('listingId', '==', listing_id)
+      .where('userId', '==', uid)
+      .where('status', 'in', ['failed', 'expired'])
+      .where('updatedAt', '>=', admin.firestore.Timestamp.fromDate(oneDayAgo))
+      .limit(1)
+      .get();
+
+    if (!recentFailedSnap.empty) {
+      res.status(400).json({ error: 'Please wait 24 hours after a failed/expired boost before trying again on this listing.' });
+      return;
+    }
+
     // ── Duplicate boost check ───────────────────────────────
     const existingBoostSnap = await admin.firestore()
       .collection('listingBoosts')

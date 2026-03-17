@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Camera, PlusCircle, Check, MapPin, ChevronRight, AlertCircle, Loader2, X, Sparkles, Smartphone, Car, Sofa, Shirt, Home as HomeIcon, Zap, ShoppingBag, Rocket, Share2, Facebook, Link as LinkIcon } from 'lucide-react';
+import { Camera, PlusCircle, Check, MapPin, ChevronRight, AlertCircle, Loader2, X, Sparkles, Smartphone, Car, Sofa, Shirt, Home as HomeIcon, Zap, ShoppingBag, Rocket, Share2, Facebook, Link as LinkIcon, RefreshCw } from 'lucide-react';
 import { compressImage } from '../lib/utils';
 import { listingSchema, sanitizePlainText, detectPromptInjection, validateFileUpload } from '../lib/validation';
 import { logAuditEvent, sanitizeErrorMessage } from '../lib/security';
@@ -58,13 +58,16 @@ export const CreateListing: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const editId = searchParams.get('edit');
+  const relistId = searchParams.get('relist');
+  const sourceId = editId || relistId;
+  const isRelist = !!relistId;
   const preCategory = searchParams.get('cat');
   const bypassAuth = import.meta.env.VITE_E2E_BYPASS_AUTH === 'true' || searchParams.get('e2e') === '1';
 
   // Step management
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [fetching, setFetching] = useState(!!editId);
+  const [fetching, setFetching] = useState(!!sourceId);
   const [showDraftSheet, setShowDraftSheet] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const { showToast } = useToast();
@@ -93,6 +96,7 @@ export const CreateListing: React.FC = () => {
   const [idempotencyKey] = useState(generateIdempotencyKey());
   const [createdListingId, setCreatedListingId] = useState<string | null>(null);
   const [isBoostModalOpen, setIsBoostModalOpen] = useState(false);
+  const [isUrgent, setIsUrgent] = useState(false);
 
   const debouncedSave = useCallback(
     debounce((uid: string) => {
@@ -101,14 +105,14 @@ export const CreateListing: React.FC = () => {
         is_negotiable: isNegotiable, min_price: minPrice, item_age: itemAge || undefined,
         city, area, contact_preferences: contactPrefs,
         image_previews: photos.map(p => p.preview).slice(0, 3),
-        idempotency_key: idempotencyKey, accessories,
+        idempotency_key: idempotencyKey, accessories, is_urgent: isUrgent,
       });
     }, 3000),
-    [step, category, title, description, price, condition, isNegotiable, city, area, contactPrefs, photos, idempotencyKey]
+    [step, category, title, description, price, condition, isNegotiable, city, area, contactPrefs, photos, idempotencyKey, isUrgent]
   );
 
   useEffect(() => {
-    if (userId && !editId && step < 6) debouncedSave(userId);
+    if (userId && !sourceId && step < 6) debouncedSave(userId);
   }, [userId, step, title, description, price, category, condition, city, area, debouncedSave, editId]);
 
   useEffect(() => {
@@ -131,9 +135,9 @@ export const CreateListing: React.FC = () => {
 
       setContactPrefs(loadContactPreferences());
 
-      if (editId) {
+      if (sourceId) {
         try {
-          const listing = await getListing(editId);
+          const listing = await getListing(sourceId);
           if (listing) {
             setTitle(listing.title);
             setPrice(listing.price.toString());
@@ -145,6 +149,7 @@ export const CreateListing: React.FC = () => {
             setAccessories(listing.accessories || []);
             setIsNegotiable(listing.isNegotiable ?? true);
             setMinPrice(listing.minPrice?.toString() || '');
+            setIsUrgent(listing.is_urgent || false);
             setContactPrefs(listing.contactPreferences || DEFAULT_CONTACT_PREFERENCES);
             if (listing.category) {
               const cat = CATEGORIES.find(c => c.id === listing.category);
@@ -178,7 +183,7 @@ export const CreateListing: React.FC = () => {
       }
     };
     init();
-  }, [editId, navigate, preCategory]);
+  }, [sourceId, navigate, preCategory]);
 
   const resumeDraft = () => {
     if (!userId) return;
@@ -195,6 +200,7 @@ export const CreateListing: React.FC = () => {
     setMinPrice(draft.min_price || '');
     setCity(draft.city || 'Port Blair');
     setArea(draft.area || '');
+    setIsUrgent(draft.is_urgent || false);
     setContactPrefs(draft.contact_preferences || DEFAULT_CONTACT_PREFERENCES);
     setStep(draft.step || 1);
     setShowDraftSheet(false);
@@ -365,20 +371,22 @@ export const CreateListing: React.FC = () => {
         accessories,
         status: 'active',
         isNegotiable: isNegotiable,
+        is_urgent: isUrgent,
         minPrice: minPrice ? parseFloat(minPrice) : null,
         contactPreferences: contactPrefs,
-        idempotencyKey: editId ? undefined : idempotencyKey
+        idempotencyKey: editId ? undefined : idempotencyKey,
+        ...(isRelist ? { relistedFrom: relistId } : {})
       };
       Object.keys(firestorePayload).forEach(k => firestorePayload[k] === undefined && delete firestorePayload[k]);
 
       let newListingId = editId;
-      if (editId) {
+      if (editId && !isRelist) {
         await updateListing(editId, firestorePayload);
         await logAuditEvent({ action: 'listing_updated', resource_type: 'listing', resource_id: editId, status: 'success' });
       } else {
         const created = await createListing(firestorePayload as any);
         newListingId = created.id;
-        await logAuditEvent({ action: 'listing_created', resource_type: 'listing', resource_id: created.id, status: 'success', metadata: { category: catId, city } });
+        await logAuditEvent({ action: isRelist ? 'listing_relisted' : 'listing_created', resource_type: 'listing', resource_id: created.id, status: 'success', metadata: { category: catId, city, ...(isRelist ? { relisted_from: relistId } : {}) } });
       }
       setCreatedListingId(newListingId);
 
@@ -410,7 +418,7 @@ export const CreateListing: React.FC = () => {
     } catch (err: any) {
       const safeError = sanitizeErrorMessage(err);
       showToast(safeError, 'error');
-      await logAuditEvent({ action: editId ? 'listing_update_failed' : 'listing_creation_failed', status: 'failed', metadata: { error: safeError } });
+      await logAuditEvent({ action: editId ? 'listing_update_failed' : (isRelist ? 'listing_relist_failed' : 'listing_creation_failed'), status: 'failed', metadata: { error: safeError } });
     } finally {
       setLoading(false);
     }
@@ -456,7 +464,16 @@ export const CreateListing: React.FC = () => {
         <div className="p-8 md:p-12">
           {step === 1 && (
             <div className="space-y-6 animate-fade-in">
-              <StepHeader title={editId ? 'Update Photos' : 'Add Photos'} stepLabel={`Step 1 of ${TOTAL_STEPS} — Photos`} />
+              <StepHeader title={editId ? 'Update Photos' : isRelist ? 'Relist — Confirm Photos' : 'Add Photos'} stepLabel={`Step 1 of ${TOTAL_STEPS} — Photos`} />
+              {isRelist && (
+                <div className="flex items-center gap-3 p-4 bg-teal-50 rounded-2xl border border-teal-100">
+                  <RefreshCw size={18} className="text-teal-500" />
+                  <div>
+                    <span className="text-teal-700 text-sm font-bold block">Relisting from a previous ad</span>
+                    <span className="text-teal-600 text-xs">All details have been carried over. Review and publish!</span>
+                  </div>
+                </div>
+              )}
               <div
                 onClick={() => photos.length < 8 && fileInputRef.current?.click()}
                 className={`min-h-[240px] border-2 border-dashed border-warm-200 rounded-3xl flex flex-col items-center justify-center bg-warm-50 transition-all p-6 group ${photos.length < 8 ? 'hover:bg-teal-50 hover:border-teal-300 cursor-pointer' : 'cursor-default'}`}
@@ -522,6 +539,7 @@ export const CreateListing: React.FC = () => {
                     value={category || ''}
                     onChange={e => setCategory(e.target.value)}
                     className="input-island"
+                    title="Select a category"
                   >
                     <option value="" disabled>Select a category</option>
                     {CATEGORIES.map(cat => (
@@ -548,6 +566,18 @@ export const CreateListing: React.FC = () => {
                     <label htmlFor="isNegotiable" className="text-sm font-bold text-midnight-700">Negotiable</label>
                     <input id="isNegotiable" title="Toggle negotiability" type="checkbox" role="switch" checked={isNegotiable} onChange={e => setIsNegotiable(e.target.checked)} className="toggle toggle-accent" />
                   </div>
+                  <div className="flex items-center justify-between px-1 pt-2 border-t border-warm-100/50 mt-2">
+                    <div className="flex items-center gap-2">
+                      <label htmlFor="isUrgent" className="text-sm font-bold text-midnight-700">Urgent Sale</label>
+                      <Sparkles size={14} className="text-amber-500 fill-amber-100" />
+                    </div>
+                    <input id="isUrgent" title="Mark as urgent" type="checkbox" role="switch" checked={isUrgent} onChange={e => setIsUrgent(e.target.checked)} className="toggle toggle-warning" />
+                  </div>
+                  {isUrgent && (
+                    <p className="text-[10px] font-bold text-amber-600 px-1 mt-1">
+                      ⚡ Urgent tag helps you sell faster by attracting quick buyers.
+                    </p>
+                  )}
                   {isNegotiable && (
                     <div className="space-y-1">
                       <label className="text-[10px] font-bold text-warm-400 uppercase tracking-widest">Min Price (Optional)</label>
@@ -795,7 +825,7 @@ export const CreateListing: React.FC = () => {
             <div className="text-center py-12 space-y-6 animate-fade-in">
               <div className="text-7xl animate-float">🏝️</div>
               <div className="space-y-2">
-                <h2 className="text-3xl font-heading font-black text-midnight-700">{editId ? 'Listing Updated!' : 'Published!'}</h2>
+                <h2 className="text-3xl font-heading font-black text-midnight-700">{editId ? 'Listing Updated!' : isRelist ? 'Relisted!' : 'Published!'}</h2>
                 <p className="text-warm-400 font-medium">{COPY.SUCCESS.LISTING_PUBLISHED}</p>
                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-teal-50 text-teal-700 rounded-full text-sm font-bold mt-2 border border-teal-100">
                   <span className="w-2 h-2 bg-teal-500 rounded-full animate-pulse" /> Live Now

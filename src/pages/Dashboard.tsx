@@ -5,6 +5,7 @@ import { collection, query, where, getDocs, orderBy, limit } from 'firebase/fire
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 export const Dashboard: React.FC = () => {
+  const progressRef = React.useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     activeAds: 0,
@@ -122,6 +123,14 @@ export const Dashboard: React.FC = () => {
     fetchStats();
   }, []);
 
+  useEffect(() => {
+    if (progressRef.current) {
+      progressRef.current.setAttribute('aria-valuenow', stats.successfulSales.toString());
+      progressRef.current.setAttribute('aria-valuemin', '0');
+      progressRef.current.setAttribute('aria-valuemax', targetSales.toString());
+    }
+  }, [stats.successfulSales, loading]);
+
   const targetSales = 5;
   const progressPercent = Math.min((stats.successfulSales / targetSales) * 100, 100);
 
@@ -166,7 +175,12 @@ export const Dashboard: React.FC = () => {
               <span>Progression</span>
               <span>{stats.successfulSales} / {targetSales} Sales</span>
             </div>
-            <div className="h-6 bg-white/10 rounded-full overflow-hidden border border-white/10 p-1">
+            <div 
+              ref={progressRef}
+              className="h-6 bg-white/10 rounded-full overflow-hidden border border-white/10 p-1"
+              role="progressbar"
+              aria-label="Sales progression to Island Legend"
+            >
               <div
                 className={`h-full bg-ocean-500 rounded-full transition-all duration-1000 ${stats.successfulSales >= targetSales ? 'w-full' :
                     stats.successfulSales === 4 ? 'w-4/5' :
@@ -223,7 +237,7 @@ export const Dashboard: React.FC = () => {
             <h3 className="font-black uppercase tracking-tight mb-6">Real-Time Pulse</h3>
             <div className="space-y-4">
               <div className="flex items-center space-x-4">
-                <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">👤</div>
+                <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center" aria-hidden="true">👤</div>
                 <div className="flex-1">
                   <p className="text-[10px] font-black uppercase">Recent Activity</p>
                   <p className="text-xs font-bold text-slate-400">Total Views: {stats.totalViews}</p>

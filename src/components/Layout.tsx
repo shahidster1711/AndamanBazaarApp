@@ -147,7 +147,21 @@ export const Layout: React.FC<LayoutProps> = ({ children, user }) => {
           </TabItem>
 
           {/* Search */}
-          <TabItem to="/listings" label="Search" active={isActive('/listings')}>
+          <TabItem 
+            to="/listings" 
+            label="Search" 
+            active={isActive('/listings')}
+            onClick={(e) => {
+              if (isActive('/listings')) {
+                e.preventDefault();
+                const searchInput = document.getElementById('search-input');
+                if (searchInput) {
+                  searchInput.focus();
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+              }
+            }}
+          >
             <Search size={22} strokeWidth={isActive('/listings') ? 2.5 : 2} />
           </TabItem>
 
@@ -275,11 +289,12 @@ const NavLink: React.FC<{ to: string; active: boolean; children: React.ReactNode
   </Link>
 );
 
-const TabItem: React.FC<{ to: string; label: string; active: boolean; children: React.ReactNode }> = ({
-  to, label, active, children
+const TabItem: React.FC<{ to: string; label: string; active: boolean; onClick?: (e: React.MouseEvent) => void; children: React.ReactNode }> = ({
+  to, label, active, onClick, children
 }) => (
   <Link
     to={to}
+    onClick={onClick}
     className={`nav-item ${active ? 'active' : ''} active:scale-90 transition-transform`}
     aria-label={label}
   >

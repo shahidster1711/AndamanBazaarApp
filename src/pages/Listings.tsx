@@ -8,6 +8,7 @@ import { FreshnessBadge } from '../components/FreshnessBadge';
 import { Search, MapPin, Heart, Sparkles, Filter, X, ChevronDown, ArrowUpDown, Loader2, Bell } from 'lucide-react';
 import { useToast } from '../components/Toast';
 import { isDemoListing } from '../lib/demoListings';
+import { UrgentBadge } from '../components/UrgentBadge';
 import { Seo } from '../components/Seo';
 
 const CATEGORIES = [
@@ -63,10 +64,8 @@ export const Listings: React.FC = () => {
   const [maxPrice, setMaxPrice] = useState('');
   const [showSortDropdown, setShowSortDropdown] = useState(false);
   const [showVerifiedOnly, setShowVerifiedOnly] = useState(searchParams.get('verified') === 'true');
-<<<<<<< HEAD
-=======
+  const [showUrgentOnly, setShowUrgentOnly] = useState(searchParams.get('urgent') === 'true');
   // sortDropdownRef removed (unused)
->>>>>>> 7ed1e68 (feat: Upgrade to Cashfree API v2025-01-01 and production code quality improvements)
 
   // Infinite scroll observer
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -84,12 +83,14 @@ export const Listings: React.FC = () => {
       const cat = searchParams.get('category');
       const area = searchParams.get('area');
       const verified = searchParams.get('verified');
+      const urgent = searchParams.get('urgent');
 
       // Build Firestore query constraints
       const constraints: any[] = [where('status', '==', 'active')];
       if (cat && cat !== 'all') constraints.push(where('categoryId', '==', cat));
       if (area) constraints.push(where('city', '==', area));
       if (verified === 'true') constraints.push(where('isLocationVerified', '==', true));
+      if (urgent === 'true') constraints.push(where('is_urgent', '==', true));
 
       // Apply server-side sort where possible
       switch (sortBy) {
@@ -164,7 +165,6 @@ export const Listings: React.FC = () => {
   useEffect(() => {
     if (!sentinelRef.current || !hasMore || loading || loadingMore) return;
 
-<<<<<<< HEAD
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && hasMore && !loadingMore) {
@@ -173,16 +173,6 @@ export const Listings: React.FC = () => {
       },
       { rootMargin: '200px' }
     );
-=======
-      const observer = new IntersectionObserver(
-        (entries) => {
-          if (entries[0].isIntersecting && hasMore && !loadingMore) {
-            void fetchListings(false);
-          }
-        },
-        { rootMargin: '200px' }
-      );
->>>>>>> 7ed1e68 (feat: Upgrade to Cashfree API v2025-01-01 and production code quality improvements)
 
     observer.observe(sentinelRef.current);
     return () => observer.disconnect();
@@ -215,11 +205,13 @@ export const Listings: React.FC = () => {
   const handleCategorySelect = (slug: string) => {
     const val = slug === 'all' ? null : slug;
     setActiveCategory(val);
+    setShowVerifiedOnly(false);
+    setShowUrgentOnly(false);
 
-    const newParams = new URLSearchParams(searchParams);
-    if (val) newParams.set('category', val);
-    else newParams.delete('category');
-    setSearchParams(newParams);
+    const params = new URLSearchParams(searchParams);
+    if (val) params.set('category', val);
+    else params.delete('category');
+    setSearchParams(params);
   };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -235,12 +227,14 @@ export const Listings: React.FC = () => {
       showToast('Min price cannot be greater than max price.', 'warning');
       return;
     }
-    const newParams = new URLSearchParams(searchParams);
-    if (showVerifiedOnly) newParams.set('verified', 'true');
-    else newParams.delete('verified');
-    if (activeArea) newParams.set('area', activeArea);
-    else newParams.delete('area');
-    setSearchParams(newParams);
+    const params = new URLSearchParams(searchParams);
+    if (showVerifiedOnly) params.set('verified', 'true');
+    else params.delete('verified');
+    if (showUrgentOnly) params.set('urgent', 'true');
+    else params.delete('urgent');
+    if (activeArea) params.set('area', activeArea);
+    else params.delete('area');
+    setSearchParams(params);
     void fetchListings(true);
     setShowFilters(false);
   };
@@ -250,10 +244,12 @@ export const Listings: React.FC = () => {
     setMaxPrice('');
     setSortBy('newest');
     setShowVerifiedOnly(false);
+    setShowUrgentOnly(false);
     setActiveArea('');
     const newParams = new URLSearchParams(searchParams);
     newParams.delete('verified');
     newParams.delete('area');
+    newParams.delete('urgent');
     setSearchParams(newParams);
     handleCategorySelect('all');
   };
@@ -285,7 +281,7 @@ export const Listings: React.FC = () => {
     }
   };
 
-  const hasActiveFilters = minPrice || maxPrice || sortBy !== 'newest' || showVerifiedOnly || activeArea;
+  const hasActiveFilters = minPrice || maxPrice || sortBy !== 'newest' || showVerifiedOnly || showUrgentOnly || activeArea;
 
   const pageTitle = searchQuery ? `Search results for "${searchQuery}"` : activeCategory ? `Listings in ${activeCategory}` : 'Browse All Listings';
   const pageDescription = `Find local goods, services, and produce for sale in the Andaman & Nicobar Islands. ${searchQuery ? `Results for ${searchQuery}.` : ''}`;
@@ -297,18 +293,25 @@ export const Listings: React.FC = () => {
       <div className="mb-12 space-y-8">
         {/* Search Bar */}
         <form onSubmit={handleSearchSubmit} className="max-w-3xl mx-auto relative group">
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-warm-300 group-focus-within:text-teal-500 transition-colors pointer-events-none">
+          <div className="text-center space-y-2">
+            <h1 className="text-3xl md:text-4xl font-heading font-black text-midnight-700">Explore Catalog</h1>
+            <p className="text-warm-400 text-sm">Find everything you need across the islands</p>
+          </div>
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-warm-300 group-focus-within:text-teal-500 transition-colors pointer-events-none mt-[44px]">
             <Search size={20} />
           </div>
           <input
+            id="search-input"
+            name="q"
+            aria-label="Search listings"
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search across the islands…"
-            className="input-island h-14 pl-12 pr-12 shadow-card"
+            className="input-island h-14 pl-12 pr-12 shadow-card mt-6"
           />
           {searchQuery && (
-            <button onClick={() => { setSearchQuery(''); handleCategorySelect('all'); }} type="button" title="Clear search" aria-label="Clear search" className="absolute right-4 top-1/2 -translate-y-1/2 text-warm-300 hover:text-midnight-700 transition-colors">
+            <button onClick={() => { setSearchQuery(''); handleCategorySelect('all'); }} type="button" title="Clear search" aria-label="Clear search" className="absolute right-4 top-1/2 -translate-y-1/2 text-warm-300 hover:text-midnight-700 transition-colors mt-[44px]">
               <X size={18} />
             </button>
           )}
@@ -414,6 +417,7 @@ export const Listings: React.FC = () => {
                   value={activeArea} 
                   onChange={(e) => setActiveArea(e.target.value)}
                   className="w-full input-island"
+                  aria-label="Select island area"
                 >
                   {AREAS.map(area => (
                     <option key={area.value} value={area.value}>
@@ -430,12 +434,33 @@ export const Listings: React.FC = () => {
                 <button
                   type="button"
                   role="switch"
-                  aria-checked={showVerifiedOnly}
+                  aria-checked={showVerifiedOnly ? "true" : "false"}
                   onClick={() => setShowVerifiedOnly(prev => !prev)}
                   aria-label="Toggle verified sellers only"
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${showVerifiedOnly ? 'bg-teal-600' : 'bg-warm-200'}`}
                 >
                   <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${showVerifiedOnly ? 'translate-x-5' : 'translate-x-1'}`} />
+                </button>
+              </div>
+
+              {/* Urgent Filter */}
+              <div className="flex items-center justify-between rounded-2xl border border-warm-200 px-4 py-3">
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-xs font-bold text-midnight-700">Urgent Deals</p>
+                    <Sparkles size={10} className="text-amber-500 fill-amber-100" />
+                  </div>
+                  <p className="text-[10px] text-warm-400">Items that need to sell fast</p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={showUrgentOnly ? "true" : "false"}
+                  onClick={() => setShowUrgentOnly(prev => !prev)}
+                  aria-label="Toggle urgent deals only"
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${showUrgentOnly ? 'bg-amber-500' : 'bg-warm-200'}`}
+                >
+                  <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${showUrgentOnly ? 'translate-x-5' : 'translate-x-1'}`} />
                 </button>
               </div>
               <div className="flex gap-3">
@@ -479,12 +504,12 @@ export const Listings: React.FC = () => {
             <div className="text-5xl animate-float">🏝️</div>
             <div className="space-y-1.5">
               <h3 className="text-xl font-heading font-bold text-midnight-700">
-                {searchQuery ? `No results for "${searchQuery}"` : 'No listings found'}
+                {searchQuery ? `No results for "${searchQuery}"` : 'No listings found in this category'}
               </h3>
               <p className="text-warm-400 text-sm max-w-xs mx-auto">
                 {hasActiveFilters 
-                  ? "Try adjusting your filters or search for 'All Andaman' to see more results."
-                  : "Be the first to post in this category! It takes just 30 seconds."}
+                  ? "Try adjusting your filters or search for 'All' to see more results."
+                  : "We couldn't find any listings here. Check back later or be the first to post!"}
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3 justify-center mt-4">
@@ -558,6 +583,12 @@ const ListingItem: React.FC<{ listing: any, isFavorited: boolean, onToggleFavori
           loading="lazy"
           alt={listing.title}
         />
+        {/* Urgent Badge */}
+        {listing.is_urgent && (
+          <div className="absolute top-2 left-2 z-10">
+            <UrgentBadge size="sm" />
+          </div>
+        )}
         <button
           onClick={onToggleFavorite}
           className={`absolute top-2 right-2 w-9 h-9 rounded-full flex items-center justify-center shadow-glass z-10 transition-all active:scale-90 ${isFavorited ? 'bg-coral-500' : 'bg-white/90 backdrop-blur-sm'

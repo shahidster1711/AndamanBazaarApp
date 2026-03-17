@@ -24,6 +24,8 @@ import { getListing, subscribeToListing } from '../lib/database';
 import { ReportModal } from '../components/ReportModal';
 import { TrustBadge } from '../components/TrustBadge';
 import { TrustCard } from '../components/TrustCard';
+import { BoostBadge } from '../components/BoostBadge';
+import { UrgentBadge } from '../components/UrgentBadge';
 import { Profile } from '../types';
 import { Listing } from '../lib/database';
 import { useToast } from '../components/Toast';
@@ -225,9 +227,17 @@ export const ListingDetail: React.FC = () => {
         <div className="bg-white border-b border-warm-200 sticky top-0 z-30">
           <div className="app-container">
             <div className="h-16 flex items-center justify-between">
-              <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-warm-100 rounded-full transition-colors">
-                <ChevronLeft size={24} />
-              </button>
+              <div className="flex items-center">
+                <Link
+                  to="/"
+                  className="p-2 rounded-full bg-white/90 backdrop-blur-sm text-midnight-700 shadow-sm"
+                >
+                  <ChevronLeft size={20} />
+                </Link>
+                {listing.is_urgent && (
+                  <UrgentBadge size="md" className="ml-2" />
+                )}
+              </div>
               <div className="flex items-center gap-2">
                 <button 
                   onClick={() => setIsReportModalOpen(true)}
@@ -255,9 +265,16 @@ export const ListingDetail: React.FC = () => {
                   </div>
                   
                   <div className="flex justify-between items-start gap-4">
-                    <h1 className="text-3xl md:text-4xl font-heading font-black text-midnight-700 leading-tight">
-                      {listing.title}
-                    </h1>
+                    <div className="flex flex-col gap-2">
+                      <h1 className="text-3xl md:text-4xl font-heading font-black text-midnight-700 leading-tight">
+                        {listing.title}
+                      </h1>
+                      {(listing as any).isBoosted && (listing as any).boostTier && (
+                        <div>
+                          <BoostBadge tier={(listing as any).boostTier} size="md" />
+                        </div>
+                      )}
+                    </div>
                     <div className="text-right">
                       <p className="text-3xl font-black text-teal-600">₹{listing.price.toLocaleString()}</p>
                       {listing.is_negotiable && (
@@ -320,6 +337,7 @@ export const ListingDetail: React.FC = () => {
                         onClick={() => copyToClipboard(whatsappText, 'WhatsApp template')}
                         className="text-emerald-600 hover:text-emerald-800 transition-colors"
                         title="Copy template"
+                        aria-label="Copy WhatsApp message template"
                       >
                         <Copy size={18} />
                       </button>
@@ -348,6 +366,7 @@ export const ListingDetail: React.FC = () => {
                         onClick={() => copyToClipboard(fbText, 'FB template')}
                         className="text-blue-600 hover:text-blue-800 transition-colors"
                         title="Copy template"
+                        aria-label="Copy Facebook post template"
                       >
                         <Copy size={18} />
                       </button>
@@ -399,33 +418,37 @@ export const ListingDetail: React.FC = () => {
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Actions</h3>
                 
                 <div className="space-y-3">
-                  <button
-                    onClick={contactSeller}
-                    className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center"
-                  >
-                    <MessageSquare className="w-5 h-5 mr-2" />
-                    Contact Seller
-                  </button>
-                  
-                  <button
-                    onClick={toggleFavorite}
-                    className={`w-full px-4 py-3 rounded-lg flex items-center justify-center ${
-                      isFavorited
-                        ? 'bg-red-600 text-white hover:bg-red-700'
-                        : 'bg-gray-200 text-gray-900 hover:bg-gray-300'
-                    }`}
-                  >
-                    <Heart className={`w-5 h-5 mr-2 ${isFavorited ? 'fill-current' : ''}`} />
-                    {isFavorited ? 'Remove from Favorites' : 'Add to Favorites'}
-                  </button>
-                  
-                  <button
-                    onClick={() => setIsBoostModalOpen(true)}
-                    className="w-full px-4 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 flex items-center justify-center"
-                  >
-                    <Rocket className="w-5 h-5 mr-2" />
-                    {listing.isFeatured ? 'Extend Boost' : 'Boost My Listing'}
-                  </button>
+                  {currentUserId !== listing.userId ? (
+                    <>
+                      <button
+                        onClick={contactSeller}
+                        className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center"
+                      >
+                        <MessageSquare className="w-5 h-5 mr-2" />
+                        Contact Seller
+                      </button>
+                      
+                      <button
+                        onClick={toggleFavorite}
+                        className={`w-full px-4 py-3 rounded-lg flex items-center justify-center ${
+                          isFavorited
+                            ? 'bg-red-600 text-white hover:bg-red-700'
+                            : 'bg-gray-200 text-gray-900 hover:bg-gray-300'
+                        }`}
+                      >
+                        <Heart className={`w-5 h-5 mr-2 ${isFavorited ? 'fill-current' : ''}`} />
+                        {isFavorited ? 'Remove from Favorites' : 'Add to Favorites'}
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => setIsBoostModalOpen(true)}
+                      className="w-full px-4 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-bold hover:shadow-lg flex items-center justify-center transition-all"
+                    >
+                      <Rocket className="w-5 h-5 mr-2" />
+                      {(listing as any).isBoosted ? 'Extend Boost' : 'Boost This Listing'}
+                    </button>
+                  )}
                 </div>
               </div>
 

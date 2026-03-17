@@ -396,7 +396,7 @@
 
   /* --- Hero Tags (Stitch-inspired pill badge) --- */
   .hero-tag {
-    @apply inline-flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-full shadow-sm border border-gray-100;
+    @apply inline-flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-full shadow-sm;
   }
 
   .hero-tag .icon {
@@ -579,7 +579,7 @@
     display: none;
   }
 
-  @supports (scrollbar-width: none) {
+  @supports (scrollbar-width: none) or (scrollbar-color: auto) {
     .hide-scrollbar {
       scrollbar-width: none;
     }

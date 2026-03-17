@@ -9,6 +9,7 @@ import { moderateContent, batchModerateContent, getModerationHistory, getModerat
 import { sendEmail, sendWeeklyTrendingEmails, sendEmailInternal } from './email';
 import { emailTemplates } from './emailTemplatesNode';
 import { updateListingFreshness, markInactiveListings, calculateResponseRates } from './freshness';
+import { generateItinerary } from './itinerary';
 
 // Import new payment functions
 import { createOrder, cleanupExpiredReservations } from './payments/createOrder';
@@ -22,6 +23,7 @@ import {
 } from './payments/seamlessPayment';
 import { createBoostOrder } from './payments/createBoostOrder';
 import { verifyBoostPayment } from './payments/verifyBoostPayment';
+import { expireBoosts } from './payments/expireBoosts';
 
 // Export payment functions
 export {
@@ -62,6 +64,7 @@ export {
   verifyOrderStatus,
   createBoostOrder,
   verifyBoostPayment,
+  expireBoosts,
 };
 
 // Health check function
@@ -98,6 +101,9 @@ export { sendEmail, sendWeeklyTrendingEmails };
 
 // Export freshness functions
 export { updateListingFreshness, markInactiveListings, calculateResponseRates };
+
+// Export itinerary functions
+export { generateItinerary };
 
 // Scheduled tasks
 export const cleanupOldData = functions.pubsub
