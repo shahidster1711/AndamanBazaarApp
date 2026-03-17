@@ -386,13 +386,13 @@ export const Profile: React.FC = () => {
           <div className="absolute top-6 right-6 z-20 flex gap-3">
             {!isEditing ? (
               <>
-                <button onClick={() => setIsEditing(true)} className="bg-base-100/10 backdrop-blur-xl text-white px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-[0.2em] hover:bg-base-100/20 transition-all flex items-center gap-2 border border-base-100/20 shadow-lg"><Edit3 size={16} /> Edit Profile</button>
+                <button onClick={() => setIsEditing(true)} className="bg-white/10 backdrop-blur-xl text-white px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-[0.2em] hover:bg-white/20 transition-all flex items-center gap-2 border border-white/20 shadow-lg"><Edit3 size={16} /> Edit Profile</button>
                 <button onClick={handleLogout} className="bg-red-500/80 backdrop-blur-xl text-white px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-[0.2em] hover:bg-red-500 transition-all flex items-center gap-2 border border-red-500/50 shadow-lg"><LogOut size={16} /> Logout</button>
               </>
             ) : (
               <>
-                <button onClick={() => { setIsEditing(false); setAvatarPreview(profile?.profile_photo_url || null); }} className="bg-base-100/10 backdrop-blur-xl text-white px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-[0.2em] hover:bg-base-100/20 transition-all flex items-center gap-2 border border-base-100/20" disabled={isSaving}><X size={16} /> Cancel</button>
-                <button onClick={handleSaveProfile} className="bg-accent text-primary px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-[0.2em] hover:bg-accent/80 transition-all flex items-center gap-2 shadow-xl" disabled={isSaving}>{isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Save</button>
+                <button onClick={() => { setIsEditing(false); setAvatarPreview(profile?.profile_photo_url || null); }} className="bg-white/10 backdrop-blur-xl text-white px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-[0.2em] hover:bg-white/20 transition-all flex items-center gap-2 border border-white/20" disabled={isSaving}><X size={16} /> Cancel</button>
+                <button onClick={handleSaveProfile} className="bg-teal-600 text-white px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-[0.2em] hover:bg-teal-700 transition-all flex items-center gap-2 shadow-xl" disabled={isSaving}>{isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Save</button>
               </>
             )}
           </div>
@@ -483,29 +483,29 @@ export const Profile: React.FC = () => {
                 </div>
               )}
             </div>
-            <div className="flex items-center justify-center gap-10 md:bg-base-100 md:p-6 md:rounded-[32px] md:border-2 md:border-secondary/10 md:shadow-sm">
-              <div className="text-center cursor-pointer" onClick={() => setActiveTab('active')}><p className="text-4xl font-heading font-black text-primary leading-none transition-colors">{stats.active}</p><p className="text-sm font-black text-secondary uppercase tracking-widest mt-2">Active Ads</p></div>
-              <div className="w-px h-12 bg-secondary/20 hidden md:block"></div>
-              <div className="text-center cursor-pointer" onClick={() => setActiveTab('sold')}><p className="text-4xl font-heading font-black text-primary leading-none transition-colors">{stats.sold}</p><p className="text-sm font-black text-secondary uppercase tracking-widest mt-2">Items Sold</p></div>
+            <div className="flex items-center justify-center gap-10 md:bg-white md:p-6 md:rounded-[32px] md:border-2 md:border-warm-200 md:shadow-sm">
+              <div className="text-center cursor-pointer" onClick={() => setActiveTab('active')}><p className="text-4xl font-heading font-black text-midnight-700 leading-none transition-colors">{stats.active}</p><p className="text-sm font-black text-warm-600 uppercase tracking-widest mt-2">Active Ads</p></div>
+              <div className="w-px h-12 bg-warm-200 hidden md:block"></div>
+              <div className="text-center cursor-pointer" onClick={() => setActiveTab('sold')}><p className="text-4xl font-heading font-black text-midnight-700 leading-none transition-colors">{stats.sold}</p><p className="text-sm font-black text-warm-600 uppercase tracking-widest mt-2">Items Sold</p></div>
             </div>
           </div>
         </div>
       </section>
 
       <div className="flex items-center justify-center mb-10">
-        <div className="inline-flex bg-secondary/10 p-2 rounded-[24px] border border-secondary/20">
+        <div className="inline-flex bg-warm-100 p-2 rounded-[24px] border border-warm-200">
           {[{ id: 'active', label: 'My Listings', icon: <Globe size={16} /> }, { id: 'sold', label: 'Sale History', icon: <ShoppingBag size={16} /> }, { id: 'saved', label: 'Favorites', icon: <Heart size={16} /> }].map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id as any)} className={`px-8 py-4 rounded-2xl font-black uppercase text-sm tracking-widest transition-all flex items-center space-x-3 ${activeTab === tab.id ? 'bg-base-100 shadow-xl text-primary border border-secondary/10' : 'text-secondary hover:text-primary'}`}>{tab.icon}<span>{tab.label}</span></button>
+            <button key={tab.id} onClick={() => setActiveTab(tab.id as any)} className={`px-8 py-4 rounded-2xl font-black uppercase text-sm tracking-widest transition-all flex items-center gap-3 ${activeTab === tab.id ? 'bg-white shadow-xl text-midnight-700 border border-warm-200' : 'text-warm-600 hover:text-midnight-700'}`}>{tab.icon}<span>{tab.label}</span></button>
           ))}
         </div>
       </div>
 
       <div className="space-y-4 max-w-3xl mx-auto px-2">
         {listings.length === 0 ? (
-          <div className="py-24 text-center bg-base-100 rounded-[40px] border-4 border-dashed border-secondary/10 animate-in fade-in">
-            <h3 className="text-3xl font-heading font-black tracking-tight">No Items Here!</h3>
-            <p className="text-secondary font-bold text-lg max-w-sm mx-auto mt-2">{COPY.EMPTY_STATE.PROFILE_NO_LISTINGS}</p>
-            <Link to="/post" className="mt-8 inline-block bg-accent text-primary px-10 py-4 rounded-2xl font-black uppercase text-sm tracking-widest shadow-2xl active:scale-95 transition-all">Create a Listing</Link>
+          <div className="py-24 text-center bg-white rounded-[40px] border-4 border-dashed border-warm-200 animate-in fade-in">
+            <h3 className="text-3xl font-heading font-black tracking-tight text-midnight-700">No Items Here!</h3>
+            <p className="text-warm-600 font-bold text-lg max-w-sm mx-auto mt-2">{COPY.EMPTY_STATE.PROFILE_NO_LISTINGS}</p>
+            <Link to="/post" className="mt-8 inline-block bg-teal-600 text-white px-10 py-4 rounded-2xl font-black uppercase text-sm tracking-widest shadow-2xl active:scale-95 transition-all hover:bg-teal-700">Create a Listing</Link>
           </div>
         ) : (
           listings.map(item => (

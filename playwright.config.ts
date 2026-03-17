@@ -53,7 +53,7 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: 'VITE_SUPABASE_URL=https://mock.supabase.co VITE_SUPABASE_ANON_KEY=mock-anon-key-for-ui-preview-mode-only-must-be-long VITE_E2E_BYPASS_AUTH=true npm run dev',
+    command: 'VITE_E2E_BYPASS_AUTH=true npm run dev',
     url: 'http://localhost:5173',
     reuseExistingServer: false,
   },

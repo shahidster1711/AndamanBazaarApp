@@ -252,7 +252,44 @@ service cloud.firestore {
       allow create: if false;
       allow update, delete: if false;
     }
-    
+
+    // payments collection — written by Cloud Functions (Admin SDK) only
+    // Buyers and sellers may read their own payment documents
+    match /payments/{orderId} {
+      allow read: if isAuthenticated() &&
+                    (request.auth.uid == resource.data.buyerId ||
+                     request.auth.uid == resource.data.sellerId);
+      allow read: if isAdmin();
+      // No client writes — all writes are via Cloud Functions with Admin SDK
+      allow create, update, delete: if false;
+    }
+
+    // paymentEvents collection — immutable audit log, server-write only
+    match /paymentEvents/{eventId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
+    }
+
+    // purchases collection — written by webhook (Admin SDK), read by buyer/seller
+    match /purchases/{purchaseId} {
+      allow read: if isAuthenticated() &&
+                    (request.auth.uid == resource.data.buyerId ||
+                     request.auth.uid == resource.data.sellerId);
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
+    }
+
+    // notifications collection — written by Cloud Functions, read by recipient only
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() &&
+                    request.auth.uid == resource.data.userId;
+      allow update: if isAuthenticated() &&
+                    request.auth.uid == resource.data.userId &&
+                    request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']) &&
+                    request.resource.data.read == true;
+      allow create, delete: if false;
+    }
+
     // auditLogs collection
     match /auditLogs/{logId} {
       allow read: if isOwner(resource.data.userId) &&

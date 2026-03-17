@@ -23,8 +23,9 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sendAbandonedChatReminders = exports.sendListingExpiryReminders = exports.cleanupOldData = exports.sendWeeklyTrendingEmails = exports.sendEmail = exports.handleWebhook = exports.healthCheck = exports.getPaymentDetails = exports.getPaymentHistoryNew = exports.checkPaymentStatus = exports.webhookHealthCheck = exports.cashfreeWebhookV2 = exports.cleanupExpiredReservations = exports.createOrder = exports.getModerationStats = exports.getModerationHistory = exports.batchModerateContent = exports.moderateContent = exports.getNearbyListings = exports.getLocationHistory = exports.verifyLocation = exports.getPaymentHistory = exports.refundPayment = exports.cashfreeWebhook = exports.verifyPayment = exports.createPayment = void 0;
+exports.sendAbandonedChatReminders = exports.sendListingExpiryReminders = exports.cleanupOldData = exports.calculateResponseRates = exports.markInactiveListings = exports.updateListingFreshness = exports.sendWeeklyTrendingEmails = exports.sendEmail = exports.handleWebhook = exports.healthCheck = exports.verifyBoostPayment = exports.createBoostOrder = exports.verifyOrderStatus = exports.getOrderPayments = exports.processSeamlessPayment = exports.createSeamlessOrder = exports.getPaymentDetails = exports.getPaymentHistoryNew = exports.checkPaymentStatus = exports.webhookHealthCheck = exports.cashfreeWebhookV2 = exports.cleanupExpiredReservations = exports.createOrder = exports.getModerationStats = exports.getModerationHistory = exports.batchModerateContent = exports.moderateContent = exports.getNearbyListings = exports.getLocationHistory = exports.verifyLocation = exports.getPaymentHistory = exports.refundPayment = exports.cashfreeWebhook = exports.verifyPayment = exports.createPayment = void 0;
 const functions = __importStar(require("firebase-functions"));
+const v2_1 = require("firebase-functions/v2");
 const admin = __importStar(require("firebase-admin"));
 // Import all function modules
 const payment_1 = require("./payment");
@@ -46,6 +47,10 @@ const email_1 = require("./email");
 Object.defineProperty(exports, "sendEmail", { enumerable: true, get: function () { return email_1.sendEmail; } });
 Object.defineProperty(exports, "sendWeeklyTrendingEmails", { enumerable: true, get: function () { return email_1.sendWeeklyTrendingEmails; } });
 const emailTemplatesNode_1 = require("./emailTemplatesNode");
+const freshness_1 = require("./freshness");
+Object.defineProperty(exports, "updateListingFreshness", { enumerable: true, get: function () { return freshness_1.updateListingFreshness; } });
+Object.defineProperty(exports, "markInactiveListings", { enumerable: true, get: function () { return freshness_1.markInactiveListings; } });
+Object.defineProperty(exports, "calculateResponseRates", { enumerable: true, get: function () { return freshness_1.calculateResponseRates; } });
 // Import new payment functions
 const createOrder_1 = require("./payments/createOrder");
 Object.defineProperty(exports, "createOrder", { enumerable: true, get: function () { return createOrder_1.createOrder; } });
@@ -57,6 +62,15 @@ const checkPaymentStatus_1 = require("./payments/checkPaymentStatus");
 Object.defineProperty(exports, "checkPaymentStatus", { enumerable: true, get: function () { return checkPaymentStatus_1.checkPaymentStatus; } });
 Object.defineProperty(exports, "getPaymentHistoryNew", { enumerable: true, get: function () { return checkPaymentStatus_1.getPaymentHistory; } });
 Object.defineProperty(exports, "getPaymentDetails", { enumerable: true, get: function () { return checkPaymentStatus_1.getPaymentDetails; } });
+const seamlessPayment_1 = require("./payments/seamlessPayment");
+Object.defineProperty(exports, "createSeamlessOrder", { enumerable: true, get: function () { return seamlessPayment_1.createSeamlessOrder; } });
+Object.defineProperty(exports, "processSeamlessPayment", { enumerable: true, get: function () { return seamlessPayment_1.processSeamlessPayment; } });
+Object.defineProperty(exports, "getOrderPayments", { enumerable: true, get: function () { return seamlessPayment_1.getOrderPayments; } });
+Object.defineProperty(exports, "verifyOrderStatus", { enumerable: true, get: function () { return seamlessPayment_1.verifyOrderStatus; } });
+const createBoostOrder_1 = require("./payments/createBoostOrder");
+Object.defineProperty(exports, "createBoostOrder", { enumerable: true, get: function () { return createBoostOrder_1.createBoostOrder; } });
+const verifyBoostPayment_1 = require("./payments/verifyBoostPayment");
+Object.defineProperty(exports, "verifyBoostPayment", { enumerable: true, get: function () { return verifyBoostPayment_1.verifyBoostPayment; } });
 // Health check function
 exports.healthCheck = functions.https.onRequest(async (req, res) => {
     res.status(200).json({
@@ -72,14 +86,15 @@ exports.handleWebhook = functions.https.onRequest(async (req, res) => {
     try {
         switch (webhookType) {
             case 'cashfree':
-                return await (0, payment_1.cashfreeWebhook)(req, res);
+                await (0, payment_1.cashfreeWebhook)(req, res);
+                break;
             default:
-                console.error('Unknown webhook type:', webhookType);
-                return res.status(400).send('Unknown webhook type');
+                v2_1.logger.error('Unknown webhook type:', webhookType);
+                res.status(400).send('Unknown webhook type');
         }
     }
     catch (error) {
-        console.error('Error handling webhook:', error);
+        v2_1.logger.error('Error handling webhook:', error);
         res.status(500).send('Webhook processing failed');
     }
 });
@@ -87,7 +102,7 @@ exports.handleWebhook = functions.https.onRequest(async (req, res) => {
 exports.cleanupOldData = functions.pubsub
     .schedule('every 24 hours')
     .onRun(async () => {
-    console.log('Running scheduled cleanup tasks');
+    v2_1.logger.info('Running scheduled cleanup tasks');
 });
 // Scheduled: listing expiry reminders (runs daily)
 exports.sendListingExpiryReminders = functions.pubsub
@@ -118,7 +133,7 @@ exports.sendListingExpiryReminders = functions.pubsub
         });
         await (0, email_1.sendEmailInternal)(user.email, template.subject, template.htmlContent);
     }
-    console.log(`Expiry reminders sent for ${snap.size} listings`);
+    v2_1.logger.info(`Expiry reminders sent for ${snap.size} listings`);
 });
 // Scheduled: abandoned chat reminders (runs every 6 hours)
 exports.sendAbandonedChatReminders = functions.pubsub
@@ -152,6 +167,6 @@ exports.sendAbandonedChatReminders = functions.pubsub
         await (0, email_1.sendEmailInternal)(user.email, template.subject, template.htmlContent);
         await doc.ref.update({ reminderSent: true });
     }
-    console.log(`Abandoned chat reminders sent for ${snap.size} chats`);
+    v2_1.logger.info(`Abandoned chat reminders sent for ${snap.size} chats`);
 });
 //# sourceMappingURL=index.js.map

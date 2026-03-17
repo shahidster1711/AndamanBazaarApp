@@ -8,9 +8,9 @@
       "status": "up",
       "build": "dist/index.html exists"
     },
-    "supabase": {
+    "firebase": {
       "status": "external",
-      "note": "Supabase connection managed via client"
+      "note": "Firebase (Firestore + Auth + Storage) — fully migrated from Supabase"
     },
     "features": {
       "auth": true,

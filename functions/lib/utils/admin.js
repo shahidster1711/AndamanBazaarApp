@@ -39,7 +39,7 @@ const initializeAdmin = () => {
     }
     try {
         const parsed = JSON.parse(serviceAccountJson);
-        if (!parsed.project_id || !parsed.client_email || !parsed.private_key) {
+        if (!parsed.projectId || !parsed.clientEmail || !parsed.privateKey) {
             throw new Error('Service account JSON is missing required fields');
         }
         admin.initializeApp({

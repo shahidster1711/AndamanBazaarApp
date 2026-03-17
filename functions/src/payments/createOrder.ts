@@ -261,7 +261,7 @@ export const cleanupExpiredReservations = paymentsRuntime.https.onRequest(async 
       .where('reservationExpiresAt', '<', now)
       .get();
 
-    const batch = admin.firestore.batch();
+    const batch = admin.firestore().batch();
     
     expiredReservations.docs.forEach(doc => {
       batch.update(doc.ref, {

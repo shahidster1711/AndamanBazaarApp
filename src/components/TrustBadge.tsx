@@ -1,9 +1,9 @@
 import React from 'react';
-import { Shield, Award, Star } from 'lucide-react';
+import { Shield, Award, Star, Info } from 'lucide-react';
 
 interface TrustBadgeProps {
-  level: 'newbie' | 'verified' | 'legend';
-  size?: 'sm' | 'md';
+  level: 'newbie' | 'verified' | 'legend' | 'official';
+  size?: 'sm' | 'md' | 'lg';
   showLabel?: boolean;
 }
 
@@ -29,6 +29,13 @@ const TRUST_CONFIG = {
     bgColor: 'bg-amber-50',
     borderColor: 'border-amber-200',
   },
+  official: {
+    icon: Info,
+    label: 'AndamanBazaar Team',
+    color: 'text-blue-600 font-black',
+    bgColor: 'bg-blue-50',
+    borderColor: 'border-blue-200',
+  },
 };
 
 export const TrustBadge: React.FC<TrustBadgeProps> = ({ 
@@ -41,9 +48,11 @@ export const TrustBadge: React.FC<TrustBadgeProps> = ({
   
   const sizeClasses = size === 'sm' 
     ? 'text-[10px] px-2 py-0.5 gap-1'
-    : 'text-xs px-3 py-1 gap-1.5';
+    : size === 'md'
+      ? 'text-xs px-3 py-1 gap-1.5'
+      : 'text-sm px-4 py-2 gap-2';
   
-  const iconSize = size === 'sm' ? 10 : 14;
+  const iconSize = size === 'sm' ? 10 : size === 'md' ? 14 : 18;
 
   return (
     <span 

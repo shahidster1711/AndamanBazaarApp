@@ -81,7 +81,7 @@ color:#666;
 <div class="container">
 <div class="header">
 <div class="logo">🌴 Andaman Bazaar</div>
-<div class="tagline">Buy • Sell • Discover in the Islands</div>
+<div class="tagline">Buy & Sell locally in Andaman — no mainland scams.</div>
 </div>
 <div class="content">
 ${content}

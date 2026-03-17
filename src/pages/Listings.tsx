@@ -4,10 +4,10 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { auth, db } from '../lib/firebase';
 import { collection, query, where, orderBy, getDocs, addDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { TrustBadge } from '../components/TrustBadge';
-import { Search, MapPin, Heart, Sparkles, Filter, X, ChevronDown, ArrowUpDown, Loader2 } from 'lucide-react';
+import { FreshnessBadge } from '../components/FreshnessBadge';
+import { Search, MapPin, Heart, Sparkles, Filter, X, ChevronDown, ArrowUpDown, Loader2, Bell } from 'lucide-react';
 import { useToast } from '../components/Toast';
 import { isDemoListing } from '../lib/demoListings';
-import { COPY } from '../lib/localCopy';
 import { Seo } from '../components/Seo';
 
 const CATEGORIES = [
@@ -46,6 +46,7 @@ export const Listings: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const [activeCategory, setActiveCategory] = useState<string | null>(searchParams.get('category'));
   const [activeArea, setActiveArea] = useState<string>(searchParams.get('area') || '');
@@ -62,6 +63,10 @@ export const Listings: React.FC = () => {
   const [maxPrice, setMaxPrice] = useState('');
   const [showSortDropdown, setShowSortDropdown] = useState(false);
   const [showVerifiedOnly, setShowVerifiedOnly] = useState(searchParams.get('verified') === 'true');
+<<<<<<< HEAD
+=======
+  // sortDropdownRef removed (unused)
+>>>>>>> 7ed1e68 (feat: Upgrade to Cashfree API v2025-01-01 and production code quality improvements)
 
   // Infinite scroll observer
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -117,14 +122,38 @@ export const Listings: React.FC = () => {
 
       setHasMore(results.length > offset + PAGE_SIZE);
       if (!reset) setPage(prev => prev + 1);
+      setError(null);
     } catch (err) {
       console.error('Error fetching listings:', err);
+      setError('Failed to load listings. Please check your connection.');
       setListings([]);
     } finally {
       setLoading(false);
       setLoadingMore(false);
     }
   }, [searchParams, sortBy, minPrice, maxPrice, page]);
+
+  const handleSaveSearch = async () => {
+    if (!auth.currentUser) {
+      showToast('Please login to save searches', 'error');
+      return;
+    }
+    try {
+      await addDoc(collection(db, 'saved_searches'), {
+        userId: auth.currentUser.uid,
+        query: searchQuery,
+        category: activeCategory,
+        minPrice,
+        maxPrice,
+        area: activeArea,
+        createdAt: serverTimestamp(),
+      });
+      showToast('Search saved! You\'ll be notified of new listings.', 'success');
+    } catch (err) {
+      console.error('Error saving search:', err);
+      showToast('Failed to save search', 'error');
+    }
+  };
 
   useEffect(() => {
     void fetchListings(true);
@@ -135,6 +164,7 @@ export const Listings: React.FC = () => {
   useEffect(() => {
     if (!sentinelRef.current || !hasMore || loading || loadingMore) return;
 
+<<<<<<< HEAD
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && hasMore && !loadingMore) {
@@ -143,6 +173,16 @@ export const Listings: React.FC = () => {
       },
       { rootMargin: '200px' }
     );
+=======
+      const observer = new IntersectionObserver(
+        (entries) => {
+          if (entries[0].isIntersecting && hasMore && !loadingMore) {
+            void fetchListings(false);
+          }
+        },
+        { rootMargin: '200px' }
+      );
+>>>>>>> 7ed1e68 (feat: Upgrade to Cashfree API v2025-01-01 and production code quality improvements)
 
     observer.observe(sentinelRef.current);
     return () => observer.disconnect();
@@ -334,6 +374,16 @@ export const Listings: React.FC = () => {
               <span>Filters</span>
               {hasActiveFilters && <span className="w-2 h-2 bg-teal-500 rounded-full" />}
             </button>
+
+            {/* Save Search Button */}
+            <button
+              onClick={handleSaveSearch}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-warm-200 bg-white text-xs font-bold text-midnight-700 hover:border-teal-300 transition-all shadow-card ml-2"
+              title="Get notified for new listings"
+            >
+              <Bell size={13} className="text-warm-400" />
+              <span className="hidden sm:inline">Save</span>
+            </button>
           </div>
 
           {/* Price Filter Panel */}
@@ -410,14 +460,40 @@ export const Listings: React.FC = () => {
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-8">
         {loading ? (
           [1, 2, 3, 4, 5, 6, 7, 8].map(n => <ListingSkeleton key={n} />)
+        ) : error ? (
+          <div className="col-span-full py-24 text-center space-y-5 bg-red-50 rounded-3xl border-2 border-dashed border-red-200 animate-fade-in">
+            <div className="text-5xl animate-bounce">⚠️</div>
+            <div className="space-y-1.5">
+              <h3 className="text-xl font-heading font-bold text-red-700">Connection Trouble</h3>
+              <p className="text-red-600/80 text-sm max-w-xs mx-auto">{error}</p>
+            </div>
+            <button 
+              onClick={() => void fetchListings(true)} 
+              className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all active:scale-95"
+            >
+              Try Again
+            </button>
+          </div>
         ) : listings.length === 0 ? (
           <div className="col-span-full py-24 text-center space-y-5 bg-warm-50 rounded-3xl border-2 border-dashed border-warm-200 animate-fade-in">
             <div className="text-5xl animate-float">🏝️</div>
             <div className="space-y-1.5">
-              <h3 className="text-xl font-heading font-bold text-midnight-700">{COPY.EMPTY_STATE.NO_SEARCH_RESULTS}</h3>
-              <p className="text-warm-400 text-sm max-w-xs mx-auto">{COPY.EMPTY_STATE.NO_LISTINGS}</p>
+              <h3 className="text-xl font-heading font-bold text-midnight-700">
+                {searchQuery ? `No results for "${searchQuery}"` : 'No listings found'}
+              </h3>
+              <p className="text-warm-400 text-sm max-w-xs mx-auto">
+                {hasActiveFilters 
+                  ? "Try adjusting your filters or search for 'All Andaman' to see more results."
+                  : "Be the first to post in this category! It takes just 30 seconds."}
+              </p>
             </div>
-            <button onClick={handleClearFilters} className="btn-primary text-sm py-2.5">Clear Filters</button>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center mt-4">
+              {hasActiveFilters ? (
+                <button onClick={handleClearFilters} className="btn-secondary text-sm py-2.5">Clear Filters</button>
+              ) : (
+                <Link to="/post" className="btn-primary text-sm py-2.5">Post a Listing</Link>
+              )}
+            </div>
           </div>
         ) : (
           listings.map((listing) => (
@@ -500,6 +576,16 @@ const ListingItem: React.FC<{ listing: any, isFavorited: boolean, onToggleFavori
             <MapPin size={8} className="text-teal-500" />{listing.city}
           </div>
         )}
+        {/* Freshness Badge */}
+        <div className="absolute top-8 left-2 z-10">
+          <FreshnessBadge
+            lastActiveAt={listing.last_active_at}
+            availabilityStatus={listing.availability_status}
+            responseRate={listing.response_rate}
+            avgResponseHours={listing.avg_response_hours}
+            size="sm"
+          />
+        </div>
         {/* Trust Badge */}
         {listing.seller && listing.seller.length > 0 && listing.seller[0].trust_level && listing.seller[0].trust_level !== 'newbie' && (
           <div className="absolute bottom-8 left-2 flex items-center gap-2 z-10">

@@ -80,14 +80,14 @@ export const checkPaymentStatus = paymentsRuntime.https.onCall(async (data: Chec
     // Check if status needs to be updated in Firestore
     const needsUpdate = 
       cashfreeStatus.orderStatus !== payment.orderStatus ||
-      (cashfreeStatus.payments?.[0]?.payment_status !== payment.paymentStatus);
+      (cashfreeStatus.payments?.[0]?.paymentStatus !== payment.paymentStatus);
 
     if (needsUpdate) {
       logger.info(`Payment status update needed: ${orderId}`, {
         currentOrderStatus: payment.orderStatus,
         currentPaymentStatus: payment.paymentStatus,
         newOrderStatus: cashfreeStatus.orderStatus,
-        newPaymentStatus: cashfreeStatus.payments?.[0]?.payment_status,
+        newPaymentStatus: cashfreeStatus.payments?.[0]?.paymentStatus,
       });
 
       // Update Firestore with latest status
@@ -101,11 +101,11 @@ export const checkPaymentStatus = paymentsRuntime.https.onCall(async (data: Chec
       // Update payment status if available
       if (cashfreeStatus.payments && cashfreeStatus.payments.length > 0) {
         const paymentInfo = cashfreeStatus.payments[0];
-        updateData.paymentStatus = paymentInfo.payment_status;
-        updateData.paymentId = paymentInfo.cf_payment_id;
-        updateData.paymentAmount = paymentInfo.payment_amount;
-        updateData.paymentTime = paymentInfo.payment_time;
-        updateData.paymentCompletionTime = paymentInfo.payment_completion_time;
+        updateData.paymentStatus = paymentInfo.paymentStatus;
+        updateData.paymentId = paymentInfo.cfPaymentId;
+        updateData.paymentAmount = paymentInfo.paymentAmount;
+        updateData.paymentTime = paymentInfo.paymentTime;
+        updateData.paymentCompletionTime = paymentInfo.paymentCompletionTime;
       }
 
       await admin.firestore().collection('payments').doc(orderId).update(updateData);
@@ -170,7 +170,7 @@ async function handleStatusChange(currentPayment: any, newStatus: CreateOrderRes
   const orderId = currentPayment.orderId;
   const oldStatus = currentPayment.orderStatus;
   const newOrderStatus = newStatus.orderStatus;
-  const newPaymentStatus = newStatus.payments?.[0]?.payment_status;
+  const newPaymentStatus = newStatus.payments?.[0]?.paymentStatus;
 
   // Handle payment success
   if (newPaymentStatus === 'SUCCESS' && currentPayment.paymentStatus !== 'SUCCESS') {

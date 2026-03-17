@@ -10,6 +10,8 @@ interface ReportModalProps {
   onClose: () => void;
   listingId: string;
   listingTitle: string;
+  reportedUserId?: string;
+  reportedItemId?: string;
 }
 
 const reasons = [
@@ -21,7 +23,14 @@ const reasons = [
   "Other"
 ];
 
-export const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, listingId, listingTitle }) => {
+export const ReportModal: React.FC<ReportModalProps> = ({
+  isOpen,
+  onClose,
+  listingId,
+  listingTitle,
+  reportedUserId,
+  reportedItemId,
+}) => {
   const [selectedReason, setSelectedReason] = useState('');
   const [details, setDetails] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -39,7 +48,8 @@ export const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, listi
 
       await addDoc(collection(db, 'reports'), {
         reporterId: userId || null,
-        listingId,
+        listingId: reportedItemId || listingId,
+        reportedUserId: reportedUserId || null,
         reason: selectedReason,
         details,
         status: 'pending',

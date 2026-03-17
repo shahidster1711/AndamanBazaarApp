@@ -7,6 +7,7 @@ import { useToast } from '../components/Toast';
 import { COPY } from '../lib/localCopy';
 import { Seo } from '../components/Seo';
 import { TrustBadge } from '../components/TrustBadge';
+import { FreshnessBadge } from '../components/FreshnessBadge';
 import {
   Search, ArrowRight, Loader2, Heart, MapPin, Flame,
   Fish, Leaf, Shell, Compass,
@@ -55,6 +56,13 @@ interface Listing {
     full_name: string;
     avatar_url: string;
   }[] | null;
+  last_active_at?: string;
+  availability_status?: 'available' | 'sold_recently' | 'inactive';
+  response_rate?: number;
+  avg_response_hours?: number;
+  // Optional fields present in some listings / demo data
+  area?: string;
+  is_official?: boolean;
 }
 
 // ============================================================
@@ -108,11 +116,28 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, saved, onSave, timeA
           />
         </button>
         {listing.city && (
-          <div className="absolute top-2 left-2 bg-white/95 backdrop-blur-sm px-2 py-1 rounded-full flex items-center gap-1 text-[9px] font-bold text-midnight-700 uppercase tracking-wide shadow-sm">
-            <MapPin size={10} className="text-ocean-600" style={{ color: '#006D77' }} />
-            {listing.city}
+          <div className="absolute top-2 left-2 flex flex-col gap-1 items-start">
+            <div className="bg-white/95 backdrop-blur-sm px-2 py-1 rounded-full flex items-center gap-1 text-[9px] font-black text-midnight-700 uppercase tracking-widest shadow-sm border border-warm-100/50">
+              <MapPin size={9} className="text-ocean-600" />
+              {listing.city}
+            </div>
+            {listing.is_official && (
+              <div className="bg-blue-600/90 backdrop-blur-sm px-2 py-0.5 rounded-full flex items-center gap-1 text-[8px] font-black text-white uppercase tracking-widest shadow-sm">
+                Official
+              </div>
+            )}
           </div>
         )}
+        {/* Freshness Badge */}
+        <div className="absolute top-8 left-2">
+          <FreshnessBadge
+            lastActiveAt={listing.last_active_at}
+            availabilityStatus={listing.availability_status}
+            responseRate={listing.response_rate}
+            avgResponseHours={listing.avg_response_hours}
+            size="sm"
+          />
+        </div>
         {/* Trust Badge */}
         {listing.seller && listing.seller.length > 0 && listing.seller[0].trust_level && listing.seller[0].trust_level !== 'newbie' && (
           <div className="absolute bottom-2 left-2 flex items-center gap-2">
@@ -120,7 +145,7 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, saved, onSave, timeA
             <Link 
               to={`/seller/${listing.seller[0].user_id}`}
               onClick={(e) => e.stopPropagation()}
-              className="text-[10px] text-warm-600 hover:text-teal-600 transition-colors bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full"
+              className="text-2xs text-warm-600 hover:text-teal-600 transition-colors bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full"
             >
               {listing.seller[0].full_name}
             </Link>
@@ -128,13 +153,13 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, saved, onSave, timeA
         )}
         {/* Featured Badge */}
         {listing.is_featured && (
-          <div className={`absolute ${listing.seller && listing.seller.length > 0 && listing.seller[0].trust_level && listing.seller[0].trust_level !== 'newbie' ? 'top-2 right-2' : 'top-2 left-2'} bg-sandy-gradient text-midnight-700 text-[8px] font-black uppercase px-2 py-0.5 rounded-full`}>
+          <div className={`absolute ${listing.seller && listing.seller.length > 0 && listing.seller[0].trust_level && listing.seller[0].trust_level !== 'newbie' ? 'top-2 right-2' : 'top-2 left-2'} bg-sandy-gradient text-midnight-700 text-3xs font-black uppercase px-2 py-0.5 rounded-full`}>
             ✦ Featured
           </div>
         )}
         {/* Demo Badge */}
         {isDemo && (
-          <div className="absolute bottom-2 right-2 bg-warm-800/60 backdrop-blur-sm text-white/90 text-[7px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full z-10">
+          <div className="absolute bottom-2 right-2 bg-warm-800/60 backdrop-blur-sm text-white/90 text-3xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full z-10">
             Demo
           </div>
         )}
@@ -142,9 +167,21 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, saved, onSave, timeA
 
       {/* Content */}
       <div className="px-3 pb-3 flex-1 flex flex-col justify-between gap-1">
-        <h3 className="text-[12px] font-semibold text-midnight-700 line-clamp-2 leading-tight pr-2">
-          {listing.title}
-        </h3>
+        <div className="space-y-0.5">
+          <div className="flex items-center gap-1">
+            <h3 className="text-xs font-semibold text-midnight-700 line-clamp-1 leading-tight pr-2 flex-1">
+              {listing.title}
+            </h3>
+            {listing.is_official && (
+              <span className="text-[8px] font-black text-blue-600 uppercase tracking-tighter shrink-0">Team</span>
+            )}
+          </div>
+          {listing.area && (
+            <p className="text-[9px] font-bold text-warm-400 uppercase tracking-widest flex items-center gap-1">
+              📍 {listing.area}
+            </p>
+          )}
+        </div>
         <div className="flex items-center justify-between mt-1">
           <span className="font-bold text-midnight-800 text-sm">
             ₹{listing.price?.toLocaleString('en-IN') ?? '0'}
@@ -181,13 +218,20 @@ const HorizontalListingCard: React.FC<HorizontalCardProps> = ({ listing, rank, s
     <Link to={isDemo ? '#' : `/listings/${listing.id}`} className="w-44 flex-shrink-0 listing-card group" onClick={handleClick}>
       <div className="relative aspect-square overflow-hidden bg-warm-100 m-2 rounded-2xl">
         <img src={imageUrl} alt={listing.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
-        {/* Location badge */}
-        {listing.city && (
-          <div className="absolute top-2 left-2 bg-white/95 backdrop-blur-sm px-2 py-1 rounded-full flex items-center gap-1 text-[9px] font-bold text-midnight-700 uppercase tracking-wide shadow-sm">
-            <MapPin size={10} className="text-ocean-600" style={{ color: '#006D77' }} />
-            {listing.city}
-          </div>
-        )}
+        {/* Location & Official Badge */}
+        <div className="absolute top-2 left-2 flex flex-col gap-1 items-start">
+          {listing.city && (
+            <div className="bg-white/95 backdrop-blur-sm px-2 py-1 rounded-full flex items-center gap-1 text-[8px] font-black text-midnight-700 uppercase tracking-widest shadow-sm border border-warm-100/50">
+              <MapPin size={8} className="text-ocean-600" />
+              {listing.city}
+            </div>
+          )}
+          {listing.is_official && (
+            <div className="bg-blue-600/90 backdrop-blur-sm px-2 py-0.5 rounded-full flex items-center gap-1 text-[7px] font-black text-white uppercase tracking-widest shadow-sm">
+              Official
+            </div>
+          )}
+        </div>
 
         {/* Trust Badge or AndamanBazaar badge */}
         <div className="absolute bottom-2 left-2 right-2 bg-white/90 backdrop-blur-md rounded-xl p-2 flex items-center gap-2">
@@ -231,13 +275,24 @@ const HorizontalListingCard: React.FC<HorizontalCardProps> = ({ listing, rank, s
           <Heart size={12} className={saved ? 'text-white fill-white' : 'text-warm-400'} />
         </button>
       </div>
-      <div className="px-3 pb-3 pt-1">
-        <h4 className="text-[13px] font-semibold text-midnight-700 line-clamp-1 leading-tight mb-1">{listing.title}</h4>
+      <div className="px-3 pb-3 flex flex-col gap-1">
+        <div className="flex items-center gap-1">
+          <h3 className="text-[11px] font-semibold text-midnight-700 line-clamp-1 leading-tight flex-1">
+            {listing.title}
+          </h3>
+          {listing.is_official && (
+            <span className="text-[7px] font-black text-blue-600 uppercase tracking-tighter shrink-0">Team</span>
+          )}
+        </div>
         <div className="flex items-center justify-between">
-          <span className="font-bold text-midnight-800 text-sm">₹{listing.price?.toLocaleString('en-IN')}</span>
-          <div className="w-6 h-6 rounded-full bg-gray-50 flex items-center justify-center border border-gray-100">
-            <ArrowRight size={10} className="text-gray-500" />
-          </div>
+          <span className="font-bold text-midnight-800 text-xs">
+            ₹{listing.price?.toLocaleString('en-IN') ?? '0'}
+          </span>
+          {listing.area && (
+             <span className="text-[8px] font-bold text-warm-400 uppercase tracking-tight truncate max-w-[60px]">
+               {listing.area}
+             </span>
+          )}
         </div>
       </div>
     </Link>
@@ -421,7 +476,7 @@ export const Home: React.FC = () => {
     <>
       <Seo 
         title="Andaman's Local Marketplace" 
-        description="Buy and sell used goods, fresh produce, and local services in the Andaman & Nicobar Islands. Your community marketplace."
+        description="Buy & Sell locally in Andaman — no mainland scams. Your trusted community marketplace for the Andaman & Nicobar Islands."
       />
       <div className="min-h-screen bg-warm-50 pb-28 md:pb-12">
 
@@ -437,7 +492,7 @@ export const Home: React.FC = () => {
             <div className="reveal">
               <span className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 px-4 py-2 rounded-full text-white/90 text-[11px] md:text-xs font-bold uppercase tracking-[0.15em]">
                 <span className="w-2 h-2 rounded-full bg-teal-300 animate-pulse" />
-                Andaman's Own Marketplace
+                Buy & Sell locally in Andaman
               </span>
             </div>
 

@@ -222,7 +222,18 @@ async function getIPLocation(request: any): Promise<any> {
 
     // Use a free IP geolocation service
     const response = await fetch(`http://ip-api.com/json/${clientIP}`);
-    const data = await response.json();
+    const data = (await response.json()) as Record<string, unknown>;
+
+    // Validate required fields exist before accessing
+    if (
+      typeof data.countryCode !== 'string' ||
+      typeof data.regionName !== 'string' ||
+      typeof data.city !== 'string' ||
+      typeof data.lat !== 'number' ||
+      typeof data.lon !== 'number'
+    ) {
+      return null;
+    }
 
     return {
       ip: clientIP,

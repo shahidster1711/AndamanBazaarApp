@@ -1,6 +1,17 @@
 // ============================================================
 // Payment Service Module
 // Handles all payment-related operations for boosting listings
+//
+// ⚠️  DEPRECATED — DO NOT ADD NEW CODE HERE.
+//     All new payment logic must go through Cloud Functions:
+//       - Boost orders  → createBoostOrder (Cloud Function HTTPS)
+//       - Boost verify  → verifyBoostPayment (Cloud Function HTTPS)
+//       - Order status  → checkPaymentStatus (Cloud Function callable)
+//       - History       → getPaymentHistory (Cloud Function callable)
+//     BoostListingModal already calls createBoostOrder directly.
+//     BoostSuccess already calls verifyBoostPayment directly.
+//     This file will be removed after migration to server-side callables
+//     is complete. Track: https://github.com/andamanbazaar/app/issues/TODO
 // ============================================================
 
 import { auth } from './firebase';

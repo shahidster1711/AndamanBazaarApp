@@ -1,4 +1,3 @@
-
 export interface Profile {
   id: string;
   phone_number?: string;
@@ -16,7 +15,10 @@ export interface Profile {
   verification_blocked_until?: string;
   total_listings: number;
   successful_sales: number;
-  trust_level: 'newbie' | 'verified' | 'legend';
+  trust_level: 'newbie' | 'verified' | 'legend' | 'official';
+  is_official?: boolean;
+  response_rate?: number;
+  avg_response_hours?: number;
   created_at: string;
 }
 
@@ -60,6 +62,7 @@ export interface AiMetadata {
 export interface Listing {
   id: string;
   user_id: string;
+  is_official?: boolean;
   category_id: string;
   subcategory_id?: string;
   title: string;
@@ -102,6 +105,12 @@ export interface Listing {
   updated_at?: string;
   images?: ListingImage[];
   seller?: Profile;
+
+  // Freshness metadata
+  last_active_at?: string;
+  availability_status?: 'available' | 'sold_recently' | 'inactive';
+  response_rate?: number; // 0-100
+  avg_response_hours?: number;
 }
 
 export interface ListingImage {
@@ -124,13 +133,20 @@ export interface Chat {
   listing_id: string;
   buyer_id: string;
   seller_id: string;
+  // Firebase shape compatibility (camelCase)
+  listingId?: string;
+  buyerId?: string;
+  sellerId?: string;
   last_message?: string;
   last_message_at: string;
+  lastMessageAt?: string;
   buyer_unread_count: number;
   seller_unread_count: number;
+  buyerUnreadCount?: number;
+  sellerUnreadCount?: number;
   listing?: Listing;
   other_party?: Profile;
-  // Fix: Added buyer and seller properties to satisfy Supabase aliased joins
+  // Chat participant profiles (buyer and seller) populated via Firestore joins
   buyer?: Profile;
   seller?: Profile;
 }

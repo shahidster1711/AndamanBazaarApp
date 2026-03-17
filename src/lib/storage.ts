@@ -195,7 +195,9 @@ export const migrateListingImages = async (
   
   for (const image of images) {
     try {
-      // Check if it's a legacy storage URL from pre-Firebase migration
+      // LEGACY MIGRATION: Detect pre-Firebase (Supabase) storage URLs from the original platform.
+      // These utilities exist solely to migrate old content to Firebase Storage.
+      // Once all legacy data has been migrated, these functions can be removed.
       const isLegacyStorageUrl = image.url.includes('supabase') && image.url.includes('/storage/');
       
       if (isLegacyStorageUrl) {
@@ -240,7 +242,8 @@ export const migrateUserAvatar = async (
   avatarUrl: string
 ): Promise<string> => {
   try {
-    // Check if it's a legacy storage URL from pre-Firebase migration
+    // LEGACY MIGRATION: Detect pre-Firebase (Supabase) storage URLs from the original platform.
+    // Remove once all user avatars have been migrated to Firebase Storage.
     const isLegacyStorageUrl = avatarUrl.includes('supabase') && avatarUrl.includes('/storage/');
     
     if (isLegacyStorageUrl) {

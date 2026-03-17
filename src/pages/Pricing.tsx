@@ -324,7 +324,7 @@ export const Pricing: React.FC = () => {
                             <span className="text-2xl font-black tracking-tighter text-midnight-700">AndamanBazaar.</span>
                         </div>
                         <p className="text-midnight-400 text-sm font-medium leading-relaxed max-w-sm">
-                            The Islands' #1 local marketplace. Helping locals buy, sell, and trade since 2024.
+                            Buy & Sell locally in Andaman — no mainland scams.
                             Built with love in Port Blair.
                         </p>
                     </div>

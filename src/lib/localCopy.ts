@@ -48,7 +48,7 @@ export const COPY = {
   },
 
   AUTH: {
-    SIGNUP_SUBTITLE: "Andaman ka digital Aberdeen Bazaar — mainland trip ki zaroorat nahi! 🏝️",
+    SIGNUP_SUBTITLE: "Buy & Sell locally in Andaman — no mainland scams.",
     WRONG_PASSWORD: "Password galat hai. BSNL ka password bhool gaye ya apna? 😅",
     EMAIL_VERIFICATION_SENT: "Mail bhej diya! BSNL signal ache ho toh 2 minute mein aa jayega �",
   },
@@ -70,6 +70,13 @@ export const COPY = {
   },
 
   HOME: {
-    HERO_SUBTITLE: 'Buy and sell locally across the Andaman & Nicobar Islands',
+    HERO_SUBTITLE: 'Buy & Sell locally in Andaman — no mainland scams.',
+  },
+
+  SHARING: {
+    WHATSAPP_TEMPLATE: (title: string, price: number, area: string, link: string) => 
+      `🏝️ *AndamanBazaar Local Deal*\n\n*${title}*\n💰 Price: ₹${price.toLocaleString()}\n📍 Location: ${area}\n\nCheck details here 👇\n${link}\n\n#AndamanBazaar #PortBlair #AndamanIslands`,
+    FB_GROUP_TEMPLATE: (title: string, price: number, area: string, link: string) => 
+      `${title} available in ${area} – details and more photos here 👇\n\n${link}\n\nOnly Andaman sellers allowed. Trade safely!`,
   },
 } as const;

@@ -2,6 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, Auth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, User, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { getFirestore, Firestore, doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
+import { logger } from './logger';
 
 // Firebase configuration
 const firebaseConfig = {
@@ -81,7 +82,7 @@ export const createFirestoreUser = async (user: User, additionalData?: any) => {
         lastActiveAt: createdAt
       });
     } catch (error) {
-      console.error('Error creating user profile:', error);
+      logger.error('Error creating user profile', error);
       throw error;
     }
   }
@@ -123,7 +124,7 @@ export const signIn = async (email: string, password: string) => {
     await updateUserLastActive(result.user.uid);
     return result;
   } catch (error) {
-    console.error('Sign in error:', error);
+    logger.error('Sign in error', error);
     throw error;
   }
 };
@@ -135,7 +136,7 @@ export const signUp = async (email: string, password: string, name?: string) => 
     await updateUserLastActive(result.user.uid);
     return result;
   } catch (error) {
-    console.error('Sign up error:', error);
+    logger.error('Sign up error', error);
     throw error;
   }
 };
@@ -145,21 +146,16 @@ export const signInWithGoogle = async () => {
     if (!auth) {
       throw new Error('Firebase Auth not initialized');
     }
-    console.log('Firebase: Starting Google sign-in popup...');
-    console.log('Firebase: Auth object:', auth);
-    console.log('Firebase: Google provider:', googleProvider);
+    logger.debug('Starting Google sign-in popup');
     const result = await signInWithPopup(auth, googleProvider);
-    console.log('Firebase: Google sign-in successful, user:', result.user);
+    logger.info('Google sign-in successful', { userId: result.user.uid });
     await createFirestoreUser(result.user, {
       name: result.user.displayName || result.user.email?.split('@')[0] || 'Island User',
     });
     await updateUserLastActive(result.user.uid);
     return result;
   } catch (error: any) {
-    console.error('Firebase: Google sign-in error:', error);
-    console.error('Firebase: Error code:', error?.code);
-    console.error('Firebase: Error message:', error?.message);
-    console.error('Firebase: Full error object:', error);
+    logger.error('Google sign-in error', error, { code: error?.code, message: error?.message });
     throw error;
   }
 };
@@ -168,7 +164,7 @@ export const signOutUser = async () => {
   try {
     await signOut(auth);
   } catch (error) {
-    console.error('Sign out error:', error);
+    logger.error('Sign out error', error);
     throw error;
   }
 };

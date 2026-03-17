@@ -88,7 +88,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, user }) => {
                 Andaman<span className="text-teal-600">Bazaar</span>
               </span>
               <span className="text-[9px] font-bold text-warm-400 uppercase tracking-[0.2em] mt-0.5">
-                Island Marketplace
+                Buy & Sell locally in Andaman
               </span>
             </div>
           </Link>
@@ -197,7 +197,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, user }) => {
               <span className="font-heading font-black text-lg text-white">AndamanBazaar</span>
             </div>
             <p className="text-sm text-warm-400 leading-relaxed">
-              Hyperlocal marketplace exclusively for the Andaman & Nicobar Islands.
+              Buy & Sell locally in Andaman — no mainland scams.
               Built by islanders, for islanders. 🏝️
             </p>
           </div>

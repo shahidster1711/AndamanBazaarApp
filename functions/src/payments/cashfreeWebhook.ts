@@ -10,10 +10,11 @@ const paymentsRuntime = functions.runWith({ secrets: CASHFREE_SECRET_BINDINGS })
 interface WebhookEventLog {
   eventId: string;
   type: string;
-  timestamp: string;
-  orderId: string;
+  // Many webhook fields may be missing depending on event; keep them optional to avoid runtime issues
+  timestamp?: string;
+  orderId?: string;
   cfOrderId?: string;
-  orderStatus: string;
+  orderStatus?: string;
   paymentStatus?: string;
   paymentId?: string;
   paymentAmount?: number;
@@ -53,26 +54,38 @@ export const cashfreeWebhook = paymentsRuntime.https.onRequest(async (req, res) 
   // Only accept POST requests
   if (req.method !== 'POST') {
     logger.warn('Webhook received non-POST request', { method: req.method });
-    return res.status(405).json({ error: 'Method not allowed' });
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
   }
 
-  const signature = req.headers['x-cashfree-signature'] as string;
+  const signature = req.headers['x-webhook-signature'] as string;
+  // v2025-01-01: Cashfree sends timestamp in x-webhook-ts header
+  const timestamp = req.headers['x-webhook-ts'] as string;
   const payload = JSON.stringify(req.body);
 
   // Validate signature
   if (!signature) {
     logger.error('Webhook missing signature');
-    return res.status(401).json({ error: 'Missing signature' });
+    res.status(401).json({ error: 'Missing signature' });
+    return;
   }
 
-  const isValidSignature = verifyWebhookSignature(payload, signature);
+  if (!timestamp) {
+    logger.error('Webhook missing timestamp (x-webhook-ts)');
+    res.status(401).json({ error: 'Missing timestamp' });
+    return;
+  }
+
+  // v2025-01-01: pass timestamp so HMAC is computed over (timestamp + payload)
+  const isValidSignature = verifyWebhookSignature(payload, signature, undefined, timestamp);
   
   if (!isValidSignature) {
     logger.error('Webhook signature verification failed', {
       signature: signature.substring(0, 20) + '...',
       payloadLength: payload.length,
     });
-    return res.status(401).json({ error: 'Invalid signature' });
+    res.status(401).json({ error: 'Invalid signature' });
+    return;
   }
 
   // Generate unique event ID for idempotency
@@ -121,11 +134,12 @@ export const cashfreeWebhook = paymentsRuntime.https.onRequest(async (req, res) 
       webhookLog.processingStatus = 'DUPLICATE';
       await admin.firestore().collection('paymentEvents').doc(eventId).set(webhookLog);
 
-      return res.status(200).json({ 
+      res.status(200).json({ 
         success: true, 
         message: 'Duplicate event ignored',
         eventId,
       });
+      return;
     }
 
     // Process the webhook event
@@ -141,7 +155,7 @@ export const cashfreeWebhook = paymentsRuntime.https.onRequest(async (req, res) 
       paymentStatus: event.paymentStatus,
     });
 
-    return res.status(200).json({ 
+    res.status(200).json({ 
       success: true, 
       eventId,
     });
@@ -175,7 +189,7 @@ export const cashfreeWebhook = paymentsRuntime.https.onRequest(async (req, res) 
       logger.error('Failed to log webhook error', logError);
     }
 
-    return res.status(500).json({ 
+    res.status(500).json({ 
       success: false, 
       error: 'Webhook processing failed',
       eventId,
@@ -189,9 +203,15 @@ export const cashfreeWebhook = paymentsRuntime.https.onRequest(async (req, res) 
 async function processWebhookEvent(event: CashfreeWebhookEvent, eventId: string): Promise<void> {
   const orderId = event.orderId;
 
+  // Ensure we have an orderId to operate on
+  if (!orderId) {
+    logger.error('Webhook event missing orderId', { eventId, event });
+    throw new Error('Missing orderId in webhook event');
+  }
+
   // Get the payment order from Firestore
   const paymentDoc = await admin.firestore().collection('payments').doc(orderId).get();
-  
+
   if (!paymentDoc.exists) {
     logger.warn(`Payment order not found for webhook: ${orderId}`, {
       eventId,
@@ -201,7 +221,7 @@ async function processWebhookEvent(event: CashfreeWebhookEvent, eventId: string)
   }
 
   const payment = paymentDoc.data()!;
-  const batch = admin.firestore.batch();
+  const batch = admin.firestore().batch();
 
   // Prepare payment update based on event type
   let paymentUpdate: PaymentUpdate = {
@@ -211,8 +231,9 @@ async function processWebhookEvent(event: CashfreeWebhookEvent, eventId: string)
     cashfreeResponse: event,
   };
 
-  // Handle different event types
+  // Handle different event types (supports both v2025-01-01 and legacy event names)
   switch (event.type) {
+    case 'PAYMENT_SUCCESS_WEBHOOK':
     case 'PAYMENT_SUCCESS':
     case 'ORDER_PAID':
       paymentUpdate.paymentStatus = 'SUCCESS';
@@ -261,6 +282,7 @@ async function processWebhookEvent(event: CashfreeWebhookEvent, eventId: string)
 
       break;
 
+    case 'PAYMENT_FAILED_WEBHOOK':
     case 'PAYMENT_FAILED':
     case 'ORDER_FAILED':
       paymentUpdate.paymentStatus = 'FAILED';
@@ -277,6 +299,7 @@ async function processWebhookEvent(event: CashfreeWebhookEvent, eventId: string)
 
       break;
 
+    case 'PAYMENT_USER_DROPPED_WEBHOOK':
     case 'PAYMENT_CANCELLED':
     case 'ORDER_CANCELLED':
       paymentUpdate.paymentStatus = 'CANCELLED';
@@ -319,7 +342,7 @@ async function processWebhookEvent(event: CashfreeWebhookEvent, eventId: string)
 
   // Update payment document
   const paymentRef = admin.firestore().collection('payments').doc(orderId);
-  batch.update(paymentRef, paymentUpdate);
+  batch.set(paymentRef, paymentUpdate, { merge: true });
 
   // Commit all changes atomically
   await batch.commit();
@@ -373,7 +396,6 @@ export const webhookHealthCheck = paymentsRuntime.https.onRequest(async (req, re
     // Check Cashfree configuration
     const cashfreeAppId = process.env.CASHFREE_APP_ID;
     const cashfreeSecret = process.env.CASHFREE_SECRET_KEY ? 'SET' : 'NOT_SET';
-    const webhookSecret = process.env.CASHFREE_WEBHOOK_SECRET ? 'SET' : 'NOT_SET';
 
     res.status(200).json({
       status: 'healthy',
@@ -381,7 +403,7 @@ export const webhookHealthCheck = paymentsRuntime.https.onRequest(async (req, re
       configuration: {
         cashfreeAppId: cashfreeAppId ? 'SET' : 'NOT_SET',
         cashfreeSecret: cashfreeSecret,
-        webhookSecret: webhookSecret,
+        // v2025-01-01: Webhook signature = HMAC-SHA256(x-webhook-ts + rawBody) using client secret
       },
     });
   } catch (error) {

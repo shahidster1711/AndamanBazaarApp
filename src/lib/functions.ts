@@ -1,4 +1,5 @@
 import { auth as firebaseAuth } from './firebase';
+import { logger } from './logger';
 
 // ===== FUNCTION PROVIDER TYPES =====
 
@@ -86,7 +87,7 @@ export const createPayment = async (request: PaymentRequest): Promise<PaymentRes
   try {
     const fnUrl = import.meta.env.VITE_FIREBASE_CREATE_PAYMENT_FUNCTION;
     if (!fnUrl) {
-      console.error('Firebase payment function URL not configured');
+      logger.error('Firebase payment function URL not configured');
       return { success: false, error: 'Configuration error' };
     }
     const response = await fetch(fnUrl, {
@@ -95,12 +96,12 @@ export const createPayment = async (request: PaymentRequest): Promise<PaymentRes
       body: JSON.stringify(request)
     });
     if (!response.ok) {
-      console.error(`Payment function error: ${response.statusText}`);
+      logger.error('Payment function error', { status: response.statusText });
       return { success: false, error: response.statusText };
     }
     return await response.json();
   } catch (error) {
-    console.error('Error creating payment:', error);
+    logger.error('Error creating payment', error);
     return { success: false, error: error instanceof Error ? error.message : 'Payment creation failed' };
   }
 };
@@ -109,7 +110,7 @@ export const verifyPayment = async (paymentId: string): Promise<PaymentResponse>
   try {
     const fnUrl = import.meta.env.VITE_FIREBASE_VERIFY_PAYMENT_FUNCTION;
     if (!fnUrl) {
-      console.error('Firebase verify payment function URL not configured');
+      logger.error('Firebase verify payment function URL not configured');
       return { success: false, error: 'Configuration error' };
     }
     const response = await fetch(`${fnUrl}?paymentId=${paymentId}`, {
@@ -117,12 +118,12 @@ export const verifyPayment = async (paymentId: string): Promise<PaymentResponse>
       headers: { 'Authorization': `Bearer ${await getFirebaseAuthToken()}` }
     });
     if (!response.ok) {
-      console.error(`Verify payment error: ${response.statusText}`);
+      logger.error('Verify payment error', { status: response.statusText });
       return { success: false, error: response.statusText };
     }
     return await response.json();
   } catch (error) {
-    console.error('Error verifying payment:', error);
+    logger.error('Error verifying payment', error);
     return { success: false, error: error instanceof Error ? error.message : 'Payment verification failed' };
   }
 };
@@ -133,7 +134,7 @@ export const verifyLocation = async (request: LocationVerificationRequest): Prom
   try {
     const fnUrl = import.meta.env.VITE_FIREBASE_VERIFY_LOCATION_FUNCTION;
     if (!fnUrl) {
-      console.error('Firebase location verification function URL not configured');
+      logger.error('Firebase location verification function URL not configured');
       return { success: false, verified: false, error: 'Configuration error' };
     }
     const response = await fetch(fnUrl, {
@@ -142,12 +143,12 @@ export const verifyLocation = async (request: LocationVerificationRequest): Prom
       body: JSON.stringify(request)
     });
     if (!response.ok) {
-      console.error(`Location verification error: ${response.statusText}`);
+      logger.error('Location verification error', { status: response.statusText });
       return { success: false, verified: false, error: response.statusText };
     }
     return await response.json();
   } catch (error) {
-    console.error('Error verifying location:', error);
+    logger.error('Error verifying location', error);
     return { success: false, verified: false, error: error instanceof Error ? error.message : 'Location verification failed' };
   }
 };
@@ -158,7 +159,7 @@ export const moderateContent = async (request: AiModerationRequest): Promise<AiM
   try {
     const fnUrl = import.meta.env.VITE_FIREBASE_MODERATE_CONTENT_FUNCTION;
     if (!fnUrl) {
-      console.error('Firebase content moderation function URL not configured');
+      logger.error('Firebase content moderation function URL not configured');
       return { approved: false, confidence: 0, flaggedCategories: [], suggestions: [], error: 'Configuration error' };
     }
     const response = await fetch(fnUrl, {
@@ -167,12 +168,12 @@ export const moderateContent = async (request: AiModerationRequest): Promise<AiM
       body: JSON.stringify(request)
     });
     if (!response.ok) {
-      console.error(`Content moderation error: ${response.statusText}`);
+      logger.error('Content moderation error', { status: response.statusText });
       return { approved: false, confidence: 0, flaggedCategories: [], suggestions: [], error: response.statusText };
     }
     return await response.json();
   } catch (error) {
-    console.error('Error moderating content:', error);
+    logger.error('Error moderating content', error);
     return { approved: false, confidence: 0, flaggedCategories: [], suggestions: [], error: error instanceof Error ? error.message : 'Content moderation failed' };
   }
 };
@@ -183,7 +184,7 @@ export const createInvoice = async (request: InvoiceRequest): Promise<InvoiceRes
   try {
     const fnUrl = import.meta.env.VITE_FIREBASE_CREATE_INVOICE_FUNCTION;
     if (!fnUrl) {
-      console.error('Firebase invoice creation function URL not configured');
+      logger.error('Firebase invoice creation function URL not configured');
       return { success: false, error: 'Configuration error' };
     }
     const response = await fetch(fnUrl, {
@@ -192,12 +193,12 @@ export const createInvoice = async (request: InvoiceRequest): Promise<InvoiceRes
       body: JSON.stringify(request)
     });
     if (!response.ok) {
-      console.error(`Invoice creation error: ${response.statusText}`);
+      logger.error('Invoice creation error', { status: response.statusText });
       return { success: false, error: response.statusText };
     }
     return await response.json();
   } catch (error) {
-    console.error('Error creating invoice:', error);
+    logger.error('Error creating invoice', error);
     return { success: false, error: error instanceof Error ? error.message : 'Invoice creation failed' };
   }
 };
@@ -208,7 +209,7 @@ export const handleWebhook = async (webhookType: string, payload: any): Promise<
   try {
     const fnUrl = import.meta.env.VITE_FIREBASE_WEBHOOK_FUNCTION;
     if (!fnUrl) {
-      console.error('Firebase webhook function URL not configured');
+      logger.error('Firebase webhook function URL not configured');
       return { success: false, processed: false };
     }
     const response = await fetch(fnUrl, {
@@ -217,12 +218,12 @@ export const handleWebhook = async (webhookType: string, payload: any): Promise<
       body: JSON.stringify(payload)
     });
     if (!response.ok) {
-      console.error(`Webhook handling error: ${response.statusText}`);
+      logger.error('Webhook handling error', { status: response.statusText });
       return { success: false, processed: false };
     }
     return await response.json();
   } catch (error) {
-    console.error('Error handling webhook:', error);
+    logger.error('Error handling webhook', error);
     return { success: false, processed: false };
   }
 };
@@ -260,7 +261,7 @@ export const checkFunctionHealth = async (): Promise<{ provider: string; healthy
     });
     return { provider: 'firebase', healthy: response.ok, latency: Date.now() - startTime };
   } catch (error) {
-    console.error('Health check failed:', error);
+    logger.error('Health check failed', error);
     return { provider: 'firebase', healthy: false };
   }
 };

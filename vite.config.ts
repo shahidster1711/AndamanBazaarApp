@@ -67,4 +67,30 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    // Raise warning threshold to 600 kB (from 500 kB default)
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          // Charts — only loaded on Dashboard; separate chunk improves caching
+          if (id.includes('recharts') || id.includes('d3-')) {
+            return 'vendor-charts';
+          }
+          // Firebase SDK — large, shared, cache-stable
+          if (id.includes('node_modules/firebase') || id.includes('node_modules/@firebase')) {
+            return 'vendor-firebase';
+          }
+          // Radix UI primitives
+          if (id.includes('@radix-ui')) {
+            return 'vendor-radix';
+          }
+          // Sentry error tracking
+          if (id.includes('@sentry')) {
+            return 'vendor-sentry';
+          }
+        },
+      },
+    },
+  },
 });

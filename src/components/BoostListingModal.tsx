@@ -77,9 +77,9 @@ export const BoostListingModal: React.FC<BoostListingModalProps> = ({
             const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
             const region = 'us-central1';
 
-            // Call the Firebase Cloud Function
+            // Call the dedicated createBoostOrder Cloud Function (HTTPS onRequest)
             const response = await fetch(
-                `https://${region}-${projectId}.cloudfunctions.net/createOrder`,
+                `https://${region}-${projectId}.cloudfunctions.net/createBoostOrder`,
                 {
                     method: 'POST',
                     headers: {

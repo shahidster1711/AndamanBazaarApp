@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { db } from '../lib/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { auth } from '../lib/firebase';
 import { CheckCircle, XCircle, ArrowLeft, Loader2 } from 'lucide-react';
 import { COPY } from '../lib/localCopy';
 
@@ -20,15 +19,35 @@ export const BoostSuccess: React.FC = () => {
 
         const checkOrderStatus = async () => {
             try {
-                const snap = await getDocs(
-                    query(collection(db, 'listingBoosts'), where('cashfreeOrderId', '==', orderId))
+                // Server-side verification — never trust client/query-param values directly
+                const user = auth.currentUser;
+                if (!user) {
+                    setStatus('failed');
+                    return;
+                }
+
+                const idToken = await user.getIdToken();
+                const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
+                const region = 'us-central1';
+
+                const response = await fetch(
+                    `https://${region}-${projectId}.cloudfunctions.net/verifyBoostPayment?orderId=${encodeURIComponent(orderId)}`,
+                    {
+                        method: 'GET',
+                        headers: { Authorization: `Bearer ${idToken}` },
+                    }
                 );
-                if (snap.empty) throw new Error('Order not found');
-                const data = snap.docs[0].data();
-                if (data.status === 'paid') {
+
+                if (!response.ok) {
+                    throw new Error('Verification request failed');
+                }
+
+                const data = await response.json();
+
+                if (data.success && data.status === 'paid') {
                     setStatus('success');
-                    setListingId(data.listingId);
-                } else if (data.status === 'failed' || data.status === 'refunded') {
+                    setListingId(data.order?.listingId ?? null);
+                } else if (data.status === 'failed' || data.status === 'expired') {
                     setStatus('failed');
                 } else {
                     setStatus('pending');

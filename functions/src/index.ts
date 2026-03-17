@@ -1,4 +1,5 @@
 import * as functions from 'firebase-functions';
+import { logger } from 'firebase-functions/v2';
 import * as admin from 'firebase-admin';
 
 // Import all function modules
@@ -7,11 +8,20 @@ import { verifyLocation, getLocationHistory, getNearbyListings } from './locatio
 import { moderateContent, batchModerateContent, getModerationHistory, getModerationStats } from './moderation';
 import { sendEmail, sendWeeklyTrendingEmails, sendEmailInternal } from './email';
 import { emailTemplates } from './emailTemplatesNode';
+import { updateListingFreshness, markInactiveListings, calculateResponseRates } from './freshness';
 
 // Import new payment functions
 import { createOrder, cleanupExpiredReservations } from './payments/createOrder';
 import { cashfreeWebhook as newCashfreeWebhook, webhookHealthCheck } from './payments/cashfreeWebhook';
 import { checkPaymentStatus, getPaymentHistory as getPaymentHistoryNew, getPaymentDetails } from './payments/checkPaymentStatus';
+import { 
+  createSeamlessOrder, 
+  processSeamlessPayment, 
+  getOrderPayments, 
+  verifyOrderStatus 
+} from './payments/seamlessPayment';
+import { createBoostOrder } from './payments/createBoostOrder';
+import { verifyBoostPayment } from './payments/verifyBoostPayment';
 
 // Export payment functions
 export {
@@ -46,6 +56,12 @@ export {
   checkPaymentStatus,
   getPaymentHistoryNew,
   getPaymentDetails,
+  createSeamlessOrder,
+  processSeamlessPayment,
+  getOrderPayments,
+  verifyOrderStatus,
+  createBoostOrder,
+  verifyBoostPayment,
 };
 
 // Health check function
@@ -65,13 +81,14 @@ export const handleWebhook = functions.https.onRequest(async (req, res) => {
   try {
     switch (webhookType) {
       case 'cashfree':
-        return await cashfreeWebhook(req, res);
+        await cashfreeWebhook(req, res);
+        break;
       default:
-        console.error('Unknown webhook type:', webhookType);
-        return res.status(400).send('Unknown webhook type');
+        logger.error('Unknown webhook type:', webhookType);
+        res.status(400).send('Unknown webhook type');
     }
   } catch (error) {
-    console.error('Error handling webhook:', error);
+    logger.error('Error handling webhook:', error);
     res.status(500).send('Webhook processing failed');
   }
 });
@@ -79,11 +96,14 @@ export const handleWebhook = functions.https.onRequest(async (req, res) => {
 // Export email functions
 export { sendEmail, sendWeeklyTrendingEmails };
 
+// Export freshness functions
+export { updateListingFreshness, markInactiveListings, calculateResponseRates };
+
 // Scheduled tasks
 export const cleanupOldData = functions.pubsub
   .schedule('every 24 hours')
   .onRun(async () => {
-    console.log('Running scheduled cleanup tasks');
+    logger.info('Running scheduled cleanup tasks');
   });
 
 // Scheduled: listing expiry reminders (runs daily)
@@ -116,7 +136,7 @@ export const sendListingExpiryReminders = functions.pubsub
       });
       await sendEmailInternal(user.email, template.subject, template.htmlContent);
     }
-    console.log(`Expiry reminders sent for ${snap.size} listings`);
+    logger.info(`Expiry reminders sent for ${snap.size} listings`);
   });
 
 // Scheduled: abandoned chat reminders (runs every 6 hours)
@@ -153,5 +173,5 @@ export const sendAbandonedChatReminders = functions.pubsub
       await sendEmailInternal(user.email, template.subject, template.htmlContent);
       await doc.ref.update({ reminderSent: true });
     }
-    console.log(`Abandoned chat reminders sent for ${snap.size} chats`);
+    logger.info(`Abandoned chat reminders sent for ${snap.size} chats`);
   });

@@ -15,6 +15,8 @@ import {
   ANDAMAN_CITIES, ITEM_AGE_OPTIONS, CONDITION_OPTIONS, CATEGORIES,
   loadContactPreferences, saveContactPreferences, DEFAULT_CONTACT_PREFERENCES,
 } from '../lib/postAdUtils';
+import { useImageUpload } from '../hooks/useImageUpload';
+import { ImageUploadPreview } from '../components/ImageUploadPreview';
 import { useToast } from '../components/Toast';
 import { safeRandomUUID } from '../lib/random';
 import { BoostListingModal } from '../components/BoostListingModal';
@@ -68,9 +70,8 @@ export const CreateListing: React.FC = () => {
   const { showToast } = useToast();
 
   // Form state
-  const [photos, setPhotos] = useState<{ file?: File; preview: string; id?: string }[]>([]);
+  const { uploads: photos, addFiles, removeUpload, retryUpload, setUploads: setPhotos } = useImageUpload({ maxFiles: 8, maxSizeMB: 10 });
   const [deletedPhotoIds, setDeletedPhotoIds] = useState<string[]>([]);
-  const [processingImages, setProcessingImages] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [category, setCategory] = useState<string | null>(preCategory);
   const [title, setTitle] = useState('');
@@ -150,7 +151,17 @@ export const CreateListing: React.FC = () => {
               setCategory(cat ? cat.name : listing.category);
             }
             if (listing.images) {
-              setPhotos(listing.images.sort((a: any, b: any) => (a.displayOrder || 0) - (b.displayOrder || 0)).map((img: any) => ({ preview: img.url, id: img.id })));
+              setPhotos(
+                listing.images
+                  .sort((a: any, b: any) => (a.displayOrder || 0) - (b.displayOrder || 0))
+                  .map((img: any) => ({
+                    id: img.id,
+                    preview: img.url,
+                    status: 'success',
+                    progress: 100,
+                    retryCount: 0,
+                  }))
+              );
             }
             setStep(1);
           }
@@ -194,46 +205,28 @@ export const CreateListing: React.FC = () => {
     setShowDraftSheet(false);
   };
 
-  const TOTAL_STEPS = 4;
+  const TOTAL_STEPS = 2;
   const nextStep = () => { window.scrollTo({ top: 0, behavior: 'smooth' }); setStep(s => s + 1); };
   const prevStep = () => { window.scrollTo({ top: 0, behavior: 'smooth' }); setStep(s => s - 1); };
   const goToStep = (s: number) => { window.scrollTo({ top: 0, behavior: 'smooth' }); setStep(s); };
 
   const handleFiles = async (selectedFiles: FileList | null) => {
     if (!selectedFiles || selectedFiles.length === 0) return;
-    const remaining = 8 - photos.length;
-    if (remaining <= 0) { showToast('Maximum 8 photos allowed', 'error'); return; }
-    setProcessingImages(true);
-    const files = Array.from(selectedFiles).slice(0, remaining);
-    const newPhotos: typeof photos = [];
-    for (const file of files) {
-      const validation = validateFileUpload(file, { maxSizeMB: 10, allowedTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/heic'] });
-      if (!validation.valid) { showToast(validation.error || 'An unknown file validation error occurred.', 'error'); continue; }
+    const fileArray = Array.from(selectedFiles);
+    addFiles(fileArray);
 
-      try {
-        const compressed = await compressImage(file);
-        const preview = URL.createObjectURL(compressed);
-        newPhotos.push({ file: compressed, preview });
-      } catch (error) {
-        console.error("Image compression failed", error);
-        showToast('Failed to process image', 'error');
-      }
-    }
-    setPhotos(prev => [...prev, ...newPhotos]);
-    setProcessingImages(false);
-
-    const firstFile = newPhotos[0]?.file;
-    if (photos.length === 0 && firstFile && !aiSuggestion) {
-      getAiSuggestion(firstFile);
+    // AI suggestion for first image
+    if (photos.length === 0 && fileArray[0] && !aiSuggestion) {
+      getAiSuggestion(fileArray[0]);
     }
   };
 
-  const removePhoto = (index: number, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const photo = photos[index];
-    if (photo.id) setDeletedPhotoIds(prev => [...prev, photo.id!]);
-    if (photo.preview.startsWith('blob:')) URL.revokeObjectURL(photo.preview);
-    setPhotos(prev => prev.filter((_, i) => i !== index));
+  const handleRemovePhoto = (id: string) => {
+    const photo = photos.find(p => p.id === id);
+    if (photo?.id && !photo.file) { // If it's an existing server-side image
+      setDeletedPhotoIds(prev => [...prev, photo.id]);
+    }
+    removeUpload(id);
   };
 
   const getAiSuggestion = async (imageFile: File) => {
@@ -455,11 +448,7 @@ export const CreateListing: React.FC = () => {
         {step <= TOTAL_STEPS && (
           <div className="h-1.5 bg-warm-100">
             <div
-              className={`h-full bg-teal-gradient transition-all duration-500 ${step === 1 ? 'w-1/4' :
-                step === 2 ? 'w-2/4' :
-                  step === 3 ? 'w-3/4' :
-                    'w-full'
-                }`}
+              className={`h-full bg-teal-gradient transition-all duration-500 ${step === 1 ? 'w-1/2' : 'w-full'}`}
             />
           </div>
         )}
@@ -469,17 +458,11 @@ export const CreateListing: React.FC = () => {
             <div className="space-y-6 animate-fade-in">
               <StepHeader title={editId ? 'Update Photos' : 'Add Photos'} stepLabel={`Step 1 of ${TOTAL_STEPS} — Photos`} />
               <div
-                onClick={() => !processingImages && fileInputRef.current?.click()}
-                className={`min-h-[240px] border-2 border-dashed border-warm-200 rounded-3xl flex flex-col items-center justify-center bg-warm-50 hover:bg-teal-50 hover:border-teal-300 transition-all cursor-pointer p-6 group ${processingImages ? 'opacity-60 cursor-wait' : ''
-                  }`}
+                onClick={() => photos.length < 8 && fileInputRef.current?.click()}
+                className={`min-h-[240px] border-2 border-dashed border-warm-200 rounded-3xl flex flex-col items-center justify-center bg-warm-50 transition-all p-6 group ${photos.length < 8 ? 'hover:bg-teal-50 hover:border-teal-300 cursor-pointer' : 'cursor-default'}`}
               >
-                <input type="file" multiple accept="image/*" hidden ref={fileInputRef} onChange={e => handleFiles(e.target.files)} disabled={processingImages} />
-                {processingImages ? (
-                  <div className="flex flex-col items-center gap-2">
-                    <Loader2 size={36} className="text-teal-500 animate-spin" />
-                    <span className="font-bold text-midnight-700 text-sm">Optimizing Images…</span>
-                  </div>
-                ) : photos.length === 0 ? (
+                <input type="file" multiple accept="image/*" hidden ref={fileInputRef} onChange={e => handleFiles(e.target.files)} />
+                {photos.length === 0 ? (
                   <>
                     <Camera size={48} className="text-warm-300 mb-3 group-hover:text-teal-400 transition-colors" />
                     <span className="font-heading font-bold text-midnight-700 text-lg">{COPY.CREATE_LISTING.PHOTO_HINT}</span>
@@ -487,23 +470,17 @@ export const CreateListing: React.FC = () => {
                   </>
                 ) : (
                   <div className="flex gap-3 overflow-x-auto w-full p-1 hide-scrollbar">
-                    {photos.map((p, i) => (
-                      <div key={i} className="relative w-28 h-28 rounded-2xl overflow-hidden flex-shrink-0 shadow-card border-2 border-white">
-                        <img src={p.preview} className="w-full h-full object-cover" alt={`Photo ${i + 1}`} />
-                        {i === 0 && (
-                          <div className="absolute top-1.5 left-1.5 bg-teal-600 text-white rounded-full px-2 py-0.5 text-[9px] font-black uppercase">Cover</div>
-                        )}
-                        <button
-                          onClick={e => removePhoto(i, e)}
-                          aria-label="Remove photo"
-                          className="absolute top-1.5 right-1.5 bg-coral-500/90 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs shadow-coral-glow hover:bg-coral-600 transition-colors"
-                        >
-                          <X size={12} />
-                        </button>
-                      </div>
+                    {photos.map((item, i) => (
+                      <ImageUploadPreview
+                        key={item.id}
+                        item={item}
+                        index={i}
+                        onRemove={handleRemovePhoto}
+                        onRetry={retryUpload}
+                      />
                     ))}
                     {photos.length < 8 && (
-                      <div className="w-28 h-28 flex items-center justify-center bg-warm-100 rounded-2xl border-2 border-dashed border-warm-200 text-warm-300 flex-shrink-0">
+                      <div className="w-28 h-28 flex items-center justify-center bg-warm-100 rounded-2xl border-2 border-dashed border-warm-200 text-warm-300 flex-shrink-0 group-hover:border-teal-300 group-hover:text-teal-400 transition-colors">
                         <PlusCircle size={28} />
                       </div>
                     )}
@@ -517,7 +494,70 @@ export const CreateListing: React.FC = () => {
                   <span className="text-teal-700 text-sm font-bold">AI is analyzing your photo…</span>
                 </div>
               )}
-              <ContinueButton onClick={nextStep} disabled={photos.length === 0 || processingImages} />
+              {/* Basic Details Section */}
+              <div className="space-y-6 pt-6 border-t border-warm-100">
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <label className="text-xs font-bold text-warm-400 uppercase tracking-widest">Title</label>
+                    <span className="text-xs font-medium text-warm-300">{title.length}/100</span>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="e.g. Fresh Snapper from Havelock"
+                    value={title}
+                    onChange={e => setTitle(e.target.value)}
+                    maxLength={100}
+                    className="input-island"
+                  />
+                  {aiSuggestion?.suggested_title && title !== aiSuggestion.suggested_title && (
+                    <button onClick={() => setTitle(aiSuggestion.suggested_title!)} className="flex items-center gap-2 px-4 py-2 bg-teal-50 rounded-full text-teal-700 text-sm font-bold border border-teal-100 hover:bg-teal-100 transition-colors">
+                      <Sparkles size={13} className="text-teal-500" /> Use AI Suggestion
+                    </button>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-warm-400 uppercase tracking-widest">Category</label>
+                  <select
+                    value={category || ''}
+                    onChange={e => setCategory(e.target.value)}
+                    className="input-island"
+                  >
+                    <option value="" disabled>Select a category</option>
+                    {CATEGORIES.map(cat => (
+                      <option key={cat.id} value={cat.name}>{cat.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-warm-400 uppercase tracking-widest">Price (₹)</label>
+                  <input
+                    type="number"
+                    placeholder={COPY.CREATE_LISTING.PRICE_PLACEHOLDER}
+                    value={price}
+                    onChange={e => setPrice(e.target.value)}
+                    className="w-full p-4 bg-white rounded-2xl border border-warm-200 focus:border-teal-400 focus:ring-4 focus:ring-teal-100 outline-none font-heading font-black text-2xl text-midnight-700 transition-all"
+                  />
+                  {aiSuggestion?.estimated_price_range && (
+                    <p className="text-xs font-bold text-teal-600 px-1">
+                      💡 Market Range: ₹{aiSuggestion.estimated_price_range.low}–₹{aiSuggestion.estimated_price_range.high}
+                    </p>
+                  )}
+                  <div className="flex items-center justify-between px-1 pt-2">
+                    <label htmlFor="isNegotiable" className="text-sm font-bold text-midnight-700">Negotiable</label>
+                    <input id="isNegotiable" title="Toggle negotiability" type="checkbox" role="switch" checked={isNegotiable} onChange={e => setIsNegotiable(e.target.checked)} className="toggle toggle-accent" />
+                  </div>
+                  {isNegotiable && (
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-warm-400 uppercase tracking-widest">Min Price (Optional)</label>
+                      <input type="number" aria-label="Minimum accepted price" placeholder="Hidden from buyers" value={minPrice} onChange={e => setMinPrice(e.target.value)} className="input-island text-sm" />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <ContinueButton onClick={nextStep} disabled={photos.length === 0 || !title || !category || !price || photos.some(p => p.status === 'compressing' || p.status === 'error')} />
             </div>
           )}
 
@@ -750,93 +790,6 @@ export const CreateListing: React.FC = () => {
             </div>
           )}
 
-          {step === 4 && (
-            <div className="space-y-6 animate-fade-in">
-              <StepHeader title="Review & Publish" stepLabel={`Step 4 of ${TOTAL_STEPS} — Final Review`} />
-
-              {/* Preview card */}
-              <div className="p-5 bg-warm-50 rounded-3xl border border-warm-200 flex items-center gap-5 text-left shadow-card">
-                {photos[0] && <img src={photos[0].preview} className="w-24 h-24 rounded-2xl object-cover shadow-card border-2 border-white flex-shrink-0" alt="Cover" />}
-                <div className="flex-1 overflow-hidden">
-                  <p className="text-[10px] font-bold text-teal-600 uppercase tracking-widest mb-1">{category}</p>
-                  <p className="font-heading font-black text-midnight-700 truncate text-xl">{title}</p>
-                  <p className="text-2xl font-heading font-black text-teal-600 mt-1">₹{parseFloat(price || '0').toLocaleString('en-IN')}</p>
-                  <div className="flex flex-wrap gap-1.5 mt-2">
-                    <span className="text-[9px] font-bold bg-warm-200 text-midnight-700 px-2.5 py-1 rounded-full uppercase">{condition.replace('_', ' ')}</span>
-                    {isNegotiable && (
-                      <span className="text-[9px] font-bold bg-teal-50 text-teal-700 px-2.5 py-1 rounded-full border border-teal-100 uppercase">
-                        Negotiable{minPrice && ` (Min: ₹${parseInt(minPrice)})`}
-                      </span>
-                    )}
-                    {itemAge && (
-                      <span className="text-[9px] font-bold bg-warm-200 text-midnight-700 px-2.5 py-1 rounded-full uppercase">
-                        {ITEM_AGE_OPTIONS.find(o => o.value === itemAge)?.label}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                {accessories.length > 0 && (
-                  <div className="p-4 bg-warm-50 rounded-2xl border border-warm-200">
-                    <p className="text-[10px] font-bold text-warm-400 uppercase tracking-widest mb-2">Accessories</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {accessories.map((acc, i) => (
-                        <span key={i} className="px-2.5 py-1 bg-teal-50 text-teal-700 border border-teal-100 rounded-full text-[10px] font-bold">{acc}</span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                <div className="flex justify-between items-center p-4 bg-warm-50 rounded-xl border border-warm-200">
-                  <span className="text-sm font-medium text-midnight-700">Photos</span>
-                  <button onClick={() => goToStep(1)} className="text-teal-600 text-sm font-bold flex items-center gap-1">{photos.length} photos ✏️</button>
-                </div>
-                <div className="flex justify-between items-center p-4 bg-warm-50 rounded-xl border border-warm-200">
-                  <span className="text-sm font-medium text-midnight-700">Location</span>
-                  <button onClick={() => goToStep(3)} className="text-teal-600 text-sm font-bold flex items-center gap-1">{city}{area ? `, ${area}` : ''} ✏️</button>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                {!isVerified && (
-                  <button
-                    onClick={handleVerifyLocation}
-                    disabled={isVerifying}
-                    className="w-full p-5 bg-teal-50 border-2 border-teal-200 rounded-3xl flex items-center justify-between group hover:bg-teal-100 transition-colors"
-                  >
-                    <div className="flex items-center gap-4">
-                      <MapPin size={24} className="text-teal-600" />
-                      <div className="text-left">
-                        <p className="font-bold text-teal-800 text-sm">Verify Island Residency</p>
-                        <p className="text-xs text-teal-600/70">Boost trust with a verified ✓ badge</p>
-                      </div>
-                    </div>
-                    {isVerifying ? <Loader2 className="animate-spin h-5 w-5 text-teal-500" /> : <ChevronRight size={20} className="text-teal-500" />}
-                  </button>
-                )}
-                {isVerified && (
-                  <div className="p-4 bg-emerald-50 text-emerald-700 rounded-3xl border border-emerald-200 flex items-center justify-center gap-3 font-bold text-sm">
-                    <Check size={20} /> Island Verified Resident
-                  </div>
-                )}
-              </div>
-
-              <button
-                onClick={handleSave}
-                disabled={loading}
-                className="btn-primary w-full py-5 text-xl disabled:opacity-50"
-              >
-                {loading ? <><Loader2 className="animate-spin" size={22} /> Please Wait...</> : (editId ? '🖼️ Update Ad Now' : '🏝️ Publish to Island')}
-              </button>
-              {!isVerified && (
-                <p className="text-xs text-warm-400 font-medium flex items-center justify-center gap-1">
-                  <AlertCircle size={11} /> Unverified accounts may have limited visibility.
-                </p>
-              )}
-              <BackButton onClick={prevStep} />
-            </div>
-          )}
 
           {step === 5 && (
             <div className="text-center py-12 space-y-6 animate-fade-in">

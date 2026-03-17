@@ -1,17 +1,34 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { getListing, subscribeToListing } from '../lib/database';
-import { db } from '../lib/firebase';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { 
+  Heart, 
+  MessageSquare, 
+  MapPin, 
+  Clock, 
+  Shield, 
+  ChevronLeft, 
+  Share2, 
+  Flag,
+  Rocket,
+  Facebook,
+  MessageCircle,
+  Copy,
+  Loader2,
+  AlertCircle,
+  Star
+} from 'lucide-react';
+import { auth, db } from '../lib/firebase';
 import { collection, doc, getDoc, getDocs, addDoc, deleteDoc, query, where, serverTimestamp } from 'firebase/firestore';
 import { getCurrentUserId } from '../lib/auth';
+import { getListing, subscribeToListing } from '../lib/database';
 import { ReportModal } from '../components/ReportModal';
 import { TrustBadge } from '../components/TrustBadge';
+import { TrustCard } from '../components/TrustCard';
 import { Profile } from '../types';
 import { Listing } from '../lib/database';
-import { MapPin, Shield, Share2, MessageSquare, Heart, ChevronLeft, AlertCircle, Edit3, Loader2, Tag, Clock, ShieldCheck, Package, Phone, MessageCircle, BadgeCheck, Rocket, Star } from 'lucide-react';
 import { useToast } from '../components/Toast';
-import { BoostListingModal } from '../components/BoostListingModal';
 import { COPY } from '../lib/localCopy';
+import { BoostListingModal } from '../components/BoostListingModal';
 import { Seo } from '../components/Seo';
 
 export const ListingDetail: React.FC = () => {
@@ -28,6 +45,15 @@ export const ListingDetail: React.FC = () => {
   const [similarListings, setSimilarListings] = useState<any[]>([]);
   const [loadingSimilar, setLoadingSimilar] = useState(false);
   const { showToast } = useToast();
+
+  const shareLink = window.location.href;
+  const whatsappText = listing ? COPY.SHARING.WHATSAPP_TEMPLATE(listing.title, listing.price, listing.city, shareLink) : '';
+  const fbText = listing ? COPY.SHARING.FB_GROUP_TEMPLATE(listing.title, listing.price, listing.city, shareLink) : '';
+
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    showToast(`${label} copied!`, 'success');
+  };
 
   const fetchListingDetails = async () => {
     try {
@@ -190,112 +216,64 @@ export const ListingDetail: React.FC = () => {
   return (
     <>
       <Seo 
-        title={listing.title}
+        title={`${listing.title} | AndamanBazaar`}
         description={listing.description}
       />
       
-      <div className="min-h-screen bg-gray-50">
-        {/* Header */}
-        <div className="bg-white shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16">
-              <button
-                onClick={() => navigate(-1)}
-                className="flex items-center text-gray-600 hover:text-gray-900"
-              >
-                <ChevronLeft className="w-5 h-5 mr-1" />
-                Back
+      <div className="min-h-screen bg-warm-50 pb-20">
+        {/* Navigation Header */}
+        <div className="bg-white border-b border-warm-200 sticky top-0 z-30">
+          <div className="app-container">
+            <div className="h-16 flex items-center justify-between">
+              <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-warm-100 rounded-full transition-colors">
+                <ChevronLeft size={24} />
               </button>
-              
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={shareListing}
-                  className="p-2 text-gray-600 hover:text-gray-900"
-                >
-                  <Share2 className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={toggleFavorite}
-                  className="p-2 text-gray-600 hover:text-red-600"
-                >
-                  <Heart className={`w-5 h-5 ${isFavorited ? 'fill-red-600 text-red-600' : ''}`} />
-                </button>
-                <button
+              <div className="flex items-center gap-2">
+                <button 
                   onClick={() => setIsReportModalOpen(true)}
-                  className="p-2 text-gray-600 hover:text-gray-900"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-black uppercase tracking-widest text-warm-400 hover:text-red-600 transition-colors"
                 >
-                  <AlertCircle className="w-5 h-5" />
+                  <Flag size={14} /> Report
                 </button>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="app-container pt-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Images and Details */}
-            <div className="lg:col-span-2">
-              {/* Image Gallery */}
-              <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
-                <div className="aspect-w-16 aspect-h-9 bg-gray-200">
-                  {listing.images.length > 0 ? (
-                    <img
-                      src={listing.images[activeImage].url}
-                      alt={listing.images[activeImage].alt}
-                      className="w-full h-96 object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-96 flex items-center justify-center">
-                      <Package className="w-16 h-16 text-gray-400" />
-                    </div>
-                  )}
-                </div>
-                
-                {listing.images.length > 1 && (
-                  <div className="flex space-x-2 p-4 overflow-x-auto">
-                    {listing.images.map((image, index) => (
-                      <button
-                        key={image.id}
-                        onClick={() => setActiveImage(index)}
-                        className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 ${
-                          activeImage === index ? 'border-blue-600' : 'border-gray-200'
-                        }`}
-                      >
-                        <img
-                          src={image.url}
-                          alt={image.alt}
-                          className="w-full h-full object-cover"
-                        />
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Listing Details */}
-              <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h1 className="text-2xl font-bold text-gray-900 mb-2">{listing.title}</h1>
-                    <div className="flex items-center space-x-4 text-sm text-gray-600">
-                      <span className="flex items-center">
-                        <MapPin className="w-4 h-4 mr-1" />
-                        {listing.city}
-                      </span>
-                      <span className="flex items-center">
-                        <Clock className="w-4 h-4 mr-1" />
-                        {listing.createdAt.toDate().toLocaleDateString()}
-                      </span>
-                    </div>
+            {/* Left Column: Images & Content */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Product Info Card */}
+              <div className="bg-white rounded-3xl p-6 md:p-8 space-y-6 shadow-sm border border-warm-200">
+                <div className="space-y-4">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {listing.is_official && <TrustBadge level="official" size="md" />}
+                    <span className="bg-teal-50 text-teal-700 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-teal-100">
+                      Only Andaman Sellers Allowed
+                    </span>
                   </div>
                   
-                  <div className="text-right">
-                    <div className="text-3xl font-bold text-gray-900">
-                      ₹{listing.price.toLocaleString('en-IN')}
+                  <div className="flex justify-between items-start gap-4">
+                    <h1 className="text-3xl md:text-4xl font-heading font-black text-midnight-700 leading-tight">
+                      {listing.title}
+                    </h1>
+                    <div className="text-right">
+                      <p className="text-3xl font-black text-teal-600">₹{listing.price.toLocaleString()}</p>
+                      {listing.is_negotiable && (
+                        <p className="text-[10px] font-bold text-warm-400 uppercase tracking-widest mt-1">Price Negotiable</p>
+                      )}
                     </div>
-                    <div className="text-sm text-gray-600">
-                      {listing.status === 'active' ? 'Available' : listing.status}
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-y-2 gap-x-6 text-warm-500">
+                    <div className="flex items-center gap-2 font-bold text-sm">
+                      <MapPin size={18} className="text-teal-600" />
+                      {listing.city}{listing.area ? `, ${listing.area}` : ''}
+                    </div>
+                    <div className="flex items-center gap-2 font-bold text-sm">
+                      <Clock size={18} className="text-teal-600" />
+                      {listing.createdAt.toDate().toLocaleDateString()}
                     </div>
                   </div>
                 </div>
@@ -318,60 +296,106 @@ export const ListingDetail: React.FC = () => {
                 </div>
               </div>
 
-              {/* Seller Info */}
-              {seller && (
-                <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900">Seller Information</h3>
-                    <TrustBadge level={seller.trust_level || 'newbie'} />
+              {/* Share Locally Section */}
+              <div className="bg-white rounded-3xl p-6 md:p-8 space-y-6 shadow-sm border border-warm-200">
+                <div className="flex items-center gap-3">
+                  <div className="bg-teal-50 p-3 rounded-2xl">
+                    <Share2 className="text-teal-600 w-6 h-6" />
                   </div>
-                  
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
-                      {seller.profile_photo_url ? (
-                        <img
-                          src={seller.profile_photo_url}
-                          alt={seller.name}
-                          className="w-full h-full rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gray-300 rounded-full flex items-center justify-center">
-                          <span className="text-gray-500 text-lg">
-                            {seller.name?.[0]?.toUpperCase() || 'U'}
-                          </span>
-                        </div>
-                      )}
+                  <div>
+                    <h3 className="text-lg font-black text-midnight-700 uppercase tracking-tight">Share Locally</h3>
+                    <p className="text-xs font-bold text-warm-400 uppercase tracking-widest">Post this deal to your groups</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* WhatsApp Share */}
+                  <div className="p-5 rounded-2xl bg-emerald-50 border border-emerald-100 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-emerald-700">
+                        <MessageCircle size={20} />
+                        <span className="font-black text-xs uppercase tracking-widest">WhatsApp Feed</span>
+                      </div>
+                      <button 
+                        onClick={() => copyToClipboard(whatsappText, 'WhatsApp template')}
+                        className="text-emerald-600 hover:text-emerald-800 transition-colors"
+                        title="Copy template"
+                      >
+                        <Copy size={18} />
+                      </button>
                     </div>
-                    
-                    <div className="flex-1">
-                      <h4 className="font-medium text-gray-900">{seller.name || 'Anonymous'}</h4>
-                      <p className="text-sm text-gray-600">
-                        {seller.total_listings || 0} listings • {seller.successful_sales || 0} sales
-                      </p>
-                      {seller.is_location_verified && (
-                        <div className="flex items-center text-sm text-green-600 mt-1">
-                          <ShieldCheck className="w-3 h-3 mr-1" />
-                          Location Verified
-                        </div>
-                      )}
-                    </div>
-                    
-                    <button
-                      onClick={contactSeller}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center"
+                    <p className="text-[11px] text-emerald-800/70 font-medium line-clamp-3 italic">
+                      "{whatsappText.substring(0, 100)}..."
+                    </p>
+                    <a 
+                      href={`https://wa.me/?text=${encodeURIComponent(whatsappText)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full py-3 bg-emerald-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20"
                     >
-                      <MessageCircle className="w-4 h-4 mr-2" />
-                      Contact
+                      Share to WhatsApp
+                    </a>
+                  </div>
+
+                  {/* Facebook Share */}
+                  <div className="p-5 rounded-2xl bg-blue-50 border border-blue-100 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-blue-700">
+                        <Facebook size={20} />
+                        <span className="font-black text-xs uppercase tracking-widest">FB Group Post</span>
+                      </div>
+                      <button 
+                        onClick={() => copyToClipboard(fbText, 'FB template')}
+                        className="text-blue-600 hover:text-blue-800 transition-colors"
+                        title="Copy template"
+                      >
+                        <Copy size={18} />
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-blue-800/70 font-medium line-clamp-3 italic">
+                      "{fbText.substring(0, 100)}..."
+                    </p>
+                    <button 
+                      onClick={() => copyToClipboard(fbText, 'FB post text')}
+                      className="w-full py-3 bg-blue-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20"
+                    >
+                      Copy for FB Group
                     </button>
                   </div>
                 </div>
-              )}
+              </div>
             </div>
 
-            {/* Sidebar */}
-            <div className="lg:col-span-1">
+            {/* Right Column: Seller & Actions */}
+            <div className="space-y-6">
+              {/* Floating Price Card for Mobile */}
+              <div className="bg-white rounded-3xl p-6 shadow-xl border border-warm-200 space-y-4 sticky top-24">
+                <div className="flex flex-col gap-1">
+                  <p className="text-sm font-medium text-gray-500">Listing Price</p>
+                  <p className="text-4xl font-extrabold text-teal-600">
+                    ₹{listing.price.toLocaleString()}
+                  </p>
+                </div>
+
+                <button
+                  onClick={contactSeller}
+                  className="w-full px-4 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 flex items-center justify-center shadow-lg active:scale-95 transition-all"
+                >
+                  <MessageCircle className="w-5 h-5 mr-2" />
+                  Chat with Seller
+                </button>
+              </div>
+
+              {/* Seller Info */}
+              {seller && (
+                <div className="bg-white rounded-3xl p-6 shadow-sm border border-warm-200">
+                  <h3 className="text-lg font-bold text-midnight-700 mb-3 px-1">Meet the Seller</h3>
+                  <TrustCard seller={seller} />
+                </div>
+              )}
+
               {/* Action Buttons */}
-              <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+              <div className="bg-white rounded-3xl p-6 shadow-sm border border-warm-200">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Actions</h3>
                 
                 <div className="space-y-3">
