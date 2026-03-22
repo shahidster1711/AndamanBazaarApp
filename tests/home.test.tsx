@@ -14,10 +14,11 @@ describe('HomeView', () => {
       </HelmetProvider>
     );
     await waitFor(() => {
-      const heading = screen.getByText(/Buy & Sell/i);
-      const subheading = screen.getByText(/in Paradise\./i);
+      const heading = screen.getByRole('heading', {
+        level: 1,
+        name: /Buy & Sell in Paradise\./i,
+      });
       expect(heading).toBeInTheDocument();
-      expect(subheading).toBeInTheDocument();
     });
   });
 });

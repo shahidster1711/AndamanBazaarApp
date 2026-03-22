@@ -40,7 +40,7 @@ describe('Webhook Signature Validation', () => {
 
   beforeEach(() => {
     // Reset environment variables
-    delete process.env.CASHFREE_WEBHOOK_SECRET;
+    delete process.env.CASHFREE_SECRET_KEY;
   });
 
   describe('verifyWebhookSignature', () => {
@@ -63,7 +63,7 @@ describe('Webhook Signature Validation', () => {
     });
 
     it('should use environment secret when not provided', () => {
-      process.env.CASHFREE_WEBHOOK_SECRET = testSecretKey;
+      process.env.CASHFREE_SECRET_KEY = testSecretKey;
       
       const crypto = require('crypto');
       const correctSignature = crypto
