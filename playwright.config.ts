@@ -13,12 +13,19 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: 'html',
+  reporter: [
+    'html',
+    ['json', { outputFile: 'test-results/results.json' }],
+    ['junit', { outputFile: 'test-results/results.xml' }]
+  ],
   use: {
     baseURL: 'http://localhost:5173',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
+    // Enhanced performance monitoring
+    actionTimeout: 10000,
+    navigationTimeout: 30000,
   },
 
   expect: {
@@ -50,11 +57,33 @@ export default defineConfig({
       name: 'Mobile Safari',
       use: { ...devices['iPhone 12'] },
     },
+    // Add tablet testing
+    {
+      name: 'iPad',
+      use: { ...devices['iPad Pro'] },
+    },
+    // Add performance testing project
+    {
+      name: 'performance',
+      testMatch: '**/performance/**/*.spec.ts',
+      use: { 
+        ...devices['Desktop Chrome'],
+        // Collect performance metrics
+        launchOptions: {
+          args: ['--disable-web-security', '--disable-features=VizDisplayCompositor']
+        }
+      },
+    },
   ],
 
   webServer: {
     command: 'VITE_E2E_BYPASS_AUTH=true npm run dev',
     url: 'http://localhost:5173',
     reuseExistingServer: false,
+    timeout: 120000,
   },
+
+  // Global setup and teardown
+  globalSetup: require.resolve('./tests/e2e/global-setup.ts'),
+  globalTeardown: require.resolve('./tests/e2e/global-teardown.ts'),
 })

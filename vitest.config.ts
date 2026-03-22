@@ -53,16 +53,18 @@ export default defineConfig({
         'src/types/**',
       ],
       thresholds: {
-        lines: 30,
-        functions: 20,
-        branches: 25,
-        statements: 30,
+        lines: 80,
+        functions: 75,
+        branches: 70,
+        statements: 80,
       },
     },
   },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@tests': path.resolve(__dirname, './tests'),
+      '@utils': path.resolve(__dirname, './src/utils'),
     },
   },
 })
