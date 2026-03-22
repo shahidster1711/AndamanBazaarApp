@@ -8,8 +8,8 @@ AndamanBazaar is a full-stack eCommerce marketplace purpose-built for the Andama
 
 ## 📑 Table of Contents
 
-- [Tech Stack](#-tech-stack)
-- [Features Implemented](#-features-implemented)
+- [Tech Stack](#tech-stack)
+- [Features Implemented](#features-implemented)
   - [Authentication & User Profiles](#1-authentication--user-profiles)
   - [Marketplace Listings](#2-marketplace-listings)
   - [Search, Filters & Discovery](#3-search-filters--discovery)
@@ -29,19 +29,19 @@ AndamanBazaar is a full-stack eCommerce marketplace purpose-built for the Andama
   - [SEO & Static Pages](#17-seo--static-pages)
   - [Offline Support](#18-offline-support)
   - [Scheduled Cloud Functions](#19-scheduled-cloud-functions)
-- [Project Structure](#-project-structure)
-- [Quick Start](#-quick-start)
-- [Environment Variables](#-environment-variables)
-- [Backend Direction](#-backend-direction)
-- [Testing](#-testing)
-- [Deployment](#-deployment)
+- [Project Structure](#project-structure)
+- [Quick Start](#quick-start)
+- [Environment Variables](#environment-variables)
+- [Backend Direction](#backend-direction)
+- [Testing](#testing)
+- [Deployment](#deployment)
 
 ---
 
 ## 🛠️ Tech Stack
 
 | Layer | Technology |
-|---|---|
+| --- | --- |
 | **Frontend** | React 18, TypeScript, Vite |
 | **Styling** | Tailwind CSS, DaisyUI, Radix UI primitives |
 | **State / Data** | React Context, Firestore real-time listeners |
@@ -337,7 +337,7 @@ AndamanBazaar is a full-stack eCommerce marketplace purpose-built for the Andama
 ### 19. Scheduled Cloud Functions
 
 | Function | Schedule | Description |
-|---|---|---|
+| --- | --- | --- |
 | `expireBoosts` | Periodic | Deactivates boosts that have passed their expiry date |
 | `cleanupExpiredReservations` | Periodic | Removes stale payment reservations |
 | `sendListingExpiryReminders` | Daily (IST) | Emails sellers whose listings expire within 24 hours |
@@ -352,7 +352,7 @@ AndamanBazaar is a full-stack eCommerce marketplace purpose-built for the Andama
 
 ## 📁 Project Structure
 
-```
+```text
 andaman-bazaar/
 ├── src/
 │   ├── App.tsx                 # Root app with routing & auth

@@ -51,6 +51,7 @@ export const ListingDetail: React.FC = () => {
 
   const shareLink = window.location.href;
   const fbText = listing ? COPY.SHARING.FB_GROUP_TEMPLATE(listing.title, listing.price, listing.city, shareLink) : '';
+  const whatsappText = listing ? `${listing.title} — ₹${listing.price.toLocaleString('en-IN')}\n${shareLink}` : '';
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);

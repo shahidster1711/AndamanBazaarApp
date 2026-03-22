@@ -659,6 +659,7 @@ export const Home: React.FC = () => {
               );
             })}
           </div>
+        </div>
       </section>
 
       {/* ── AI TRIP PLANNER PROMO ── */}

@@ -587,7 +587,7 @@ export const Profile: React.FC = () => {
                       <button onClick={e => item.id && handleBumpListing(item.id, e)} disabled={item.status !== 'active'} className="py-2 px-2 rounded-lg border border-teal-200 text-teal-600 font-medium text-xs hover:bg-teal-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1">
                         <ArrowUpDown size={12} /> Bump
                       </button>
-                      <button onClick={e => item.id && handleMarkAsSold(item.id, e)} disabled={item.status === 'sold'} className="py-2 px-2 rounded-lg border border-warm-200 text-warm-600 font-medium text-xs hover:bg-warm-50 transition-colors disabled:opacity-50">
+                      <button onClick={e => item.id && handleMarkAsSold(item.id, e)} disabled={item.status !== 'active'} className="py-2 px-2 rounded-lg border border-warm-200 text-warm-600 font-medium text-xs hover:bg-warm-50 transition-colors disabled:opacity-50">
                         Mark Sold
                       </button>
                       <button onClick={() => item.id && setBoostingListing({ id: item.id, title: item.title })} disabled={item.status !== 'active'} className="py-2 px-2 rounded-lg bg-coral-500 text-white font-semibold text-xs shadow-md shadow-coral-500/20 hover:opacity-90 transition-opacity flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-warm-300 disabled:shadow-none">

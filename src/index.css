@@ -1,8 +1,7 @@
+/* stylelint-disable at-rule-no-unknown */
 @tailwind base;
 @tailwind components;
-@tailwind utilities;
-
-/* ============================================
+@tailwind utilities;/* ============================================
    CSS CUSTOM PROPERTIES — ISLAND DESIGN TOKENS
    Refined from Stitch designs: Ocean + Coral palette
    ============================================ */
