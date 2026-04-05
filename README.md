@@ -14,10 +14,10 @@ AndamanBazaar is a full-stack eCommerce marketplace purpose-built for the Andama
   - [Marketplace Listings](#2-marketplace-listings)
   - [Search, Filters & Discovery](#3-search-filters--discovery)
   - [Real-Time Chat](#4-real-time-chat)
-  - [Payments & Listing Boosts](#5-payments--listing-boosts-cashfree)
+  - [Payments & Listing Boosts](#5-payments--listing-boosts-cashfree-payment-gateway-is-implemented-on-the-backend)
   - [Trust & Verification System](#6-trust--verification-system)
   - [AI Content Moderation](#7-ai-content-moderation)
-  - [Trip Planner (AI)](#8-trip-planner-ai-powered)
+  - [Trip Planner](#trip-planner)
   - [Email & Notification System](#9-email--notification-system)
   - [Seller Profiles & Dashboard](#10-seller-profiles--dashboard)
   - [Admin Panel](#11-admin-panel)
@@ -38,7 +38,7 @@ AndamanBazaar is a full-stack eCommerce marketplace purpose-built for the Andama
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Layer | Technology |
 | --- | --- |
@@ -58,7 +58,7 @@ AndamanBazaar is a full-stack eCommerce marketplace purpose-built for the Andama
 
 ---
 
-## ✅ Features Implemented
+## Features Implemented
 
 ### 1. Authentication & User Profiles
 
@@ -183,7 +183,7 @@ AndamanBazaar is a full-stack eCommerce marketplace purpose-built for the Andama
 
 ---
 
-### 8. Trip Planner (AI-Powered)
+### Trip Planner
 
 **Page:** `TripPlanner.tsx`
 **Cloud Function:** `generateItinerary`
@@ -350,7 +350,7 @@ AndamanBazaar is a full-stack eCommerce marketplace purpose-built for the Andama
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```text
 andaman-bazaar/
@@ -388,7 +388,7 @@ andaman-bazaar/
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ```bash
 # 1. Install dependencies
@@ -407,7 +407,7 @@ npm run dev
 
 ---
 
-## 🔑 Environment Variables
+## Environment Variables
 
 ```env
 # Firebase Client Config
@@ -435,7 +435,7 @@ VITE_FIREBASE_AI_SUGGEST_FUNCTION=
 
 ---
 
-## ☁️ Backend Direction
+## Backend Direction
 
 All new backend work uses **Firebase / GCP services only**:
 
@@ -449,7 +449,7 @@ Security constraints are documented in `AGENTS.md`.
 
 ---
 
-## 🧪 Testing
+## Testing
 
 ```bash
 npm run test           # Run all Vitest tests
@@ -462,7 +462,7 @@ npm run test:all       # Unit + Integration + Security + A11y
 
 ---
 
-## 🚢 Deployment
+## Deployment
 
 ```bash
 # Build and deploy to Firebase
@@ -471,6 +471,6 @@ npm run firebase-deploy
 
 See `DEPLOYMENT.md` and `DEPLOYMENT_CHECKLIST.md` for the full deployment runbook.
 
----
+## Project Metadata
 
-*Last updated: March 22, 2026*
+Last updated: March 23, 2026.

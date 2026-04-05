@@ -99,7 +99,6 @@ export const Listings: React.FC = () => {
     }
 
     try {
-<<<<<<< HEAD
       const q = searchQuery.toLowerCase();
       
       const constraints: any[] = [where('status', '==', 'active')];
@@ -114,22 +113,6 @@ export const Listings: React.FC = () => {
       
       if (showVerifiedOnly) constraints.push(where('isLocationVerified', '==', true));
       if (showUrgentOnly) constraints.push(where('is_urgent', '==', true));
-=======
-      const q = searchParams.get('q')?.toLowerCase();
-      const cat = searchParams.get('category');
-      const area = searchParams.get('area');
-
-      const verified = searchParams.get('verified');
-      const condition = searchParams.get('condition');
-      const dateRange = searchParams.get('dateRange');
-
-      // Build Firestore query constraints
-      const constraints: any[] = [where('status', '==', 'active')];
-      if (cat && cat !== 'all') constraints.push(where('categoryId', '==', cat));
-      if (area) constraints.push(where('city', '==', area));
-      if (verified === 'true') constraints.push(where('isLocationVerified', '==', true));
-      if (condition) constraints.push(where('condition', '==', condition));
->>>>>>> 9732085 (Migrate project: Firebase to Google AI Studio, update data migration, auth, storage, serverless logic, security rules, and sync all test and code changes)
 
       switch (sortBy) {
         case 'price_low': constraints.push(orderBy('price', 'asc')); break;
@@ -141,7 +124,6 @@ export const Listings: React.FC = () => {
       const snap = await getDocs(query(collection(db, 'listings'), ...constraints));
       let results = snap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
 
-<<<<<<< HEAD
       if (q) {
         results = results.filter(l =>
           l.title?.toLowerCase().includes(q) || l.description?.toLowerCase().includes(q)
@@ -161,23 +143,6 @@ export const Listings: React.FC = () => {
           if (filters.durations.includes('Half Day') && mins >= 120 && mins <= 360) return true;
           if (filters.durations.includes('Full Day') && mins > 360) return true;
           return false;
-=======
-      // Client-side filters (text search, price range, date range)
-      if (q) results = results.filter(l =>
-        l.title?.toLowerCase().includes(q) || l.description?.toLowerCase().includes(q)
-      );
-      if (minPrice && !isNaN(Number(minPrice)))
-        results = results.filter(l => (l.price ?? 0) >= Number(minPrice));
-      if (maxPrice && !isNaN(Number(maxPrice)))
-        results = results.filter(l => (l.price ?? 0) <= Number(maxPrice));
-      if (dateRange && !isNaN(Number(dateRange))) {
-        const days = Number(dateRange);
-        const now = Date.now();
-        results = results.filter(l => {
-          if (!l.createdAt) return false;
-          const created = l.createdAt.seconds ? l.createdAt.seconds * 1000 : new Date(l.createdAt).getTime();
-          return now - created <= days * 24 * 60 * 60 * 1000;
->>>>>>> 9732085 (Migrate project: Firebase to Google AI Studio, update data migration, auth, storage, serverless logic, security rules, and sync all test and code changes)
         });
       }
 
@@ -273,50 +238,7 @@ export const Listings: React.FC = () => {
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-<<<<<<< HEAD
     void fetchListings(true);
-=======
-    const newParams = new URLSearchParams(searchParams);
-    if (searchQuery.trim()) newParams.set('q', searchQuery.trim());
-    else newParams.delete('q');
-    setSearchParams(newParams);
-  };
-
-  const handleApplyPriceFilter = () => {
-    if (minPrice && maxPrice && Number(minPrice) > Number(maxPrice)) {
-      showToast('Min price cannot be greater than max price.', 'warning');
-      return;
-    }
-    const newParams = new URLSearchParams(searchParams);
-    if (showVerifiedOnly) newParams.set('verified', 'true');
-    else newParams.delete('verified');
-    if (activeArea) newParams.set('area', activeArea);
-    else newParams.delete('area');
-    if (activeCondition) newParams.set('condition', activeCondition);
-    else newParams.delete('condition');
-    if (activeDateRange) newParams.set('dateRange', activeDateRange);
-    else newParams.delete('dateRange');
-    setSearchParams(newParams);
-    void fetchListings(true);
-    setShowFilters(false);
-  };
-
-  const handleClearFilters = () => {
-    setMinPrice('');
-    setMaxPrice('');
-    setSortBy('newest');
-    setShowVerifiedOnly(false);
-    setActiveArea('');
-    setActiveCondition('');
-    setActiveDateRange('');
-    const newParams = new URLSearchParams(searchParams);
-    newParams.delete('verified');
-    newParams.delete('area');
-    newParams.delete('condition');
-    newParams.delete('dateRange');
-    setSearchParams(newParams);
-    handleCategorySelect('all');
->>>>>>> 9732085 (Migrate project: Firebase to Google AI Studio, update data migration, auth, storage, serverless logic, security rules, and sync all test and code changes)
   };
 
   const toggleFavorite = async (listingId: string, e: React.MouseEvent) => {
@@ -346,11 +268,7 @@ export const Listings: React.FC = () => {
     }
   };
 
-<<<<<<< HEAD
   const hasActiveFilters = filters.minPrice !== '' || filters.maxPrice !== '' || sortBy !== 'newest' || showVerifiedOnly || showUrgentOnly || filters.location !== '' || filters.category !== '' || filters.durations.length > 0;
-=======
-  const hasActiveFilters = minPrice || maxPrice || sortBy !== 'newest' || showVerifiedOnly || activeArea || activeCondition || activeDateRange;
->>>>>>> 9732085 (Migrate project: Firebase to Google AI Studio, update data migration, auth, storage, serverless logic, security rules, and sync all test and code changes)
 
   const pageTitle = searchQuery ? `Search results for "${searchQuery}"` : filters.category && filters.category !== 'All Categories' ? `Listings in ${filters.category}` : 'Browse All Listings';
   const pageDescription = `Find local goods, services, and produce for sale in the Andaman & Nicobar Islands. ${searchQuery ? `Results for ${searchQuery}.` : ''}`;
@@ -406,7 +324,6 @@ export const Listings: React.FC = () => {
               </form>
 
               <div className="flex items-center gap-3">
-<<<<<<< HEAD
                 {/* Sort Dropdown */}
                 <div className="relative">
                   <button
@@ -430,66 +347,6 @@ export const Listings: React.FC = () => {
                       ))}
                     </div>
                   )}
-=======
-                <div className="flex-1">
-                  <label className="text-[10px] font-bold text-warm-400 uppercase tracking-widest mb-1.5 block">Min (₹)</label>
-                  <input type="number" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} placeholder="0" className="input-island" />
-                </div>
-                <span className="text-warm-200 font-black mt-5">—</span>
-                <div className="flex-1">
-                  <label className="text-[10px] font-bold text-warm-400 uppercase tracking-widest mb-1.5 block">Max (₹)</label>
-                  <input type="number" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} placeholder="Any" className="input-island" />
-                </div>
-              </div>
-              
-              {/* Area Filter */}
-              <div>
-                <label className="text-[10px] font-bold text-warm-400 uppercase tracking-widest mb-1.5 block">Area</label>
-                <select 
-                  value={activeArea} 
-                  onChange={(e) => setActiveArea(e.target.value)}
-                  className="w-full input-island"
-                >
-                  {AREAS.map(area => (
-                    <option key={area.value} value={area.value}>
-                      {area.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Condition Filter */}
-              <div>
-                <label className="text-[10px] font-bold text-warm-400 uppercase tracking-widest mb-1.5 block">Condition</label>
-                <select
-                  value={activeCondition}
-                  onChange={e => setActiveCondition(e.target.value)}
-                  className="w-full input-island"
-                >
-                  {CONDITIONS.map(cond => (
-                    <option key={cond.value} value={cond.value}>{cond.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Date Range Filter */}
-              <div>
-                <label className="text-[10px] font-bold text-warm-400 uppercase tracking-widest mb-1.5 block">Posted Within</label>
-                <select
-                  value={activeDateRange}
-                  onChange={e => setActiveDateRange(e.target.value)}
-                  className="w-full input-island"
-                >
-                  {DATE_RANGES.map(range => (
-                    <option key={range.value} value={range.value}>{range.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex items-center justify-between rounded-2xl border border-warm-200 px-4 py-3">
-                <div>
-                  <p className="text-xs font-bold text-midnight-700">Verified Sellers Only</p>
-                  <p className="text-[10px] text-warm-400">GPS-verified island residents</p>
->>>>>>> 9732085 (Migrate project: Firebase to Google AI Studio, update data migration, auth, storage, serverless logic, security rules, and sync all test and code changes)
                 </div>
 
                 <button
@@ -499,6 +356,37 @@ export const Listings: React.FC = () => {
                 >
                   <Bell size={14} className="text-warm-400" />
                   <span className="hidden sm:inline">Save</span>
+                </button>
+              </div>
+
+              {/* Toggles Row */}
+              <div className="flex items-center gap-4 px-2 overflow-x-auto no-scrollbar">
+                <button
+                  role="switch"
+                  aria-checked={showVerifiedOnly}
+                  onClick={() => setShowVerifiedOnly(!showVerifiedOnly)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${
+                    showVerifiedOnly 
+                      ? 'bg-teal-500 text-white shadow-teal-mnm' 
+                      : 'bg-warm-50 text-warm-400 hover:bg-warm-100'
+                  }`}
+                >
+                  <Sparkles size={12} className={showVerifiedOnly ? 'animate-pulse' : ''} />
+                  Verified
+                </button>
+
+                <button
+                  role="switch"
+                  aria-checked={showUrgentOnly}
+                  onClick={() => setShowUrgentOnly(!showUrgentOnly)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${
+                    showUrgentOnly 
+                      ? 'bg-coral-500 text-white shadow-coral-mnm' 
+                      : 'bg-warm-50 text-warm-400 hover:bg-warm-100'
+                  }`}
+                >
+                  <Bell size={12} className={showUrgentOnly ? 'animate-bounce-subtle' : ''} />
+                  Urgent
                 </button>
               </div>
             </div>
