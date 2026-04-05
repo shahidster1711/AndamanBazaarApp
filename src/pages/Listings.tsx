@@ -363,7 +363,7 @@ export const Listings: React.FC = () => {
               <div className="flex items-center gap-4 px-2 overflow-x-auto no-scrollbar">
                 <button
                   role="switch"
-                  aria-checked={showVerifiedOnly}
+                  aria-checked={showVerifiedOnly ? "true" : "false"}
                   onClick={() => setShowVerifiedOnly(!showVerifiedOnly)}
                   className={`flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${
                     showVerifiedOnly 
@@ -377,7 +377,7 @@ export const Listings: React.FC = () => {
 
                 <button
                   role="switch"
-                  aria-checked={showUrgentOnly}
+                  aria-checked={showUrgentOnly ? "true" : "false"}
                   onClick={() => setShowUrgentOnly(!showUrgentOnly)}
                   className={`flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${
                     showUrgentOnly 
