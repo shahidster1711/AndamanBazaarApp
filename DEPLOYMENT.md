@@ -447,7 +447,7 @@ export const measurePageLoad = () => {
 
 ---
 
-## � Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 

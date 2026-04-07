@@ -7,7 +7,7 @@ on:
     branches: [ main, develop ]
 
 env:
-  NODE_VERSION: '18'
+  NODE_VERSION: '22'
   CI: true
 
 jobs:
@@ -106,18 +106,6 @@ jobs:
   integration-tests:
     name: Integration Tests
     runs-on: ubuntu-latest
-    services:
-      # Mock Firebase emulator
-      firebase:
-        image: node:18
-        options: >-
-          --name firebase
-          --health-cmd "curl -f http://localhost:4000"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 4000:4000
 
     steps:
       - name: Checkout code

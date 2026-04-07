@@ -136,5 +136,10 @@
       "path": "dist/assets/*.css",
       "maxSize": "50kb"
     }
-  ]
+  ],
+  "overrides": {
+    "vite-plugin-pwa": {
+      "vite": "$vite"
+    }
+  }
 }
