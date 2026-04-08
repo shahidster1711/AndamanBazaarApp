@@ -49,7 +49,7 @@ async function getIpGeolocation(ip: string): Promise<IpGeoResponse | null> {
 
   try {
     const response = await fetch(
-      `http://ip-api.com/json/${ip}?fields=status,country,countryCode,lat,lon,isp`,
+      `https://ip-api.com/json/${ip}?fields=status,country,countryCode,lat,lon,isp`,
       { signal: AbortSignal.timeout(5000) }
     );
 
