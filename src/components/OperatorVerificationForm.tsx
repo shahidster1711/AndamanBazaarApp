@@ -57,7 +57,7 @@ export const OperatorVerificationForm: React.FC<OperatorVerificationFormProps> =
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!idFile && status === 'unverified') {
+    if (!idFile && !status) {
       showToast('Please upload an ID document.', 'error');
       return;
     }
