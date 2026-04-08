@@ -108,7 +108,7 @@ async function generateInvoiceHtml(invoice) {
                     <tr>
                         <td>
                             <div class="item-name">${tierInfo.emoji} ${tierInfo.label} Boost — ${invoice.duration_days} days</div>
-                            <div class="item-detail">Listing: "${invoice.listing_title}"</div>
+                            <div class="item-detail">Listing: "${String(invoice.listing_title).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[c]))}"</div>
                         </td>
                         <td style="text-align:center;">1</td>
                         <td style="text-align:right;">₹${invoice.amount_total.toFixed(2)}</td>
