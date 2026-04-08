@@ -62,13 +62,15 @@ exports.createReview = (0, https_1.onCall)(async (request) => {
         // 2. Calculate average rating
         const vals = Object.values(ratings);
         const avgRating = vals.reduce((a, b) => a + b, 0) / vals.length;
-        // 3. Batch Write: Create Review + Update Activity Stats (with duplicate check inside transaction)
-        const reviewRef = db.collection('reviews').doc();
+        // 3. Batch Write: Create Review + Update Activity Stats
+        // Use a deterministic document ID based on bookingId to prevent duplicate reviews
+        // transactionally (concurrent requests will hit an already-exists conflict on set).
+        const reviewRef = db.collection('reviews').doc(`review_${bookingId}`);
         const activityRef = db.collection('activities').doc(activityId);
         await db.runTransaction(async (transaction) => {
-            // Check for duplicate review inside the transaction to prevent TOCTOU race condition
-            const existingReviewQuery = await db.collection('reviews').where('bookingId', '==', bookingId).limit(1).get();
-            if (!existingReviewQuery.empty) {
+            // Check for duplicate review using transaction.get() on the deterministic ref
+            const existingReviewDoc = await transaction.get(reviewRef);
+            if (existingReviewDoc.exists) {
                 throw new https_1.HttpsError('already-exists', 'A review for this booking already exists.');
             }
             const activityDoc = await transaction.get(activityRef);
