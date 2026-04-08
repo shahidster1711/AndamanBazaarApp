@@ -152,7 +152,7 @@ jobs:
         run: npm run test:accessibility
 
       - name: Upload accessibility report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: accessibility-report
@@ -234,7 +234,7 @@ jobs:
           CI: true
 
       - name: Upload test results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: playwright-report-${{ matrix.browser }}-${{ matrix.shard }}
@@ -242,7 +242,7 @@ jobs:
           retention-days: 7
 
       - name: Upload screenshots
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: screenshots-${{ matrix.browser }}-${{ matrix.shard }}
@@ -276,7 +276,7 @@ jobs:
         run: npx playwright test tests/e2e/visual.spec.ts
 
       - name: Upload visual diff
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: visual-diff
@@ -344,7 +344,7 @@ jobs:
           BUNDLESIZE_MAX_SIZE: 250kb
 
       - name: Bundle size report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: bundle-report
           path: bundle-report.json
