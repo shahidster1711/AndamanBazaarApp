@@ -45,7 +45,8 @@ describe('Payment Security Tests', () => {
       expect(encrypted.iv).toBeDefined()
       expect(encrypted.authTag).toBeDefined()
       expect(encrypted.encrypted).not.toContain('4111111111111111')
-      expect(encrypted.encrypted).not.toContain('123')
+      // CVV '123' in UTF-8 hex is '313233'; verify it is not embedded as plaintext
+      expect(encrypted.encrypted).not.toContain('313233')
     })
 
     it('should validate payment card numbers using Luhn algorithm', () => {
@@ -107,10 +108,10 @@ describe('Payment Security Tests', () => {
       // Verify signature
       const verifySignature = (data: any, signature: string, secret: string) => {
         const expectedSignature = generateSignature(data, secret)
-        return crypto.timingSafeEqual(
-          Buffer.from(signature, 'hex'),
-          Buffer.from(expectedSignature, 'hex')
-        )
+        const sigBuffer = Buffer.from(signature, 'hex')
+        const expectedBuffer = Buffer.from(expectedSignature, 'hex')
+        if (sigBuffer.length !== expectedBuffer.length) return false
+        return crypto.timingSafeEqual(sigBuffer, expectedBuffer)
       }
       
       expect(verifySignature(paymentData, signature, secret)).toBe(true)
@@ -176,10 +177,10 @@ describe('Payment Security Tests', () => {
       
       const verifyWebhookSignature = (payload: any, signature: string, secret: string) => {
         const expectedSignature = generateWebhookSignature(payload, secret)
-        return crypto.timingSafeEqual(
-          Buffer.from(signature, 'hex'),
-          Buffer.from(expectedSignature, 'hex')
-        )
+        const sigBuffer = Buffer.from(signature, 'hex')
+        const expectedBuffer = Buffer.from(expectedSignature, 'hex')
+        if (sigBuffer.length !== expectedBuffer.length) return false
+        return crypto.timingSafeEqual(sigBuffer, expectedBuffer)
       }
       
       expect(verifyWebhookSignature(webhookPayload, signature, webhookSecret)).toBe(true)
