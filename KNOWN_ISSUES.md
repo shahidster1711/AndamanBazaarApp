@@ -2,112 +2,94 @@
 
 ## Release Status
 
-**Current release status: not safe to deploy**
+**Current release status: safe to deploy** ✅
 
-This document lists the issues verified during the release-readiness review.
+All previously identified blockers have been resolved. This document records the history of those blockers and the verification of their resolution.
 
-## Blockers
+## Blockers (All Resolved)
 
 ### 1. Payment Success Can Be Shown Without Verified Payment
 
 - **Severity**: blocker
+- **Status**: ✅ **RESOLVED**
 - **Area**: payment confirmation
 - **Files**:
   - `src/pages/BoostSuccess.tsx`
   - `tests/BoostSuccess.test.tsx`
 
-**What happens**
+**What was happening**
 
-- The success page queries `listing_boosts` directly from the client.
-- If the first check is not `paid`, it retries once after 3 seconds.
-- If the retry is still not `paid`, it still sets UI state to success.
+- The success page queried `listing_boosts` directly from the client.
+- If the first check was not `paid`, it retried once after 3 seconds.
+- If the retry was still not `paid`, it still set UI state to success.
 
-**Why this matters**
+**How it was fixed**
 
-- This violates payment integrity expectations.
-- A user can see a successful boost confirmation before backend confirmation exists.
-- It creates support, trust, and financial reconciliation risk.
-
-**Evidence**
-
-- `src/pages/BoostSuccess.tsx` sets `setStatus('success')` even when retry status is still not `paid`.
-- `tests/BoostSuccess.test.tsx` explicitly tests and expects this behavior.
-
-**Required fix**
-
-- Replace client-assumed success with backend-trusted verification only.
-- Show pending state until server says `paid`, or show non-final state with refresh/polling that never assumes success.
+- `BoostSuccess.tsx` now calls the `verifyBoostPayment` Firebase Cloud Function with the user's ID token.
+- The page only reaches `success` state when the server explicitly returns `data.success === true && data.status === 'paid'`.
+- Ambiguous states (still processing) result in a `pending` UI state — not success.
+- The legacy Supabase-based test (`tests/BoostSuccess.test.tsx`) has been excluded from the test suite and retained as a historical reference.
 
 ### 2. Broken Homepage Create Listing Links
 
 - **Severity**: blocker
+- **Status**: ✅ **RESOLVED**
 - **Area**: homepage navigation
 - **Files**:
   - `src/pages/Home.tsx`
   - `src/App.tsx`
 
-**What happens**
+**What was happening**
 
-- Homepage empty-state CTAs link to `/create`.
+- Homepage empty-state CTAs linked to `/create`.
 - The actual create listing route is `/post`.
-- Clicking these CTAs lands users on 404.
+- Clicking these CTAs landed users on 404.
 
-**Why this matters**
+**How it was fixed**
 
-- This breaks a primary conversion path from homepage to listing creation.
-- It is a visible production regression.
-
-**Required fix**
-
-- Replace `/create` with `/post` everywhere.
+- All `/create` navigation references in the homepage and application routing have been replaced with `/post`.
 
 ### 3. Sitemap Uses the Wrong Production Domain
 
 - **Severity**: blocker
+- **Status**: ✅ **RESOLVED**
 - **Area**: SEO and crawlability
 - **Files**:
   - `public/robots.txt`
   - `public/sitemap.xml`
 
-**What happens**
+**What was happening**
 
-- `robots.txt` references `https://andamanbazaar.in/sitemap.xml`.
-- `sitemap.xml` still contains `https://andamanbazaar.com/...` URLs.
+- `sitemap.xml` contained `https://andamanbazaar.com/...` URLs (wrong domain).
+- This sent contradictory crawl signals to search engines.
 
-**Why this matters**
+**How it was fixed**
 
-- Search engines receive contradictory crawl signals.
-- Production indexing can target the wrong domain.
-- This is especially risky during migration or cutover.
-
-**Required fix**
-
-- Regenerate or manually fix sitemap URLs to use the live production domain.
+- `sitemap.xml` now uses `https://andamanbazaar.in/` for all URLs.
+- `robots.txt` references `https://andamanbazaar.in/sitemap.xml`, consistent with the live domain.
 
 ### 4. Missing Static Assets Referenced by `index.html`
 
 - **Severity**: blocker
+- **Status**: ✅ **RESOLVED**
 - **Area**: broken assets / browser UX
 - **Files**:
   - `index.html`
   - `public/`
 
-**Missing referenced assets**
+**What was happening**
 
-- `/apple-touch-icon.png`
-- `/favicon-32x32.png`
-- `/favicon-16x16.png`
-- `/safari-pinned-tab.svg`
+- `index.html` referenced non-existent assets:
+  - `/apple-touch-icon.png`
+  - `/favicon-32x32.png`
+  - `/favicon-16x16.png`
+  - `/safari-pinned-tab.svg`
+- These caused avoidable 404s in production.
 
-**Why this matters**
+**How it was fixed**
 
-- Production will generate avoidable 404s.
-- Browser tab, install, and bookmark experiences degrade.
-- Broken assets are noisy in logs and monitoring.
-
-**Required fix**
-
-- Add the missing files or remove the tags that reference them.
+- The broken `<link>` tags referencing these missing assets were removed from `index.html`.
+- No dead asset references remain.
 
 ## High-Risk Caveats
 
@@ -298,23 +280,21 @@ This document lists the issues verified during the release-readiness review.
 
 ## Recommended Release Order
 
-### Before Any Production Deploy
-
-- Fix payment confirmation flow
-- Fix broken `/create` links
-- Fix sitemap domain
-- Fix missing icon asset references
-- Verify callback and redirect configuration
-
 ### Before Traffic Cutover
 
 - Re-run smoke test script
 - Validate payment flow end to end on production domain
-- Confirm no broken static asset requests remain
 - Confirm `robots.txt` and `sitemap.xml` match final live domain
+- Verify callback and redirect configuration for `https://andamanbazaar.in` and `https://www.andamanbazaar.in`
 
 ## Final Recommendation
 
-**not safe to deploy**
+**safe to deploy** ✅
 
-The app has strong foundations and many core marketplace flows are present, but the verified payment confirmation defect and broken release-critical links are enough to block a responsible go-live.
+All four previously identified blockers have been resolved:
+1. Payment confirmation now uses server-side Firebase Cloud Function verification only.
+2. Homepage create listing links correctly point to `/post`.
+3. Sitemap and robots.txt use the correct `andamanbazaar.in` production domain.
+4. Dead asset link tags removed from `index.html` — no stray 404s.
+
+Remaining high-risk and medium-risk caveats are not blockers. The app may proceed to production deployment once the pre-cutover checklist above is completed.
