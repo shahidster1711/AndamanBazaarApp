@@ -81,10 +81,19 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: 'VITE_E2E_BYPASS_AUTH=true npm run dev',
+    command: 'npm run dev',
     url: 'http://localhost:5173',
     reuseExistingServer: false,
     timeout: 120000,
+    env: {
+      VITE_E2E_BYPASS_AUTH: 'true',
+      VITE_FIREBASE_API_KEY: process.env.VITE_FIREBASE_API_KEY || 'AIzaMock00000000000000000000000ForTest',
+      VITE_FIREBASE_AUTH_DOMAIN: process.env.VITE_FIREBASE_AUTH_DOMAIN || 'mock-project.firebaseapp.com',
+      VITE_FIREBASE_PROJECT_ID: process.env.VITE_FIREBASE_PROJECT_ID || 'mock-project-id',
+      VITE_FIREBASE_STORAGE_BUCKET: process.env.VITE_FIREBASE_STORAGE_BUCKET || 'mock-project-id.appspot.com',
+      VITE_FIREBASE_MESSAGING_SENDER_ID: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '123456789012',
+      VITE_FIREBASE_APP_ID: process.env.VITE_FIREBASE_APP_ID || '1:123456789012:web:abcdefgh12345678',
+    },
   },
 
   // Global setup and teardown
