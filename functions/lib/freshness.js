@@ -206,4 +206,3 @@ exports.calculateResponseRates = functions.pubsub
       console.error("Error calculating response rates:", error);
     }
   });
-//# sourceMappingURL=freshness.js.map
