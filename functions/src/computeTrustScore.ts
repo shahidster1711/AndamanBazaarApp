@@ -65,7 +65,7 @@ export const computeTrustScore = onCall(async (request: CallableRequest) => {
       sumRatings += (data.rating || 0) * (data.reviewCount || 0);
     }
 
-    let avgRating = totalReviews > 0 ? sumRatings / totalReviews : 0;
+    const avgRating = totalReviews > 0 ? sumRatings / totalReviews : 0;
 
     // 3. Algorithm Calculation
     // Avg Rating: 5.0 -> 40 points
@@ -83,7 +83,7 @@ export const computeTrustScore = onCall(async (request: CallableRequest) => {
     if (operatorTier === "verified") verificationScore = 20;
 
     // Penalty for no reviews if verified long ago could be added here
-    let finalScore = Math.round(ratingScore + volumeScore + verificationScore);
+    const finalScore = Math.round(ratingScore + volumeScore + verificationScore);
 
     // Determine badge level
     let badge = "Low";

@@ -273,7 +273,7 @@ async function processWebhookEvent(
   const batch = admin.firestore().batch();
 
   // Prepare payment update based on event type
-  let paymentUpdate: PaymentUpdate = {
+  const paymentUpdate: PaymentUpdate = {
     orderStatus: event.orderStatus as
       | "ACTIVE"
       | "PAID"
@@ -288,7 +288,7 @@ async function processWebhookEvent(
   switch (event.type) {
     case "PAYMENT_SUCCESS_WEBHOOK":
     case "PAYMENT_SUCCESS":
-    case "ORDER_PAID":
+    case "ORDER_PAID": {
       paymentUpdate.paymentStatus = "SUCCESS";
       paymentUpdate.paymentId = event.paymentId;
       paymentUpdate.paymentAmount = event.paymentAmount;
@@ -337,10 +337,11 @@ async function processWebhookEvent(
       });
 
       break;
+    }
 
     case "PAYMENT_FAILED_WEBHOOK":
     case "PAYMENT_FAILED":
-    case "ORDER_FAILED":
+    case "ORDER_FAILED": {
       paymentUpdate.paymentStatus = "FAILED";
 
       // Release listing reservation
@@ -357,10 +358,11 @@ async function processWebhookEvent(
       });
 
       break;
+    }
 
     case "PAYMENT_USER_DROPPED_WEBHOOK":
     case "PAYMENT_CANCELLED":
-    case "ORDER_CANCELLED":
+    case "ORDER_CANCELLED": {
       paymentUpdate.paymentStatus = "CANCELLED";
 
       // Release listing reservation
@@ -377,8 +379,9 @@ async function processWebhookEvent(
       });
 
       break;
+    }
 
-    case "ORDER_EXPIRED":
+    case "ORDER_EXPIRED": {
       paymentUpdate.orderStatus = "EXPIRED";
       paymentUpdate.paymentStatus = "CANCELLED";
 
@@ -396,6 +399,7 @@ async function processWebhookEvent(
       });
 
       break;
+    }
 
     default:
       logger.info(`Unhandled webhook event type: ${event.type}`, {
