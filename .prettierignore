@@ -1,0 +1,8 @@
+# Compiled Cloud Functions artifacts – format the source (functions/src) instead
+functions/lib/**
+
+# Generated / vendored files
+node_modules
+dist
+build
+coverage

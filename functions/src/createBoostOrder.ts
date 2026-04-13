@@ -85,12 +85,12 @@ export const createBoostOrder = onCall(async (request: CallableRequest) => {
   let boostDocRef!: admin.firestore.DocumentReference;
 
   await db.runTransaction(async (transaction) => {
-    const existingBoostsSnapshot = await db
+    const existingBoostsQuery = db
       .collection("listing_boosts")
       .where("listing_id", "==", listing_id)
       .where("status", "==", "pending")
-      .limit(1)
-      .get();
+      .limit(1);
+    const existingBoostsSnapshot = await transaction.get(existingBoostsQuery);
 
     if (!existingBoostsSnapshot.empty) {
       // Expire old pending boost to avoid duplicates
