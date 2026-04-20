@@ -8,12 +8,14 @@ export interface ListingRow extends Pick<Listing, 'id' | 'title' | 'status' | 'c
   updated_at?: string;
 }
 
-export interface ChatRow {
+export interface UnreadChatRow {
   id: string;
   listing_id: string | null;
-  created_at: string;
-  last_message_at: string;
   seller_unread_count: number | null;
+}
+
+export interface TrendChatRow {
+  created_at: string;
 }
 
 export type ProfileRow = Pick<Profile, 'successful_sales' | 'trust_level' | 'is_location_verified'>;
@@ -21,7 +23,8 @@ export type ProfileRow = Pick<Profile, 'successful_sales' | 'trust_level' | 'is_
 export interface DashboardState {
   profile: ProfileRow | null;
   listings: ListingRow[];
-  chats: ChatRow[];
+  chats: UnreadChatRow[];
+  recentChats: TrendChatRow[];
 }
 
 export interface KpiCardData {

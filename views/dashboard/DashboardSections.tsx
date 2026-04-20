@@ -18,6 +18,7 @@ import {
   YAxis,
 } from 'recharts';
 import { TONE_STYLES } from './types';
+import { formatSignedPercent } from './utils';
 import type {
   AlertData,
   ChartPoint,
@@ -329,8 +330,3 @@ const EmptyState: React.FC<{ text: string }> = ({ text }) => (
     {text}
   </div>
 );
-
-const formatSignedPercent = (value: number) => {
-  if (!Number.isFinite(value) || value === 0) return '0%';
-  return `${value > 0 ? '+' : ''}${Math.round(value)}%`;
-};

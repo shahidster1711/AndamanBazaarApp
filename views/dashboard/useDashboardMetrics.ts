@@ -9,86 +9,43 @@ import {
 } from 'lucide-react';
 import type {
   AlertData,
-  ChatRow,
   DashboardMetrics,
   KpiCardData,
   ListingRow,
-  MetricBarData,
   ProfileRow,
   Tone,
+  TrendChatRow,
+  UnreadChatRow,
 } from './types';
-
-const DAY_MS = 24 * 60 * 60 * 1000;
-const ACTIVE_TARGET = 5;
-const HEALTHY_VIEWS_PER_LISTING = 20;
-
-const formatSignedPercent = (value: number) => {
-  if (!Number.isFinite(value) || value === 0) return '0%';
-  return `${value > 0 ? '+' : ''}${Math.round(value)}%`;
-};
-
-const formatSignedCount = (value: number) => {
-  if (value === 0) return '0';
-  return `${value > 0 ? '+' : ''}${value}`;
-};
-
-const getPercentChange = (current: number, previous: number) => {
-  if (previous === 0) {
-    if (current === 0) return 0;
-    return 100;
-  }
-
-  return ((current - previous) / previous) * 100;
-};
-
-const startOfDay = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
-
-const daysAgo = (days: number) => {
-  const date = new Date();
-  date.setHours(0, 0, 0, 0);
-  date.setDate(date.getDate() - days);
-  return date;
-};
-
-const isBetween = (iso: string, start: Date, end: Date) => {
-  const value = new Date(iso).getTime();
-  return value >= start.getTime() && value < end.getTime();
-};
-
-const getTrendTone = (value: number): Tone => {
-  if (value === 0) return 'neutral';
-  return value > 0 ? 'good' : 'bad';
-};
-
-const toMetricBar = (
-  label: string,
-  hint: string,
-  value: number,
-  total: number,
-  barColor: string,
-  textColor: string,
-): MetricBarData => ({
-  label,
-  hint,
-  value,
-  width: total ? Math.max((value / total) * 100, value > 0 ? 8 : 0) : 0,
-  barColor,
-  textColor,
-});
+import {
+  DASHBOARD_TARGETS,
+  DAY_MS,
+  daysAgo,
+  formatSignedCount,
+  formatSignedPercent,
+  getPercentChange,
+  getTrendTone,
+  isBetween,
+  scorePriorityListing,
+  startOfDay,
+  toMetricBar,
+} from './utils';
 
 export const useDashboardMetrics = ({
   profile,
   listings,
   chats,
+  recentChats,
 }: {
   profile: ProfileRow | null;
   listings: ListingRow[];
-  chats: ChatRow[];
+  chats: UnreadChatRow[];
+  recentChats: TrendChatRow[];
 }): DashboardMetrics =>
   useMemo(() => {
-    const currentPeriodStart = daysAgo(6);
+    const currentPeriodStart = daysAgo(DASHBOARD_TARGETS.trendWindowDays - 1);
     const currentPeriodEnd = new Date(startOfDay(new Date()).getTime() + DAY_MS);
-    const previousPeriodStart = daysAgo(13);
+    const previousPeriodStart = daysAgo(DASHBOARD_TARGETS.trendWindowDays * 2 - 1);
     const previousPeriodEnd = currentPeriodStart;
 
     const activeListings = listings.filter((listing) => listing.status === 'active');
@@ -98,8 +55,8 @@ export const useDashboardMetrics = ({
 
     const currentWeekListings = listings.filter((listing) => isBetween(listing.created_at, currentPeriodStart, currentPeriodEnd));
     const previousWeekListings = listings.filter((listing) => isBetween(listing.created_at, previousPeriodStart, previousPeriodEnd));
-    const currentWeekChats = chats.filter((chat) => isBetween(chat.created_at, currentPeriodStart, currentPeriodEnd));
-    const previousWeekChats = chats.filter((chat) => isBetween(chat.created_at, previousPeriodStart, previousPeriodEnd));
+    const currentWeekChats = recentChats.filter((chat) => isBetween(chat.created_at, currentPeriodStart, currentPeriodEnd));
+    const previousWeekChats = recentChats.filter((chat) => isBetween(chat.created_at, previousPeriodStart, previousPeriodEnd));
 
     const unreadReplies = chats.reduce((sum, chat) => sum + (chat.seller_unread_count || 0), 0);
     const totalViews = listings.reduce((sum, listing) => sum + (listing.views_count || 0), 0);
@@ -116,14 +73,14 @@ export const useDashboardMetrics = ({
 
     const inquiryTrend = getPercentChange(currentWeekChats.length, previousWeekChats.length);
     const listingTrend = getPercentChange(currentWeekListings.length, previousWeekListings.length);
-    const activeGap = activeListings.length - ACTIVE_TARGET;
+    const activeGap = activeListings.length - DASHBOARD_TARGETS.activeInventory;
     const zeroViewShare = activeListings.length ? (zeroViewActiveListings.length / activeListings.length) * 100 : 0;
-    const viewEfficiencyDelta = avgViewsPerActive - HEALTHY_VIEWS_PER_LISTING;
+    const viewEfficiencyDelta = avgViewsPerActive - DASHBOARD_TARGETS.healthyViewsPerListing;
 
     const currentChatCountByDay = new Map<number, number>();
     const previousChatCountByDay = new Map<number, number>();
 
-    chats.forEach((chat) => {
+    recentChats.forEach((chat) => {
       const chatDay = startOfDay(new Date(chat.created_at)).getTime();
 
       if (chatDay >= currentPeriodStart.getTime() && chatDay < currentPeriodEnd.getTime()) {
@@ -136,7 +93,7 @@ export const useDashboardMetrics = ({
       }
     });
 
-    const chartData = Array.from({ length: 7 }, (_, index) => {
+    const chartData = Array.from({ length: DASHBOARD_TARGETS.trendWindowDays }, (_, index) => {
       const currentDay = new Date(currentPeriodStart.getTime() + index * DAY_MS);
       const previousDay = new Date(previousPeriodStart.getTime() + index * DAY_MS);
 
@@ -202,47 +159,7 @@ export const useDashboardMetrics = ({
     }, {});
 
     const priorityListings = activeListings
-      .map((listing) => {
-        const views = listing.views_count || 0;
-        const ageDays = Math.max(0, Math.floor((Date.now() - new Date(listing.created_at).getTime()) / DAY_MS));
-        const unreadForListing = listingUnreadMap[listing.id] || 0;
-        let priority = 0;
-        let reason = 'Stable performance';
-        let tone: Tone = 'good';
-
-        if (unreadForListing > 0) {
-          priority += 50 + unreadForListing * 10;
-          reason = `${unreadForListing} unread buyer ${unreadForListing === 1 ? 'reply' : 'replies'}`;
-          tone = 'bad';
-        } else if (views === 0) {
-          priority += 18 + ageDays;
-          reason = ageDays > 7 ? 'No views after a week' : 'No views yet';
-          tone = 'bad';
-        } else if (ageDays > 14 && views < 10) {
-          priority += 12;
-          reason = 'Stale listing with weak reach';
-          tone = 'bad';
-        } else if (views < 10) {
-          priority += 6;
-          reason = 'Needs stronger title or pricing';
-          tone = 'neutral';
-        } else {
-          priority += Math.max(1, 20 - views);
-          reason = 'Healthy but monitor conversion';
-          tone = 'good';
-        }
-
-        return {
-          id: listing.id,
-          title: listing.title,
-          views,
-          ageDays,
-          unreadForListing,
-          priority,
-          reason,
-          tone,
-        };
-      })
+      .map((listing) => scorePriorityListing({ listing, unreadForListing: listingUnreadMap[listing.id] || 0 }))
       .sort((a, b) => b.priority - a.priority)
       .slice(0, 4);
 
@@ -376,7 +293,7 @@ export const useDashboardMetrics = ({
       {
         label: 'Active inventory',
         value: activeListings.length.toString(),
-        helper: `Target is ${ACTIVE_TARGET} live listings`,
+        helper: `Target is ${DASHBOARD_TARGETS.activeInventory} live listings`,
         trend: formatSignedCount(activeGap),
         trendText: activeGap >= 0 ? 'above coverage target' : 'below coverage target',
         tone: activeGap >= 0 ? 'good' : 'bad',
@@ -387,7 +304,7 @@ export const useDashboardMetrics = ({
         value: activeListings.length ? avgViewsPerActive.toFixed(1) : '0',
         helper: 'Reach quality across live inventory',
         trend: formatSignedCount(Math.round(viewEfficiencyDelta)),
-        trendText: `vs healthy benchmark (${HEALTHY_VIEWS_PER_LISTING})`,
+        trendText: `vs healthy benchmark (${DASHBOARD_TARGETS.healthyViewsPerListing})`,
         tone: viewEfficiencyDelta >= 0 ? 'good' : 'bad',
         icon: Eye,
       },
@@ -424,4 +341,4 @@ export const useDashboardMetrics = ({
       priorityListings,
       alerts,
     };
-  }, [profile, listings, chats]);
+  }, [profile, listings, chats, recentChats]);
