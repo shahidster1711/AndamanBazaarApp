@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './components/Layout';
@@ -18,37 +17,37 @@ import { User } from '@supabase/supabase-js';
 import { AlertTriangle, Terminal, ExternalLink } from 'lucide-react';
 
 const ConfigRequiredView: React.FC = () => (
-  <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
-    <div className="max-w-md w-full bg-white rounded-[40px] shadow-2xl border-4 border-white overflow-hidden text-center p-10 space-y-8 animate-slide-up">
-      <div className="w-24 h-24 bg-ocean-50 text-ocean-600 rounded-[32px] flex items-center justify-center mx-auto shadow-inner border border-ocean-100">
-        <AlertTriangle size={48} />
+  <div className="min-h-screen flex items-center justify-center bg-arches p-6">
+    <div className="max-w-md w-full bg-white rounded-airbnb-lg shadow-airbnb border border-gray-200 overflow-hidden text-center p-10 space-y-8 animate-slide-up">
+      <div className="w-20 h-20 bg-rausch-50 text-rausch rounded-full flex items-center justify-center mx-auto border border-rausch-100">
+        <AlertTriangle size={40} />
       </div>
       <div className="space-y-3">
-        <h1 className="text-3xl font-heading font-black text-slate-950 tracking-tight leading-tight">
+        <h1 className="text-2xl font-bold text-hof tracking-tight">
           Configuration <br/>Required
         </h1>
-        <p className="text-slate-500 font-bold text-sm leading-relaxed px-4">
+        <p className="text-gray-500 text-sm leading-relaxed px-4">
           AndamanBazaar needs your Supabase keys to connect to the database.
         </p>
       </div>
       
-      <div className="bg-slate-900 rounded-3xl p-6 text-left space-y-4">
-        <div className="flex items-center space-x-2 text-ocean-400">
+      <div className="bg-gray-50 rounded-2xl p-6 text-left space-y-4 border border-gray-100">
+        <div className="flex items-center space-x-2 text-hof">
           <Terminal size={16} />
-          <span className="text-[10px] font-black uppercase tracking-widest">Setup Instructions</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest">Setup Instructions</span>
         </div>
-        <ol className="text-xs text-slate-300 font-medium space-y-3 list-decimal list-inside">
-          <li>Create a project at <a href="https://supabase.com" className="text-white underline hover:text-ocean-300">supabase.com</a></li>
-          <li>Copy your <span className="text-white">Project URL</span> and <span className="text-white">Anon Key</span></li>
-          <li>Create a <code className="bg-slate-800 px-1.5 py-0.5 rounded text-ocean-300">.env</code> file in your root folder</li>
-          <li>Add the variables as shown in <code className="bg-slate-800 px-1.5 py-0.5 rounded">.env.example</code></li>
+        <ol className="text-xs text-gray-600 font-medium space-y-3 list-decimal list-inside">
+          <li>Create a project at <a href="https://supabase.com" className="text-rausch underline hover:text-rausch-600">supabase.com</a></li>
+          <li>Copy your <span className="text-hof font-bold">Project URL</span> and <span className="text-hof font-bold">Anon Key</span></li>
+          <li>Create a <code className="bg-gray-200 px-1.5 py-0.5 rounded text-hof">.env</code> file in your root folder</li>
+          <li>Add the variables as shown in <code className="bg-gray-200 px-1.5 py-0.5 rounded">.env.example</code></li>
         </ol>
       </div>
 
       <div className="pt-4 flex flex-col gap-3">
         <button 
           onClick={() => window.location.reload()}
-          className="w-full py-4 bg-ocean-700 text-white rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] shadow-xl shadow-ocean-700/20 active:scale-95 transition-all"
+          className="w-full py-3.5 airbnb-button shadow-md active:scale-95 transition-all text-sm"
         >
           I've added the keys, reload!
         </button>
@@ -56,7 +55,7 @@ const ConfigRequiredView: React.FC = () => (
           href="https://supabase.com/docs/guides/getting-started/quickstarts/reactjs" 
           target="_blank" 
           rel="noopener noreferrer"
-          className="flex items-center justify-center space-x-2 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-ocean-700 transition-colors"
+          className="flex items-center justify-center space-x-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest hover:text-rausch transition-colors"
         >
           <span>Need help? View Docs</span>
           <ExternalLink size={12} />
@@ -104,7 +103,7 @@ const App: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-ocean-600"></div>
+        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-rausch"></div>
       </div>
     );
   }
