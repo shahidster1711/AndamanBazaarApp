@@ -211,7 +211,7 @@ export const AlertsSection: React.FC<{ alerts: AlertData[] }> = ({ alerts }) => 
 
     <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
       {alerts.map((alert) => (
-        <AlertCard key={`${alert.title}-${alert.detail}`} {...alert} />
+        <AlertCard key={alert.id} {...alert} />
       ))}
     </div>
   </section>

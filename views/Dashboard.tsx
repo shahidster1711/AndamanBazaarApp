@@ -39,7 +39,7 @@ export const Dashboard: React.FC = () => {
             .order('created_at', { ascending: false }),
           supabase
             .from('chats')
-            .select('id, listing_id, created_at, last_message_at, seller_unread_count, listing:listings(title)')
+            .select('id, listing_id, created_at, last_message_at, seller_unread_count')
             .eq('seller_id', user.id)
             .order('created_at', { ascending: false }),
         ]);

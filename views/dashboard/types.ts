@@ -1,15 +1,11 @@
 import type { LucideIcon } from 'lucide-react';
+import type { Listing, Profile } from '../../types';
 
 export type Tone = 'good' | 'bad' | 'neutral';
 
-export interface ListingRow {
-  id: string;
-  title: string;
-  status: 'draft' | 'active' | 'sold' | 'expired' | 'deleted';
-  views_count: number | null;
-  created_at: string;
+export interface ListingRow extends Pick<Listing, 'id' | 'title' | 'status' | 'created_at' | 'is_featured'> {
+  views_count: Listing['views_count'] | null;
   updated_at?: string;
-  is_featured?: boolean;
 }
 
 export interface ChatRow {
@@ -18,14 +14,9 @@ export interface ChatRow {
   created_at: string;
   last_message_at: string;
   seller_unread_count: number | null;
-  listing?: { title?: string } | { title?: string }[] | null;
 }
 
-export interface ProfileRow {
-  successful_sales: number | null;
-  trust_level: string | null;
-  is_location_verified: boolean | null;
-}
+export type ProfileRow = Pick<Profile, 'successful_sales' | 'trust_level' | 'is_location_verified'>;
 
 export interface DashboardState {
   profile: ProfileRow | null;
@@ -76,6 +67,7 @@ export interface PriorityListingData {
 }
 
 export interface AlertData {
+  id: string;
   title: string;
   detail: string;
   tone: Tone;

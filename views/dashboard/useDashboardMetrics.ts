@@ -211,7 +211,7 @@ export const useDashboardMetrics = ({
         let tone: Tone = 'good';
 
         if (unreadForListing > 0) {
-          priority += unreadForListing * 5;
+          priority += 50 + unreadForListing * 10;
           reason = `${unreadForListing} unread buyer ${unreadForListing === 1 ? 'reply' : 'replies'}`;
           tone = 'bad';
         } else if (views === 0) {
@@ -250,6 +250,7 @@ export const useDashboardMetrics = ({
 
     if (unreadReplies > 0) {
       alerts.push({
+        id: 'buyer-replies-waiting',
         title: 'Buyer replies waiting',
         detail: `${unreadReplies} unread ${unreadReplies === 1 ? 'message needs' : 'messages need'} a response. Fast replies are the quickest way to protect conversion.`,
         tone: 'bad',
@@ -258,6 +259,7 @@ export const useDashboardMetrics = ({
 
     if (activeListings.length > 0 && zeroViewShare >= 40) {
       alerts.push({
+        id: 'listings-invisible',
         title: 'Too many listings are invisible',
         detail: `${zeroViewActiveListings.length} of ${activeListings.length} active listings still have zero views. Rework thumbnails, titles, or pricing first.`,
         tone: 'bad',
@@ -266,6 +268,7 @@ export const useDashboardMetrics = ({
 
     if (activeListings.length > 0 && currentWeekChats.length === 0) {
       alerts.push({
+        id: 'demand-stalled',
         title: 'Demand stalled this week',
         detail: 'No new buyer conversations started in the last 7 days. Promote your top listing or refresh stale inventory.',
         tone: 'bad',
@@ -274,6 +277,7 @@ export const useDashboardMetrics = ({
 
     if (expiredListings.length > 0) {
       alerts.push({
+        id: 'expired-inventory',
         title: 'Expired inventory needs action',
         detail: `${expiredListings.length} ${expiredListings.length === 1 ? 'listing has' : 'listings have'} expired and are no longer discoverable.`,
         tone: 'neutral',
@@ -282,6 +286,7 @@ export const useDashboardMetrics = ({
 
     if (activeListings.length > 0 && freshInventoryShare < 50) {
       alerts.push({
+        id: 'inventory-aging',
         title: 'Inventory is aging',
         detail: `Only ${Math.round(freshInventoryShare)}% of active listings were created in the last 14 days. Refreshing old listings can recover visibility.`,
         tone: 'neutral',
@@ -290,6 +295,7 @@ export const useDashboardMetrics = ({
 
     if (profile && !profile.is_location_verified) {
       alerts.push({
+        id: 'trust-signal-missing',
         title: 'Trust signal missing',
         detail: 'Location verification is off. Turning it on should improve buyer confidence.',
         tone: 'neutral',
@@ -298,6 +304,7 @@ export const useDashboardMetrics = ({
 
     if (alerts.length === 0) {
       alerts.push({
+        id: 'system-healthy',
         title: 'System looks healthy',
         detail: 'No urgent anomalies detected. Focus on converting active demand and keeping inventory fresh.',
         tone: 'good',
@@ -399,7 +406,7 @@ export const useDashboardMetrics = ({
         helper: 'Successful sales vs total listings',
         trend: `${successfulSales} sold`,
         trendText: profile?.trust_level ? `trust level: ${profile.trust_level}` : 'track against closed deals',
-        tone: sellThroughRate >= 25 ? 'good' : sellThroughRate > 0 ? 'neutral' : 'bad',
+        tone: listings.length === 0 ? 'neutral' : sellThroughRate >= 25 ? 'good' : sellThroughRate > 0 ? 'neutral' : 'bad',
         icon: ShieldCheck,
       },
     ];
