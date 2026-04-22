@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { GoogleGenAI, Type } from "@google/genai";
-import { Camera, MapPin, ChevronRight, ChevronLeft, Check, PlusCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Camera, MapPin, ChevronRight, ChevronLeft, Check, PlusCircle, AlertCircle, Loader2, Rocket, ShieldCheck, Terminal } from 'lucide-react';
 
 export const CreateListing: React.FC = () => {
   const navigate = useNavigate();
@@ -98,7 +98,6 @@ export const CreateListing: React.FC = () => {
         img.src = event.target?.result as string;
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          // Optimized for 2G/3G connections: slightly smaller max resolution and WebP
           const MAX_WIDTH = 1000;
           const MAX_HEIGHT = 1000;
           let width = img.width;
@@ -120,7 +119,6 @@ export const CreateListing: React.FC = () => {
           const ctx = canvas.getContext('2d');
           ctx?.drawImage(img, 0, 0, width, height);
           
-          // Use WebP with 60% quality for aggressive compression
           canvas.toBlob((blob) => {
             if (!blob) {
               reject(new Error('Image resizing failed'));
@@ -321,35 +319,38 @@ export const CreateListing: React.FC = () => {
   };
 
   if (fetching) return (
-    <div className="h-screen flex flex-col items-center justify-center space-y-4">
-      <div className="animate-spin h-10 w-10 border-t-2 border-ocean-600 rounded-full"></div>
-      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Loading Listing Data...</p>
+    <div className="h-screen flex flex-col items-center justify-center bg-abyss space-y-6">
+      <div className="animate-spin h-12 w-12 border-t-2 border-b-2 border-emerald-500 rounded-full"></div>
+      <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-emerald-500 animate-pulse">Pulling_Unit_Data...</p>
     </div>
   );
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
-      <div className="bg-white rounded-[40px] shadow-2xl overflow-hidden border border-slate-100">
-        <div className="h-2 bg-slate-100"><div className="h-full bg-ocean-600 transition-all duration-500" style={{ width: `${(step/5)*100}%` }}></div></div>
-        <div className="p-8 md:p-12">
+    <div className="max-w-3xl mx-auto px-4 py-12 animate-fade-in bg-abyss">
+      <div className="bg-carbon rounded-lg shadow-elevation-high overflow-hidden border border-warm">
+        <div className="h-1 bg-abyss">
+          <div className="h-full bg-emerald-500 transition-all duration-700 shadow-glow" style={{ width: `${(step/5)*100}%` }}></div>
+        </div>
+        
+        <div className="p-8 md:p-16">
           {step === 1 && (
-            <div className="space-y-8 text-center animate-in fade-in slide-in-from-bottom-4">
-              <div className="space-y-2">
-                <h2 className="text-3xl font-black">{editId ? 'Modify Category' : 'Choose Category'}</h2>
-                <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Step 1 of 4</p>
+            <div className="space-y-12 text-center animate-slide-up">
+              <div className="space-y-4">
+                <p className="text-[10px] font-mono text-emerald-500 uppercase tracking-[0.4em]">step_01 // identify_class</p>
+                <h2 className="text-4xl font-heading font-black text-snow uppercase tracking-tighter">{editId ? 'Modify Cluster' : 'Initialize Unit'}</h2>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {['Mobiles', 'Vehicles', 'Home', 'Fashion', 'Property', 'Services'].map(cat => (
                   <button 
                     key={cat} 
                     onClick={() => { setCategory(cat); nextStep(); }} 
-                    className={`p-8 rounded-3xl border-2 transition-all group ${
+                    className={`p-6 rounded border transition-all group flex flex-col items-center space-y-4 ${
                       category === cat 
-                      ? 'bg-ocean-50 border-ocean-600 shadow-lg' 
-                      : 'bg-slate-50 border-transparent hover:border-ocean-300'
+                      ? 'bg-emerald-500/10 border-emerald-500 shadow-glow' 
+                      : 'bg-abyss border-warm hover:border-emerald-500/50'
                     }`}
                   >
-                    <span className={`font-black uppercase text-[10px] tracking-widest ${category === cat ? 'text-ocean-700' : 'text-slate-400 group-hover:text-ocean-700'}`}>{cat}</span>
+                    <span className={`font-mono uppercase text-[10px] tracking-widest ${category === cat ? 'text-emerald-500' : 'text-slate-500 group-hover:text-emerald-400'}`}>{cat}</span>
                   </button>
                 ))}
               </div>
@@ -357,132 +358,151 @@ export const CreateListing: React.FC = () => {
           )}
 
           {step === 2 && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-right-4">
-              <div className="space-y-2">
-                <h2 className="text-2xl font-black">Ad Information</h2>
-                <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Step 2 of 4</p>
+            <div className="space-y-10 animate-slide-up">
+              <div className="space-y-4 border-l-4 border-emerald-500 pl-8">
+                <p className="text-[10px] font-mono text-emerald-500 uppercase tracking-[0.4em]">step_02 // data_injection</p>
+                <h2 className="text-3xl font-black text-snow uppercase tracking-tighter">Metadata Input</h2>
               </div>
-              <div className="space-y-4">
-                <div className="space-y-1.5">
-                   <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Listing Title</label>
-                   <input type="text" placeholder="e.g. Royal Enfield Classic 350" value={title} onChange={e => setTitle(e.target.value)} className="w-full p-4 bg-slate-50 rounded-2xl border-2 border-slate-100 focus:border-ocean-600 outline-none font-bold" />
+              <div className="space-y-8">
+                <div className="space-y-3">
+                   <label className="text-[10px] font-mono text-slate-500 uppercase tracking-[0.3em] ml-1">var unit_title</label>
+                   <input type="text" placeholder="e.g. CORE_TRANS_UNIT_01" value={title} onChange={e => setTitle(e.target.value)} className="w-full p-4 bg-abyss border border-warm rounded focus:border-emerald-500 outline-none font-mono text-snow text-sm transition-all" />
                 </div>
-                <div className="space-y-1.5">
-                   <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Price (₹)</label>
-                   <input type="number" placeholder="Enter Amount" value={price} onChange={e => setPrice(e.target.value)} className="w-full p-4 bg-slate-50 rounded-2xl border-2 border-slate-100 focus:border-ocean-600 outline-none font-bold" />
+                <div className="space-y-3">
+                   <label className="text-[10px] font-mono text-slate-500 uppercase tracking-[0.3em] ml-1">var valuation (₹)</label>
+                   <input type="number" placeholder="Enter Amount" value={price} onChange={e => setPrice(e.target.value)} className="w-full p-4 bg-abyss border border-warm rounded focus:border-emerald-500 outline-none font-mono text-snow text-sm transition-all" />
                 </div>
-                <div className="space-y-1.5">
-                   <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Description</label>
-                   <textarea placeholder="Describe item details, condition, and inclusions..." rows={4} value={description} onChange={e => setDescription(e.target.value)} className="w-full p-4 bg-slate-50 rounded-2xl border-2 border-slate-100 focus:border-ocean-600 outline-none font-medium text-sm leading-relaxed"></textarea>
+                <div className="space-y-3">
+                   <label className="text-[10px] font-mono text-slate-500 uppercase tracking-[0.3em] ml-1">var specifications.log</label>
+                   <textarea placeholder="Append condition, history, and modules..." rows={5} value={description} onChange={e => setDescription(e.target.value)} className="w-full p-4 bg-abyss border border-warm rounded focus:border-emerald-500 outline-none font-mono text-snow text-sm leading-relaxed transition-all"></textarea>
                 </div>
               </div>
-              <button onClick={nextStep} disabled={!title || !price || !description} className="w-full py-4 bg-ocean-700 text-white rounded-2xl font-black shadow-lg shadow-ocean-700/20 active:scale-95 disabled:opacity-50 transition-all uppercase text-[10px] tracking-widest">Continue</button>
-              <button onClick={prevStep} className="w-full text-slate-400 font-black uppercase text-[10px] tracking-widest">Back</button>
+              <div className="flex flex-col gap-4 pt-8">
+                <button onClick={nextStep} disabled={!title || !price || !description} className="btn-premium w-full text-xs font-mono tracking-widest py-5">CONTINUE_TO_MEDIA</button>
+                <button onClick={prevStep} className="btn-ghost w-full text-[10px] font-mono tracking-widest">GO_BACK</button>
+              </div>
             </div>
           )}
 
           {step === 3 && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-right-4">
-              <div className="space-y-2">
-                <h2 className="text-2xl font-black">Media & Location</h2>
-                <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Step 3 of 4</p>
+            <div className="space-y-10 animate-slide-up">
+              <div className="space-y-4 border-l-4 border-emerald-500 pl-8">
+                <p className="text-[10px] font-mono text-emerald-500 uppercase tracking-[0.4em]">step_03 // signal_capture</p>
+                <h2 className="text-3xl font-black text-snow uppercase tracking-tighter">Media & Origin</h2>
               </div>
               
               <div 
                 onClick={() => !processingImages && fileInputRef.current?.click()} 
-                className={`h-48 border-4 border-dashed border-slate-200 rounded-3xl flex flex-col items-center justify-center bg-slate-50 hover:bg-white transition-colors cursor-pointer p-4 group ${processingImages ? 'opacity-50 cursor-wait' : ''}`}
+                className={`h-56 border-2 border-dashed border-warm rounded-lg flex flex-col items-center justify-center bg-abyss hover:border-emerald-500/50 transition-all cursor-pointer p-6 group ${processingImages ? 'opacity-50 cursor-wait' : ''}`}
               >
                 <input type="file" multiple hidden ref={fileInputRef} onChange={e => handleFiles(e.target.files)} disabled={processingImages} />
                 
                 {processingImages ? (
-                   <div className="flex flex-col items-center animate-pulse">
-                     <Loader2 size={40} className="text-ocean-600 animate-spin mb-2" />
-                     <span className="font-bold text-ocean-700 uppercase text-[10px] tracking-widest">Compressing for Island Data...</span>
+                   <div className="flex flex-col items-center space-y-4">
+                     <Loader2 size={32} className="text-emerald-500 animate-spin" />
+                     <span className="font-mono text-emerald-500 uppercase text-[10px] tracking-[0.3em] animate-pulse">Compressing_Packets...</span>
                    </div>
                 ) : photos.length === 0 ? (
-                  <> 
-                    <Camera size={40} className="text-slate-300 mb-2 group-hover:text-ocean-400 transition-colors" /> 
-                    <span className="font-black text-slate-400 uppercase text-[10px] tracking-widest text-center px-4">Optimized photo uploads (up to 8)</span> 
-                  </>
+                  <div className="flex flex-col items-center space-y-4"> 
+                    <Camera size={40} className="text-slate-600 group-hover:text-emerald-500 transition-colors" /> 
+                    <span className="font-mono text-slate-500 uppercase text-[9px] tracking-[0.3em] text-center max-w-xs leading-loose">Upload Visual Proof (Up to 8 Fragments)</span> 
+                  </div>
                 ) : (
-                  <div className="flex gap-2 overflow-x-auto w-full p-2 scrollbar-hide">
+                  <div className="flex gap-4 overflow-x-auto w-full p-2 no-scrollbar">
                     {photos.map((p, i) => (
-                      <div key={i} className="relative w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0 shadow-sm border-2 border-white">
+                      <div key={i} className="relative w-24 h-24 rounded border border-warm overflow-hidden flex-shrink-0 shadow-glow">
                         <img src={p.preview} className="w-full h-full object-cover" />
-                        <button onClick={e => removePhoto(i, e)} className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs shadow-lg hover:bg-red-600 transition-colors">×</button>
+                        <button onClick={e => removePhoto(i, e)} className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow-glow hover:bg-red-600 transition-colors">×</button>
                       </div>
                     ))}
                     {photos.length < 8 && (
-                      <div className="w-24 h-24 flex items-center justify-center bg-slate-100 rounded-2xl border-2 border-slate-200 text-slate-300 flex-shrink-0 hover:bg-slate-200 transition-colors">
-                         <PlusCircle size={32} />
+                      <div className="w-24 h-24 flex items-center justify-center bg-carbon rounded border border-warm text-emerald-500 flex-shrink-0 hover:border-emerald-500 transition-all">
+                         <PlusCircle size={24} />
                       </div>
                     )}
                   </div>
                 )}
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
-                 <div className="space-y-1.5">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Island/City</label>
-                    <select value={city} onChange={e => setCity(e.target.value)} className="w-full p-4 bg-slate-50 rounded-2xl border-2 border-slate-100 font-bold outline-none">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <div className="space-y-3">
+                    <label className="text-[10px] font-mono text-slate-500 uppercase tracking-[0.3em] ml-1">var node_loc</label>
+                    <select value={city} onChange={e => setCity(e.target.value)} className="w-full p-4 bg-abyss border border-warm rounded font-mono text-snow text-xs outline-none focus:border-emerald-500 appearance-none transition-all">
                         <option>Port Blair</option><option>Havelock</option><option>Neil Island</option><option>Diglipur</option><option>Mayabunder</option><option>Rangat</option><option>Campbell Bay</option>
                     </select>
                  </div>
-                 <div className="space-y-1.5">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Local Area</label>
-                    <input placeholder="e.g. Garacharma" value={area} onChange={e => setArea(e.target.value)} className="w-full p-4 bg-slate-50 rounded-2xl border-2 border-slate-100 font-bold outline-none" />
+                 <div className="space-y-3">
+                    <label className="text-[10px] font-mono text-slate-500 uppercase tracking-[0.3em] ml-1">var area_tag</label>
+                    <input placeholder="e.g. SECTOR_07" value={area} onChange={e => setArea(e.target.value)} className="w-full p-4 bg-abyss border border-warm rounded font-mono text-snow text-xs outline-none focus:border-emerald-500 transition-all" />
                  </div>
               </div>
-              <button onClick={nextStep} disabled={photos.length === 0 || !area || processingImages} className="w-full py-4 bg-ocean-700 text-white rounded-2xl font-black shadow-lg shadow-ocean-700/20 active:scale-95 disabled:opacity-50 transition-all uppercase text-[10px] tracking-widest">Review Listing</button>
-              <button onClick={prevStep} className="w-full text-slate-400 font-black uppercase text-[10px] tracking-widest">Back</button>
+
+              <div className="flex flex-col gap-4 pt-8">
+                <button onClick={nextStep} disabled={photos.length === 0 || !area || processingImages} className="btn-premium w-full text-xs font-mono tracking-widest py-5">VERIFY_INTEGRITY</button>
+                <button onClick={prevStep} className="btn-ghost w-full text-[10px] font-mono tracking-widest">BACK_TO_DATA</button>
+              </div>
             </div>
           )}
 
           {step === 4 && (
-            <div className="space-y-8 animate-in zoom-in-95 text-center">
-              <div className="space-y-2">
-                <h2 className="text-2xl font-black">Final Confirmation</h2>
-                <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Step 4 of 4</p>
+            <div className="space-y-12 animate-slide-up text-center">
+              <div className="space-y-4">
+                <p className="text-[10px] font-mono text-emerald-500 uppercase tracking-[0.4em]">step_04 // final_handshake</p>
+                <h2 className="text-3xl font-black text-snow uppercase tracking-tighter">System Audit</h2>
               </div>
               
-              <div className="p-6 bg-slate-50 rounded-[32px] border-2 border-slate-100 flex items-center space-x-6 text-left shadow-inner">
-                {photos[0] && <img src={photos[0].preview} className="w-24 h-24 rounded-2xl object-cover shadow-md border-2 border-white" />}
-                <div className="flex-1 overflow-hidden">
-                    <p className="text-[10px] font-black text-ocean-700 uppercase tracking-widest mb-1">{category}</p>
-                    <p className="font-heading font-black text-slate-900 truncate text-lg">{title}</p>
-                    <p className="text-2xl font-heading font-black text-slate-950 mt-1">₹ {parseFloat(price).toLocaleString('en-IN')}</p>
+              <div className="p-8 bg-abyss rounded border border-warm flex items-center space-x-8 text-left shadow-glow">
+                {photos[0] && <img src={photos[0].preview} className="w-24 h-24 rounded border border-warm object-cover shadow-elevation-low" />}
+                <div className="flex-1 overflow-hidden space-y-2">
+                    <p className="text-[9px] font-mono text-emerald-500 uppercase tracking-widest">class::{category}</p>
+                    <p className="font-mono font-bold text-snow truncate text-lg uppercase tracking-tight">{title}</p>
+                    <p className="text-2xl font-heading font-black text-emerald-500">₹ {parseFloat(price).toLocaleString('en-IN')}</p>
                 </div>
               </div>
 
               <div className="space-y-4">
                   {!isVerified && (
-                    <button onClick={handleVerifyLocation} disabled={isVerifying} className="w-full p-5 bg-amber-50 text-amber-700 rounded-3xl border-2 border-amber-100 flex items-center justify-between group hover:bg-amber-100 transition-colors">
-                      <div className="flex items-center space-x-4"><MapPin size={24}/> <div className="text-left"><p className="font-black text-xs uppercase tracking-widest">Verify Island Residency</p><p className="text-[10px] font-bold opacity-80">Boost trust by 40% with local verification</p></div></div>
-                      {isVerifying ? <div className="animate-spin h-5 w-5 border-2 border-amber-700 border-t-transparent rounded-full"></div> : <ChevronRight size={20} />}
+                    <button onClick={handleVerifyLocation} disabled={isVerifying} className="w-full p-6 bg-carbon rounded border border-warm flex items-center justify-between group hover:border-emerald-500 transition-all shadow-elevation-low">
+                      <div className="flex items-center space-x-6">
+                        <Terminal size={24} className="text-emerald-500 logo-glow" /> 
+                        <div className="text-left space-y-1">
+                          <p className="font-mono font-bold text-snow text-xs uppercase tracking-widest">Run Residency_Check</p>
+                          <p className="text-[9px] font-mono text-slate-500 uppercase tracking-widest">Improve visibility throughput by 40%</p>
+                        </div>
+                      </div>
+                      {isVerifying ? <Loader2 className="animate-spin text-emerald-500" size={20} /> : <ChevronRight size={18} className="text-slate-600 group-hover:text-emerald-500" />}
                     </button>
                   )}
-                  {isVerified && <div className="p-5 bg-emerald-50 text-emerald-700 rounded-3xl border-2 border-emerald-100 flex items-center justify-center space-x-3 font-black text-xs uppercase tracking-widest"><Check size={20}/> <span>Island Verified Resident</span></div>}
+                  {isVerified && (
+                    <div className="p-6 bg-emerald-500/5 text-emerald-500 rounded border border-emerald-500/30 flex items-center justify-center space-x-4 font-mono font-bold text-xs uppercase tracking-[0.3em] shadow-glow">
+                      <ShieldCheck size={20} /> 
+                      <span>Protocol_Verified :: Local_Node</span>
+                    </div>
+                  )}
               </div>
               
-              <button onClick={handleSave} disabled={loading} className="w-full py-6 bg-slate-900 text-white rounded-[32px] font-black text-xl shadow-2xl active:scale-95 transition-all uppercase tracking-tighter">
-                {loading ? 'Processing...' : (editId ? 'Update Ad Now' : 'Publish Ad Now')}
-              </button>
-              
-              {!isVerified && <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center justify-center"><AlertCircle size={10} className="mr-2"/> Unverified accounts have limited visibility.</p>}
-              <button onClick={prevStep} className="w-full text-slate-400 font-black uppercase text-[10px] tracking-widest">Edit Details</button>
+              <div className="flex flex-col gap-4 pt-8">
+                <button onClick={handleSave} disabled={loading} className="w-full btn-premium py-6 font-mono text-xs tracking-[0.4em] shadow-glow">
+                  {loading ? 'DEPLOYING...' : (editId ? 'UPDATE_REGISTRY' : 'PUBLISH_TO_CLUSTER')}
+                </button>
+                {!isVerified && <p className="text-[9px] font-mono text-red-500 uppercase tracking-[0.2em] flex items-center justify-center animate-pulse"><AlertCircle size={10} className="mr-2"/> System_Warning: Unverified signals throttled</p>}
+                <button onClick={prevStep} className="btn-ghost w-full text-[10px] font-mono tracking-widest">EDIT_PARAMETERS</button>
+              </div>
             </div>
           )}
 
           {step === 5 && (
-            <div className="text-center py-12 space-y-8 animate-in zoom-in-90">
-               <div className="w-32 h-32 bg-emerald-100 text-emerald-600 rounded-[48px] flex items-center justify-center mx-auto shadow-inner border-4 border-white"><Check size={64} strokeWidth={4} /></div>
-               <div className="space-y-2">
-                 <h2 className="text-4xl font-black uppercase tracking-tighter">{editId ? 'Ad Updated!' : 'Published!'}</h2>
-                 <p className="text-slate-500 font-bold text-sm">Your item is now live for the island community.</p>
+            <div className="text-center py-20 space-y-12 animate-in zoom-in-95">
+               <div className="w-24 h-24 bg-emerald-500/10 text-emerald-500 rounded border border-emerald-500/30 flex items-center justify-center mx-auto shadow-glow">
+                  <Rocket size={40} className="logo-glow" />
                </div>
-               <div className="flex flex-col gap-4">
-                 <button onClick={() => navigate('/listings')} className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl">Browse Marketplace</button>
-                 <button onClick={() => navigate('/profile')} className="w-full py-4 bg-white border-2 border-slate-100 text-slate-800 rounded-2xl font-black uppercase text-[11px] tracking-widest">My Account</button>
+               <div className="space-y-4">
+                 <h2 className="text-4xl font-heading font-black text-snow uppercase tracking-tighter leading-none">{editId ? 'Update_Success' : 'Signal_Deployed'}</h2>
+                 <p className="text-slate-500 font-mono text-xs uppercase tracking-[0.2em] leading-loose">Unit is now broadcasting to the island mesh.</p>
+               </div>
+               <div className="flex flex-col gap-4 pt-8">
+                 <button onClick={() => navigate('/listings')} className="btn-premium w-full font-mono text-[10px] tracking-widest">LS /MARKETPLACE</button>
+                 <button onClick={() => navigate('/profile')} className="btn-ghost w-full font-mono text-[10px] tracking-widest">CAT /MY_IDENTITY</button>
                </div>
             </div>
           )}

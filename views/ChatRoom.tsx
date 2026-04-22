@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Chat, Message, Profile } from '../types';
-import { Send, Camera, ChevronLeft, Phone, MoreVertical, ShieldCheck } from 'lucide-react';
+import { Send, Camera, ChevronLeft, Phone, MoreVertical, ShieldCheck, Terminal, Loader2 } from 'lucide-react';
 
 export const ChatRoom: React.FC = () => {
   const { id } = useParams();
@@ -33,7 +33,6 @@ export const ChatRoom: React.FC = () => {
           .eq('id', id)
           .single();
 
-        // If ID is actually a listing ID (from "Chat Now" button), resolve correctly
         if (chatError || !chatData) {
           const { data: listing } = await supabase
             .from('listings')
@@ -79,7 +78,6 @@ export const ChatRoom: React.FC = () => {
         if (chatData) {
           setChat(chatData);
           
-          // Initial Message Fetch
           const { data: messageData } = await supabase
             .from('messages')
             .select('*')
@@ -88,7 +86,6 @@ export const ChatRoom: React.FC = () => {
           
           if (messageData) setMessages(messageData);
 
-          // Reset unread count for current user
           const isBuyer = user.id === chatData.buyer_id;
           await supabase
             .from('chats')
@@ -157,60 +154,67 @@ export const ChatRoom: React.FC = () => {
   };
 
   if (loading) return (
-    <div className="h-screen flex items-center justify-center bg-white">
-      <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-ocean-600"></div>
+    <div className="h-screen flex flex-col items-center justify-center bg-abyss space-y-6">
+      <Loader2 className="animate-spin text-emerald-500" size={32} />
+      <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-emerald-500 animate-pulse">Syncing_Tunnel...</p>
     </div>
   );
 
   if (!chat) return (
-    <div className="h-screen flex flex-col items-center justify-center p-8 text-center bg-white">
-      <h2 className="text-2xl font-black mb-4 uppercase tracking-tighter">Chat Unavailable</h2>
-      <Link to="/chats" className="bg-ocean-700 text-white px-8 py-3 rounded-2xl font-black text-xs uppercase tracking-widest">Back to Inbox</Link>
+    <div className="h-screen flex flex-col items-center justify-center p-8 text-center bg-abyss">
+      <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded border border-red-500/30 flex items-center justify-center mb-8 shadow-glow">
+        <Terminal size={32} />
+      </div>
+      <h2 className="text-2xl font-black mb-4 uppercase tracking-tighter text-snow">Connection_Lost</h2>
+      <p className="text-slate-500 font-mono text-[10px] uppercase tracking-widest mb-10">Data packet unavailable or protocol mismatch.</p>
+      <Link to="/chats" className="btn-premium px-10 font-mono text-[10px]">REVERT_TO_MESH</Link>
     </div>
   );
 
   const otherParty = currentUser?.id === chat.buyer_id ? chat.seller : chat.buyer;
 
   return (
-    <div className="h-screen flex flex-col bg-slate-50">
-      <div className="px-4 py-3 border-b bg-white flex items-center justify-between shadow-sm sticky top-0 z-20">
-        <div className="flex items-center space-x-3">
-          <button onClick={() => navigate('/chats')} className="p-2 -ml-2 hover:bg-slate-100 rounded-full transition-colors">
+    <div className="h-screen flex flex-col bg-abyss">
+      <div className="px-6 py-4 border-b border-warm bg-carbon flex items-center justify-between shadow-elevation-low sticky top-0 z-20">
+        <div className="flex items-center space-x-6">
+          <button onClick={() => navigate('/chats')} className="p-2 -ml-2 text-slate-500 hover:text-emerald-500 transition-colors">
             <ChevronLeft size={24} />
           </button>
-          <div className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden border-2 border-white shadow-sm ring-1 ring-slate-100">
+          <div className="w-12 h-12 rounded border border-warm bg-abyss overflow-hidden shadow-glow">
             <img src={otherParty?.profile_photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${otherParty?.id}`} alt="" />
           </div>
-          <div>
-            <div className="flex items-center space-x-1">
-              <h3 className="font-black text-xs text-slate-900 leading-tight uppercase tracking-tight">{otherParty?.name || 'Seller'}</h3>
-              {otherParty?.is_location_verified && <ShieldCheck size={12} className="text-ocean-600" />}
+          <div className="space-y-1">
+            <div className="flex items-center space-x-2">
+              <h3 className="font-mono font-bold text-sm text-snow uppercase tracking-widest">{otherParty?.name || 'NODE_UNKNOWN'}</h3>
+              {otherParty?.is_location_verified && <ShieldCheck size={14} className="text-emerald-500" />}
             </div>
-            <p className="text-[9px] font-black text-green-600 uppercase tracking-widest">Island Verified</p>
+            <p className="text-[8px] font-mono text-emerald-500 uppercase tracking-[0.3em] animate-pulse">Status: Online</p>
           </div>
         </div>
-        <div className="flex items-center space-x-2">
-           <button className="p-2 text-slate-400 hover:text-ocean-700 transition-colors"><Phone size={20} /></button>
-           <button className="p-2 text-slate-400 hover:text-ocean-700 transition-colors"><MoreVertical size={20} /></button>
+        <div className="flex items-center space-x-4">
+           <button className="p-2 text-slate-600 hover:text-emerald-500 transition-colors"><Phone size={18} /></button>
+           <button className="p-2 text-slate-600 hover:text-emerald-500 transition-colors"><MoreVertical size={18} /></button>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        <div className="text-center py-6">
-           <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] bg-slate-100 inline-block px-4 py-1 rounded-full">Conversation Started</p>
+      <div className="flex-1 overflow-y-auto p-8 space-y-6 no-scrollbar">
+        <div className="text-center py-10">
+           <p className="text-[9px] font-mono text-slate-600 uppercase tracking-[0.5em] border border-warm/30 inline-block px-6 py-2 rounded">Session_Initiated</p>
         </div>
         
         {messages.map((msg) => {
           const isMe = msg.sender_id === currentUser?.id;
           return (
             <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 duration-300`}>
-              <div className={`max-w-[75%] px-4 py-3 rounded-2xl shadow-sm ${
-                isMe ? 'bg-ocean-700 text-white rounded-tr-none' : 'bg-white text-slate-800 rounded-tl-none border border-slate-200'
+              <div className={`max-w-[80%] px-6 py-4 rounded border transition-all ${
+                isMe 
+                ? 'bg-emerald-500/5 border-emerald-500/30 text-emerald-200 rounded-tr-none shadow-glow' 
+                : 'bg-carbon border-warm text-snow rounded-tl-none'
               }`}>
-                <p className="text-sm font-medium leading-relaxed">{msg.message_text}</p>
-                <div className="flex items-center justify-end space-x-1 mt-1 opacity-60">
-                   <p className="text-[8px] font-black uppercase tracking-widest">
-                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                <p className="text-sm font-sans leading-relaxed tracking-wide">{msg.message_text}</p>
+                <div className="flex items-center justify-end space-x-2 mt-3 opacity-40">
+                   <p className="text-[8px] font-mono uppercase">
+                    [{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}]
                   </p>
                 </div>
               </div>
@@ -220,16 +224,16 @@ export const ChatRoom: React.FC = () => {
         <div ref={scrollRef} />
       </div>
 
-      <div className="p-4 bg-white border-t safe-bottom">
-        <div className="flex items-center space-x-3">
-          <button className="p-3 bg-slate-100 rounded-2xl text-slate-400 hover:bg-slate-200 transition-colors">
+      <div className="p-6 bg-carbon border-t border-warm safe-bottom">
+        <div className="flex items-center space-x-4">
+          <button className="p-4 bg-abyss border border-warm rounded text-slate-500 hover:text-emerald-500 hover:border-emerald-500 transition-all">
             <Camera size={20} />
           </button>
-          <div className="flex-1 bg-slate-50 rounded-[24px] flex items-center px-5 py-3 border-2 border-slate-100 focus-within:border-ocean-600 focus-within:bg-white transition-all">
+          <div className="flex-1 bg-abyss rounded border border-warm flex items-center px-6 py-4 focus-within:border-emerald-500 transition-all shadow-glow">
             <input 
               type="text" 
-              placeholder="Type your message..." 
-              className="bg-transparent flex-1 outline-none text-sm font-bold placeholder:text-slate-400"
+              placeholder="Inject payload..." 
+              className="bg-transparent flex-1 outline-none text-sm font-mono text-snow placeholder:text-slate-700"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
@@ -238,7 +242,7 @@ export const ChatRoom: React.FC = () => {
           <button 
             onClick={handleSend}
             disabled={!inputText.trim()}
-            className="p-4 bg-ocean-700 text-white rounded-[20px] shadow-xl shadow-ocean-700/20 active:scale-90 transition-all disabled:opacity-30 disabled:scale-95"
+            className="p-5 bg-emerald-500 text-abyss rounded shadow-glow active:scale-90 transition-all disabled:opacity-20 disabled:scale-95 border border-emerald-400"
           >
             <Send size={20} />
           </button>

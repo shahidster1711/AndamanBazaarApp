@@ -17,47 +17,55 @@ import { User } from '@supabase/supabase-js';
 import { AlertTriangle, Terminal, ExternalLink } from 'lucide-react';
 
 const ConfigRequiredView: React.FC = () => (
-  <div className="min-h-screen flex items-center justify-center bg-arches p-6">
-    <div className="max-w-md w-full bg-white rounded-airbnb-lg shadow-airbnb border border-gray-200 overflow-hidden text-center p-10 space-y-8 animate-slide-up">
-      <div className="w-20 h-20 bg-rausch-50 text-rausch rounded-full flex items-center justify-center mx-auto border border-rausch-100">
-        <AlertTriangle size={40} />
+  <div className="min-h-screen flex items-center justify-center bg-abyss p-6">
+    <div className="max-w-md w-full bg-carbon rounded-lg shadow-elevation-high border border-warm overflow-hidden text-center p-10 space-y-10 animate-slide-up">
+      <div className="w-20 h-20 bg-emerald-500/10 text-emerald-500 rounded-lg flex items-center justify-center mx-auto border border-emerald-500/30 shadow-glow">
+        <Terminal size={40} />
       </div>
-      <div className="space-y-3">
-        <h1 className="text-2xl font-bold text-hof tracking-tight">
-          Configuration <br/>Required
+      <div className="space-y-4">
+        <h1 className="text-3xl font-black text-snow tracking-tighter uppercase leading-none">
+          Initialization <br/>Required
         </h1>
-        <p className="text-gray-500 text-sm leading-relaxed px-4">
-          AndamanBazaar needs your Supabase keys to connect to the database.
+        <p className="text-slate-500 font-mono text-[10px] leading-loose uppercase tracking-[0.3em]">
+          SYSTEM_ACCESS_DENIED: MISSING_ENV_VARS
         </p>
       </div>
       
-      <div className="bg-gray-50 rounded-2xl p-6 text-left space-y-4 border border-gray-100">
-        <div className="flex items-center space-x-2 text-hof">
-          <Terminal size={16} />
-          <span className="text-[10px] font-bold uppercase tracking-widest">Setup Instructions</span>
+      <div className="bg-abyss rounded border border-warm p-6 text-left space-y-6">
+        <div className="flex items-center space-x-3 text-emerald-500">
+          <Settings size={16} />
+          <span className="text-[10px] font-mono uppercase tracking-[0.3em]">Setup Protocol</span>
         </div>
-        <ol className="text-xs text-gray-600 font-medium space-y-3 list-decimal list-inside">
-          <li>Create a project at <a href="https://supabase.com" className="text-rausch underline hover:text-rausch-600">supabase.com</a></li>
-          <li>Copy your <span className="text-hof font-bold">Project URL</span> and <span className="text-hof font-bold">Anon Key</span></li>
-          <li>Create a <code className="bg-gray-200 px-1.5 py-0.5 rounded text-hof">.env</code> file in your root folder</li>
-          <li>Add the variables as shown in <code className="bg-gray-200 px-1.5 py-0.5 rounded">.env.example</code></li>
+        <ol className="text-[11px] font-mono text-parchment space-y-4 list-none">
+          <li className="flex items-start space-x-3">
+             <span className="text-emerald-500">01.</span>
+             <span>Access project at <a href="https://supabase.com" className="text-emerald-400 underline hover:text-emerald-300">supabase.com</a></span>
+          </li>
+          <li className="flex items-start space-x-3">
+             <span className="text-emerald-500">02.</span>
+             <span>Retrieve [ PROJECT_URL ] and [ ANON_KEY ]</span>
+          </li>
+          <li className="flex items-start space-x-3">
+             <span className="text-emerald-500">03.</span>
+             <span>Inject into <code className="bg-carbon px-1.5 py-0.5 rounded text-snow">.env</code> file</span>
+          </li>
         </ol>
       </div>
 
-      <div className="pt-4 flex flex-col gap-3">
+      <div className="pt-4 flex flex-col gap-4">
         <button 
           onClick={() => window.location.reload()}
-          className="w-full py-3.5 airbnb-button shadow-md active:scale-95 transition-all text-sm"
+          className="w-full btn-premium shadow-glow font-mono text-[10px] tracking-[0.2em]"
         >
-          I've added the keys, reload!
+          REBOOT_SYSTEM
         </button>
         <a 
           href="https://supabase.com/docs/guides/getting-started/quickstarts/reactjs" 
           target="_blank" 
           rel="noopener noreferrer"
-          className="flex items-center justify-center space-x-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest hover:text-rausch transition-colors"
+          className="flex items-center justify-center space-x-3 text-[9px] font-mono text-slate-600 uppercase tracking-widest hover:text-emerald-500 transition-colors"
         >
-          <span>Need help? View Docs</span>
+          <span>READ_DOCUMENTATION</span>
           <ExternalLink size={12} />
         </a>
       </div>
@@ -102,8 +110,14 @@ const App: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-rausch"></div>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-abyss space-y-6">
+        <div className="relative">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
+          <div className="absolute inset-0 flex items-center justify-center">
+             <div className="w-6 h-6 bg-emerald-500/10 rounded-full animate-pulse"></div>
+          </div>
+        </div>
+        <p className="text-[9px] font-mono uppercase tracking-[0.4em] text-emerald-500 animate-pulse">Initializing_Identity_Shell...</p>
       </div>
     );
   }

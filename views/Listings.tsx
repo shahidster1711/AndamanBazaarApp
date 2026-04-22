@@ -102,26 +102,26 @@ export const Listings: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-12 space-y-16 animate-fade-in">
+    <div className="max-w-7xl mx-auto px-6 py-12 space-y-16 animate-fade-in bg-abyss">
       <div className="space-y-12">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 border-b border-warm pb-12">
            <div className="space-y-2">
-              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-ocean-600">The Collection</p>
-              <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-slate-950 uppercase">Explorer</h1>
+              <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-emerald-500">ls /market_data</p>
+              <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-snow uppercase">Registry</h1>
            </div>
            <form onSubmit={handleSearchSubmit} className="flex-1 max-w-xl relative group">
-             <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-ocean-600 transition-colors">
+             <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-emerald-500 transition-colors">
                <Search size={22} />
              </div>
              <input 
                type="text" 
                value={searchQuery}
                onChange={(e) => setSearchQuery(e.target.value)}
-               placeholder="Find anything in the Islands..." 
-               className="w-full py-5 pl-16 pr-12 rounded-[24px] bg-white border border-slate-100 focus:border-ocean-300 focus:ring-[8px] focus:ring-ocean-50/50 transition-all duration-300 text-lg font-bold text-slate-950 shadow-sm outline-none"
+               placeholder="grep -r islands *" 
+               className="w-full py-6 pl-16 pr-12 rounded-xl bg-carbon border border-warm focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all duration-300 text-lg font-mono text-snow shadow-elevation-low outline-none"
              />
              {searchQuery && (
-               <button onClick={() => {setSearchQuery(''); handleCategorySelect('All');}} type="button" className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-900 transition-colors">
+               <button onClick={() => {setSearchQuery(''); handleCategorySelect('All');}} type="button" className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-500 hover:text-snow transition-colors">
                    <X size={20} />
                </button>
              )}
@@ -133,10 +133,10 @@ export const Listings: React.FC = () => {
             <button 
               key={cat}
               onClick={() => handleCategorySelect(cat)}
-              className={`px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all flex-shrink-0 border-2 ${
+              className={`px-8 py-4 rounded-lg text-[10px] font-mono uppercase tracking-[0.2em] transition-all flex-shrink-0 border ${
                 (activeCategory?.toLowerCase() === cat.toLowerCase() || (cat === 'All' && !activeCategory))
-                ? 'bg-ocean-600 text-white border-ocean-600 shadow-lg shadow-ocean-600/20 scale-105'
-                : 'bg-white text-slate-400 border-slate-50 hover:border-slate-200 hover:text-slate-900'
+                ? 'bg-emerald-500 text-abyss border-emerald-500 shadow-glow scale-105 font-bold'
+                : 'bg-carbon text-slate-500 border-warm hover:border-emerald-500/50 hover:text-emerald-400'
               }`}
             >
               {cat}
@@ -145,17 +145,17 @@ export const Listings: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {loading ? (
           [1, 2, 3, 4, 5, 6, 7, 8].map(n => <ListingSkeleton key={n} />)
         ) : listings.length === 0 ? (
-          <div className="col-span-full py-32 text-center space-y-8 bg-white rounded-[48px] border border-slate-100 animate-slide-up">
-            <div className="w-24 h-24 bg-slate-50 rounded-[32px] flex items-center justify-center mx-auto shadow-sm text-4xl">🏝️</div>
-            <div className="space-y-2">
-                <h3 className="text-3xl font-black text-slate-950 uppercase tracking-tighter">No items found</h3>
-                <p className="text-slate-400 font-bold text-sm max-w-xs mx-auto uppercase tracking-widest leading-loose">Try adjusting your filters or search terms.</p>
+          <div className="col-span-full py-32 text-center space-y-8 bg-carbon rounded-lg border-2 border-dashed border-warm animate-slide-up">
+            <div className="w-24 h-24 bg-abyss rounded-full flex items-center justify-center mx-auto shadow-elevation-low border border-warm text-4xl">📡</div>
+            <div className="space-y-4">
+                <h3 className="text-3xl font-black text-snow uppercase tracking-tighter">Zero Match Found</h3>
+                <p className="text-slate-500 font-mono text-xs max-w-xs mx-auto uppercase tracking-[0.2em] leading-loose">No active units detected for given parameters.</p>
             </div>
-            <button onClick={() => handleCategorySelect('All')} className="btn-premium px-10 py-4 text-[10px] uppercase tracking-widest">Clear Everything</button>
+            <button onClick={() => handleCategorySelect('All')} className="btn-premium px-10 py-4 text-[10px] font-mono uppercase tracking-widest">RESET_FILTERS</button>
           </div>
         ) : (
           listings.map((listing) => (
@@ -173,11 +173,11 @@ export const Listings: React.FC = () => {
 };
 
 const ListingSkeleton: React.FC = () => (
-  <div className="bg-white rounded-[40px] border border-slate-100 h-[450px] p-4 space-y-6 animate-pulse">
-    <div className="aspect-[4/5] bg-slate-50 rounded-[32px]"></div>
+  <div className="bg-carbon border border-warm rounded-lg h-[450px] p-4 space-y-6 animate-pulse">
+    <div className="aspect-[4/5] bg-abyss rounded-md"></div>
     <div className="space-y-4 px-2">
-       <div className="h-6 bg-slate-50 rounded-full w-3/4"></div>
-       <div className="h-10 bg-slate-50 rounded-full w-1/2"></div>
+       <div className="h-4 bg-abyss rounded w-3/4"></div>
+       <div className="h-8 bg-abyss rounded w-1/2"></div>
     </div>
   </div>
 );
@@ -200,43 +200,43 @@ const ListingItem: React.FC<{ listing: ListingCardData, isFavorited: boolean, on
   return (
     <Link 
       to={`/listings/${listing.id}`} 
-      className="group flex flex-col bg-white rounded-[40px] border border-slate-100 p-3 hover:shadow-premium hover:-translate-y-2 transition-all duration-500"
+      className="group flex flex-col bg-carbon rounded-lg border border-warm p-3 hover:border-emerald-500 hover:-translate-y-1 transition-all duration-300 shadow-elevation-low"
     >
-      <div className="relative aspect-[4/5] bg-slate-50 rounded-[32px] overflow-hidden">
+      <div className="relative aspect-[4/5] bg-abyss rounded-md overflow-hidden">
         <img 
           src={imageUrl} 
-          className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" 
+          className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" 
           loading="lazy"
           alt={listing.title} 
         />
         <button 
           onClick={onToggleFavorite}
-          className={`absolute top-4 right-4 w-12 h-12 glass rounded-2xl flex items-center justify-center transition-all duration-300 z-10 ${isFavorited ? 'text-coral-500 scale-110' : 'text-slate-900/40 hover:text-coral-500'}`}
+          className={`absolute top-4 right-4 w-10 h-10 glass rounded-lg flex items-center justify-center transition-all duration-300 z-10 ${isFavorited ? 'text-emerald-500 scale-110 shadow-glow border-emerald-500/50' : 'text-slate-400 hover:text-emerald-400'}`}
         >
-          <Heart size={20} fill={isFavorited ? "currentColor" : "none"} strokeWidth={2.5} />
+          <Heart size={18} fill={isFavorited ? "currentColor" : "none"} strokeWidth={2.5} />
         </button>
         {listing.is_featured && (
-            <div className="absolute top-4 left-4 bg-ocean-600 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg flex items-center z-10">
-                <Sparkles size={12} className="mr-2" /> Featured
+            <div className="absolute top-4 left-4 bg-emerald-500 text-abyss px-3 py-1.5 rounded text-[9px] font-mono font-bold uppercase tracking-widest shadow-glow flex items-center z-10">
+                <Sparkles size={10} className="mr-1.5" /> PRIORITY
             </div>
         )}
         <div className="absolute bottom-4 left-4 z-10">
-           <div className="glass px-4 py-2 rounded-xl text-[10px] font-black text-slate-900 uppercase tracking-widest shadow-sm flex items-center">
-             <MapPin size={12} className="mr-2 text-ocean-600" /> {listing.city}
+           <div className="bg-carbon/80 backdrop-blur-md px-3 py-1.5 rounded border border-warm text-[9px] font-mono text-parchment uppercase tracking-widest flex items-center">
+             <MapPin size={10} className="mr-2 text-emerald-500" /> {listing.city}
            </div>
         </div>
       </div>
-      <div className="p-5 pb-3 flex flex-col flex-1 space-y-4">
+      <div className="p-4 flex flex-col flex-1 space-y-4">
         <div className="space-y-1">
-          <h3 className="font-black text-slate-950 line-clamp-2 leading-tight text-sm uppercase tracking-tight group-hover:text-ocean-600 transition-colors">{listing.title}</h3>
+          <h3 className="font-bold text-snow line-clamp-2 leading-tight text-sm uppercase font-mono tracking-tight group-hover:text-emerald-400 transition-colors">{listing.title}</h3>
         </div>
-        <div className="mt-auto flex items-end justify-between">
+        <div className="mt-auto flex items-end justify-between border-t border-warm/50 pt-4">
            <div className="flex flex-col">
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Asking Price</span>
-              <span className="text-2xl font-heading font-black text-slate-950 tracking-tighter">₹ {listing.price.toLocaleString('en-IN')}</span>
+              <span className="text-[9px] font-mono text-slate-500 uppercase tracking-widest mb-1">Value</span>
+              <span className="text-2xl font-heading font-black text-snow tracking-tighter">₹ {listing.price.toLocaleString('en-IN')}</span>
            </div>
-           <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-ocean-50 group-hover:text-ocean-600 transition-all">
-              <ArrowRight size={18} strokeWidth={2.5} />
+           <div className="w-10 h-10 rounded border border-warm flex items-center justify-center text-slate-500 group-hover:border-emerald-500 group-hover:text-emerald-500 transition-all">
+              <ArrowRight size={18} />
            </div>
         </div>
       </div>

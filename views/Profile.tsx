@@ -22,7 +22,9 @@ import {
   Loader2,
   MapPin,
   ShieldCheck,
-  Award
+  Award,
+  RefreshCw,
+  AlertCircle
 } from 'lucide-react';
 
 export const Profile: React.FC = () => {
@@ -314,41 +316,41 @@ export const Profile: React.FC = () => {
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto p-8 flex flex-col items-center justify-center min-h-[60vh]">
-        <div className="w-12 h-12 border-4 border-ocean-600 border-t-transparent rounded-full animate-spin"></div>
-        <p className="mt-4 font-black uppercase tracking-widest text-[10px] text-slate-400">Loading Profile...</p>
+        <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+        <p className="mt-4 font-mono uppercase tracking-widest text-[10px] text-emerald-500 animate-pulse">Loading_Identity_Shell...</p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 pb-12 animate-slide-up">
-      {/* Delete Confirmation Modal */}
+    <div className="max-w-7xl mx-auto px-4 pb-12 animate-fade-in bg-abyss">
+      {/* Delete Confirmation Terminal */}
       {deleteConfirmationId && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 animate-in fade-in duration-300">
-          <div className="absolute inset-0 bg-slate-900/70 backdrop-blur-md" onClick={() => setDeleteConfirmationId(null)}></div>
-          <div className="bg-white p-8 md:p-10 rounded-[40px] shadow-2xl max-w-md w-full relative overflow-hidden border-2 border-slate-100 animate-in zoom-in-95 duration-300">
-            <div className="text-center space-y-6">
-              <div className="w-24 h-24 bg-coral-50 text-coral-500 rounded-[32px] flex items-center justify-center text-3xl mx-auto shadow-inner border border-coral-100">
-                <Trash2 size={40} strokeWidth={2.5} />
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
+          <div className="absolute inset-0 bg-abyss/80 backdrop-blur-md" onClick={() => setDeleteConfirmationId(null)}></div>
+          <div className="bg-carbon p-8 md:p-10 rounded-lg shadow-elevation-high max-w-md w-full relative overflow-hidden border border-red-500/30 animate-in zoom-in-95 duration-300">
+            <div className="text-center space-y-8">
+              <div className="w-20 h-20 bg-red-500/10 text-red-500 rounded-lg flex items-center justify-center text-3xl mx-auto border border-red-500/20 shadow-glow">
+                <Trash2 size={32} />
               </div>
-              <div className="space-y-2">
-                <h2 className="text-2xl font-heading font-black text-slate-900 tracking-tight">Permanent Removal?</h2>
-                <p className="text-slate-500 font-bold text-sm leading-relaxed">
-                  This listing will be gone forever. All chats, views, and favorites associated with it will be deleted.
+              <div className="space-y-4">
+                <h2 className="text-2xl font-heading font-black text-snow uppercase tracking-tighter">Purge Data?</h2>
+                <p className="text-slate-500 font-mono text-xs leading-loose uppercase tracking-widest">
+                  IRREVERSIBLE_ACTION: ALL_ASSOCIATED_BUFFERS_WILL_BE_CLEARED
                 </p>
               </div>
               <div className="flex gap-4 pt-4">
                 <button 
                   onClick={() => setDeleteConfirmationId(null)}
-                  className="flex-1 py-4 rounded-2xl font-black text-slate-400 hover:text-slate-900 transition-colors uppercase text-[10px] tracking-widest"
+                  className="flex-1 btn-ghost text-[10px] font-mono tracking-widest"
                 >
-                  Keep Ad
+                  ABORT
                 </button>
                 <button 
                   onClick={handleDeleteListing}
-                  className="flex-[1.5] py-4 rounded-2xl font-black bg-coral-600 text-white shadow-xl shadow-coral-500/20 hover:bg-coral-700 active:scale-95 transition-all uppercase text-[10px] tracking-widest border border-coral-700"
+                  className="flex-[1.5] py-4 rounded bg-red-600 text-white font-mono text-[10px] tracking-widest shadow-glow active:scale-95 transition-all"
                 >
-                  Yes, Delete
+                  CONFIRM_PURGE
                 </button>
               </div>
             </div>
@@ -356,33 +358,33 @@ export const Profile: React.FC = () => {
         </div>
       )}
 
-      {/* Boost Modal */}
+      {/* Boost Modal Terminal */}
       {boostConfirmationId && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 animate-in fade-in duration-300">
-          <div className="absolute inset-0 bg-slate-900/70 backdrop-blur-md" onClick={() => setBoostConfirmationId(null)}></div>
-          <div className="bg-white p-8 md:p-10 rounded-[40px] shadow-2xl max-w-md w-full relative overflow-hidden border-2 border-slate-100 animate-in zoom-in-95 duration-300">
-            <div className="text-center space-y-6">
-              <div className="w-24 h-24 bg-amber-50 text-amber-500 rounded-[32px] flex items-center justify-center text-3xl mx-auto shadow-inner border border-amber-100">
-                <Rocket size={40} strokeWidth={2.5} />
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
+          <div className="absolute inset-0 bg-abyss/80 backdrop-blur-md" onClick={() => setBoostConfirmationId(null)}></div>
+          <div className="bg-carbon p-8 md:p-10 rounded-lg shadow-elevation-high max-w-md w-full relative overflow-hidden border border-emerald-500/30 animate-in zoom-in-95 duration-300">
+            <div className="text-center space-y-8">
+              <div className="w-20 h-20 bg-emerald-500/10 text-emerald-500 rounded-lg flex items-center justify-center text-3xl mx-auto border border-emerald-500/20 shadow-glow">
+                <Rocket size={32} />
               </div>
-              <div className="space-y-2">
-                <h2 className="text-2xl font-heading font-black text-slate-900 tracking-tight">Boost Visibility</h2>
-                <p className="text-slate-500 font-bold text-sm leading-relaxed">
-                  Get featured at the top of the island search results for 7 days. Our data shows 3x faster sales for boosted ads.
+              <div className="space-y-4">
+                <h2 className="text-2xl font-heading font-black text-snow uppercase tracking-tighter">Amplify Signal</h2>
+                <p className="text-slate-500 font-mono text-xs leading-loose uppercase tracking-widest">
+                  GET_FEATURED: 3X_THROUGHPUT_ESTIMATED
                 </p>
               </div>
-              <div className="flex flex-col gap-3 pt-4">
+              <div className="flex flex-col gap-4 pt-4">
                 <button 
                   onClick={() => handleBoostListing(boostConfirmationId)}
-                  className="w-full py-5 rounded-2xl font-black bg-amber-500 text-black shadow-xl shadow-amber-500/20 hover:bg-amber-600 active:scale-95 transition-all uppercase text-[10px] tracking-widest"
+                  className="w-full btn-premium py-5 font-mono text-[10px] tracking-widest"
                 >
-                  Boost for ₹99
+                  EXECUTE_BOOST --VAL=₹99
                 </button>
                 <button 
                   onClick={() => setBoostConfirmationId(null)}
-                  className="w-full py-3 rounded-2xl font-black text-slate-400 hover:text-slate-900 transition-colors uppercase text-[10px] tracking-widest"
+                  className="w-full btn-ghost py-3 font-mono text-[10px] tracking-widest"
                 >
-                  Maybe Later
+                  DECLINE
                 </button>
               </div>
             </div>
@@ -390,50 +392,45 @@ export const Profile: React.FC = () => {
         </div>
       )}
 
-      {/* Profile Header Redesign */}
+      {/* Profile Header Terminal */}
       <section className="mb-12">
-        {/* Prominent Cover Photo Area */}
-        <div className="relative h-56 md:h-80 bg-slate-900 rounded-b-[48px] md:rounded-[48px] shadow-2xl overflow-hidden border-b-8 border-ocean-700">
-          <div className="absolute inset-0 opacity-40">
-            {/* Artistic Island Gradient / Background Pattern */}
-            <div className="absolute inset-0 bg-gradient-to-br from-ocean-600 via-slate-900 to-coral-600"></div>
-            <div className="absolute top-0 right-0 w-96 h-96 bg-white/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2"></div>
-            <div className="absolute bottom-0 left-0 w-96 h-96 bg-ocean-400/20 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2"></div>
+        <div className="relative h-56 md:h-72 bg-carbon rounded-lg shadow-elevation-high overflow-hidden border border-warm">
+          <div className="absolute inset-0 opacity-20">
+            <div className="absolute inset-0 bg-[radial-gradient(#3d3a39_1px,transparent_1px)] [background-size:20px_20px]"></div>
+            <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 animate-pulse"></div>
           </div>
           
-          {/* Action Buttons in Cover Area */}
           <div className="absolute top-6 right-6 z-20">
              {!isEditing ? (
                  <button 
                     onClick={() => setIsEditing(true)}
-                    className="bg-white/10 backdrop-blur-xl text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-white/20 transition-all flex items-center gap-2 border border-white/20 shadow-lg"
+                    className="btn-ghost text-[10px] font-mono tracking-widest flex items-center gap-3"
                  >
-                     <Edit3 size={14} /> Edit Profile
+                     <Edit3 size={14} /> [ MOD_PROFILE ]
                  </button>
              ) : (
-                 <div className="flex gap-3">
+                 <div className="flex gap-4">
                      <button 
                         onClick={() => { setIsEditing(false); setAvatarPreview(profile?.profile_photo_url || null); }}
-                        className="bg-white/10 backdrop-blur-xl text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-white/20 transition-all flex items-center gap-2 border border-white/20"
+                        className="btn-ghost text-[10px] font-mono tracking-widest"
                         disabled={isSaving}
                      >
-                         <X size={14} /> Cancel
+                         ABORT
                      </button>
                      <button 
                         onClick={handleSaveProfile}
-                        className="bg-white text-slate-900 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-slate-100 transition-all flex items-center gap-2 shadow-xl"
+                        className="btn-premium text-[10px] font-mono tracking-widest"
                         disabled={isSaving}
                      >
-                         {isSaving ? <Loader2 size={14} className="animate-spin"/> : <Save size={14} />} Save Changes
+                         {isSaving ? 'SYNCING...' : 'SAVE_CHANGES'}
                      </button>
                  </div>
              )}
           </div>
 
-          {/* Large Circular Profile Photo with Overlap */}
           <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 md:left-12 md:translate-x-0">
             <div className="relative group">
-              <div className={`w-36 h-36 md:w-48 md:h-48 rounded-full border-[10px] border-white bg-slate-100 shadow-2xl overflow-hidden flex items-center justify-center transition-all duration-500 ${isEditing ? 'ring-8 ring-ocean-600/20' : ''}`}>
+              <div className={`w-36 h-36 md:w-40 md:h-40 rounded border-[6px] border-abyss bg-carbon shadow-glow overflow-hidden flex items-center justify-center transition-all duration-500 ${isEditing ? 'border-emerald-500' : 'border-warm'}`}>
                 <img 
                   src={avatarPreview || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile?.id}`} 
                   alt="Profile" 
@@ -442,89 +439,74 @@ export const Profile: React.FC = () => {
                 
                 {isEditing && (
                     <div 
-                      className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm flex items-center justify-center cursor-pointer group-hover:bg-slate-950/60 transition-colors"
+                      className="absolute inset-0 bg-abyss/60 backdrop-blur-sm flex items-center justify-center cursor-pointer"
                       onClick={() => fileInputRef.current?.click()}
                     >
-                        <div className="flex flex-col items-center text-white space-y-2">
-                          <Camera size={32} strokeWidth={2.5} />
-                          <span className="text-[9px] font-black uppercase tracking-widest">Update Photo</span>
-                        </div>
+                        <Camera size={24} className="text-emerald-500" />
                     </div>
                 )}
                 
-                <input 
-                    type="file" 
-                    ref={fileInputRef} 
-                    hidden 
-                    accept="image/*" 
-                    onChange={handleFileSelect}
-                />
+                <input type="file" ref={fileInputRef} hidden accept="image/*" onChange={handleFileSelect} />
               </div>
               
-              {/* Floating Verified Check (Visual Only enhancement) */}
               {profile?.is_location_verified && !isEditing && (
-                <div className="absolute bottom-2 right-2 w-10 h-10 md:w-12 md:h-12 bg-ocean-600 text-white rounded-full flex items-center justify-center shadow-xl border-4 border-white">
-                   <ShieldCheck size={24} strokeWidth={2.5} />
+                <div className="absolute bottom-2 right-2 w-8 h-8 bg-emerald-500 text-abyss rounded flex items-center justify-center shadow-glow border-2 border-abyss">
+                   <ShieldCheck size={18} />
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* User Info & Badges */}
-        <div className="mt-20 md:mt-6 md:ml-64 px-4 space-y-6">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-            <div className="space-y-4 text-center md:text-left">
+        <div className="mt-20 md:mt-8 md:ml-60 px-4 space-y-8">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+            <div className="space-y-6 text-center md:text-left">
               {isEditing ? (
-                  <div className="space-y-4 animate-in fade-in slide-in-from-top-4 max-w-md mx-auto md:mx-0">
+                  <div className="space-y-6 max-w-md mx-auto md:mx-0">
                       <input 
                         value={editName}
                         onChange={e => setEditName(e.target.value)}
-                        className="w-full text-3xl font-heading font-black text-slate-900 border-b-4 border-slate-100 focus:border-ocean-600 outline-none pb-2 bg-transparent"
-                        placeholder="Full Name"
+                        className="w-full text-3xl font-heading font-black text-snow bg-abyss border border-warm focus:border-emerald-500 outline-none p-4 rounded font-mono"
+                        placeholder="NAME_TOKEN"
                       />
-                      <div className="flex flex-col sm:flex-row gap-3">
-                        <div className="flex-1 relative">
-                          <MapPin size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                          <input 
-                              value={editCity}
-                              onChange={e => setEditCity(e.target.value)}
-                              className="w-full pl-10 pr-4 py-3 text-xs font-bold text-slate-600 border-2 border-slate-100 rounded-2xl focus:border-ocean-600 outline-none bg-slate-50"
-                              placeholder="City"
-                          />
-                        </div>
+                      <div className="flex flex-col sm:flex-row gap-4">
+                        <input 
+                            value={editCity}
+                            onChange={e => setEditCity(e.target.value)}
+                            className="flex-1 p-4 bg-abyss border border-warm focus:border-emerald-500 rounded outline-none font-mono text-xs text-snow"
+                            placeholder="LOC_ID"
+                        />
                         <input 
                             value={editPhone}
                             onChange={e => setEditPhone(e.target.value)}
-                            className="flex-1 px-4 py-3 text-xs font-bold text-slate-600 border-2 border-slate-100 rounded-2xl focus:border-ocean-600 outline-none bg-slate-50"
-                            placeholder="Phone (e.g. +91 99330...)"
+                            className="flex-1 p-4 bg-abyss border border-warm focus:border-emerald-500 rounded outline-none font-mono text-xs text-snow"
+                            placeholder="COMM_LINK"
                         />
                       </div>
                   </div>
               ) : (
-                <div className="space-y-3">
-                  <h3 className="text-4xl md:text-5xl font-heading font-black text-slate-950 tracking-tight leading-tight">
-                    {profile?.name || 'Local Islander'}
+                <div className="space-y-4">
+                  <h3 className="text-4xl md:text-5xl font-heading font-black text-snow tracking-tighter uppercase leading-none border-l-4 border-emerald-500 pl-6">
+                    {profile?.name || 'ISLANDER_NULL'}
                   </h3>
                   
-                  {/* High Visibility Badges */}
-                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
-                    <div className="flex items-center space-x-2 px-5 py-2.5 bg-slate-100 text-slate-600 rounded-2xl border-2 border-slate-200 shadow-sm">
-                      <Calendar size={16} className="text-ocean-600" />
-                      <span className="text-[10px] font-black uppercase tracking-widest">Member since {profile?.created_at ? new Date(profile.created_at).getFullYear() : '2024'}</span>
+                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-4">
+                    <div className="flex items-center space-x-3 px-4 py-2 bg-carbon border border-warm rounded text-[10px] font-mono text-slate-500 uppercase tracking-widest">
+                      <Calendar size={14} className="text-emerald-500" />
+                      <span>EPOCH: {profile?.created_at ? new Date(profile.created_at).getFullYear() : '2024'}</span>
                     </div>
 
                     {profile?.is_location_verified && (
-                      <div className="flex items-center space-x-2 px-5 py-2.5 bg-emerald-50 text-emerald-700 rounded-2xl border-2 border-emerald-100 shadow-sm">
-                        <ShieldCheck size={16} />
-                        <span className="text-[10px] font-black uppercase tracking-widest">Verified Resident</span>
+                      <div className="flex items-center space-x-3 px-4 py-2 bg-emerald-500/5 text-emerald-500 border border-emerald-500/20 rounded text-[10px] font-mono uppercase tracking-widest shadow-glow">
+                        <ShieldCheck size={14} />
+                        <span>VERIFIED_NODE</span>
                       </div>
                     )}
 
                     {profile?.trust_level === 'legend' && (
-                      <div className="flex items-center space-x-2 px-5 py-2.5 bg-amber-50 text-amber-700 rounded-2xl border-2 border-amber-100 shadow-sm">
-                        <Award size={16} />
-                        <span className="text-[10px] font-black uppercase tracking-widest">Island Legend</span>
+                      <div className="flex items-center space-x-3 px-4 py-2 bg-emerald-500/5 text-emerald-500 border border-emerald-500/20 rounded text-[10px] font-mono uppercase tracking-widest shadow-glow">
+                        <Award size={14} />
+                        <span>LEGEND_CLASS</span>
                       </div>
                     )}
                   </div>
@@ -532,37 +514,36 @@ export const Profile: React.FC = () => {
               )}
             </div>
 
-            {/* Quick Stats Summary */}
-            <div className="flex items-center justify-center gap-10 md:bg-white md:p-6 md:rounded-[32px] md:border-2 md:border-slate-100 md:shadow-sm">
+            <div className="flex items-center justify-center gap-10 bg-carbon p-6 rounded-lg border border-warm shadow-elevation-low">
               <div className="text-center group cursor-pointer" onClick={() => setActiveTab('active')}>
-                <p className="text-3xl font-heading font-black text-slate-900 leading-none group-hover:text-ocean-700 transition-colors">{lifecycleStats.active}</p>
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-2">Active Ads</p>
+                <p className="text-3xl font-heading font-black text-snow leading-none group-hover:text-emerald-500 transition-colors uppercase">{lifecycleStats.active}</p>
+                <p className="text-[9px] font-mono text-slate-600 uppercase tracking-widest mt-3">ACTIVE_UNITS</p>
               </div>
-              <div className="w-px h-10 bg-slate-200 hidden md:block"></div>
+              <div className="w-px h-10 bg-warm/50"></div>
               <div className="text-center group cursor-pointer" onClick={() => setActiveTab('sold')}>
-                <p className="text-3xl font-heading font-black text-slate-900 leading-none group-hover:text-emerald-700 transition-colors">{lifecycleStats.sold}</p>
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-2">Sold items</p>
+                <p className="text-3xl font-heading font-black text-snow leading-none group-hover:text-emerald-500 transition-colors uppercase">{lifecycleStats.sold}</p>
+                <p className="text-[9px] font-mono text-slate-600 uppercase tracking-widest mt-3">PROCESSED_OPS</p>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Tabs Section */}
-      <div className="flex items-center justify-center mb-10">
-        <div className="inline-flex bg-slate-100 p-1.5 rounded-[24px] border border-slate-200">
+      {/* Tabs Terminal */}
+      <div className="flex items-center justify-center mb-12">
+        <div className="inline-flex bg-carbon p-1.5 rounded border border-warm">
           {[
-            { id: 'active', label: 'My Listings', icon: <Globe size={14} /> },
-            { id: 'sold', label: 'Sale History', icon: <ShoppingBag size={14} /> },
-            { id: 'saved', label: 'My Favorites', icon: <Heart size={14} /> }
+            { id: 'active', label: 'INVENTORY', icon: <Globe size={14} /> },
+            { id: 'sold', label: 'ARCHIVE', icon: <ShoppingBag size={14} /> },
+            { id: 'saved', label: 'WATCHLIST', icon: <Heart size={14} /> }
           ].map((tab) => (
             <button 
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`px-6 py-3 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all flex items-center space-x-2 ${
+              className={`px-8 py-3 rounded text-[10px] font-mono uppercase tracking-widest transition-all flex items-center space-x-3 ${
                 activeTab === tab.id 
-                  ? 'bg-white shadow-xl text-ocean-700 border border-slate-100' 
-                  : 'text-slate-400 hover:text-slate-600'
+                  ? 'bg-abyss text-emerald-500 border border-emerald-500/30 shadow-glow font-bold' 
+                  : 'text-slate-600 hover:text-slate-300'
               }`}
             >
               {tab.icon}
@@ -572,17 +553,17 @@ export const Profile: React.FC = () => {
         </div>
       </div>
 
-      {/* Grid Content */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+      {/* Grid Registry */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {listings.length === 0 ? (
-          <div className="col-span-full py-24 text-center bg-white rounded-[40px] border-4 border-dashed border-slate-100 animate-in fade-in duration-700">
-            <div className="text-5xl mb-6 grayscale">🏝️</div>
-            <h3 className="text-xl font-heading font-black text-slate-900 uppercase tracking-tight">No Items Found</h3>
-            <p className="text-slate-400 font-bold text-sm max-w-xs mx-auto mt-2">
-              It looks quiet here. Start buying or selling within our island community today!
+          <div className="col-span-full py-32 text-center bg-carbon rounded-lg border-2 border-dashed border-warm animate-fade-in">
+            <div className="text-5xl mb-8 opacity-20">📡</div>
+            <h3 className="text-2xl font-heading font-black text-snow uppercase tracking-tighter">Empty Buffer</h3>
+            <p className="text-slate-600 font-mono text-xs max-w-xs mx-auto mt-4 uppercase tracking-[0.2em] leading-loose">
+              No active data streams detected. Initialize a new unit to begin.
             </p>
-            <Link to="/post" className="mt-8 inline-block bg-ocean-700 text-white px-10 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-2xl active:scale-95 transition-all">
-              Create First Listing
+            <Link to="/post" className="mt-10 btn-premium inline-block px-12 font-mono text-[10px] tracking-widest">
+              DEPLOY_FIRST_UNIT
             </Link>
           </div>
         ) : (
@@ -593,23 +574,23 @@ export const Profile: React.FC = () => {
             return (
               <div key={item.id} className="relative group/card">
                 <div 
-                  className={`bg-white border-2 rounded-[40px] overflow-hidden transition-all duration-300 relative h-full flex flex-col ${
-                    isBoosted ? 'border-amber-400 shadow-xl shadow-amber-500/10' : 'border-slate-100 hover:border-ocean-300 hover:shadow-2xl hover:shadow-slate-200'
+                  className={`bg-carbon border rounded transition-all duration-300 relative h-full flex flex-col ${
+                    isBoosted ? 'border-emerald-500 shadow-glow' : 'border-warm hover:border-emerald-500/50'
                   }`}
                 >
                   <Link to={`/listings/${item.id}`} className="block overflow-hidden relative">
-                    <div className="h-64 bg-slate-100 relative">
-                      <img src={`https://picsum.photos/seed/list-${item.id}/800/600`} className="w-full h-full object-cover group-hover/card:scale-105 transition-transform duration-700" alt="" />
+                    <div className="h-64 bg-abyss relative">
+                      <img src={`https://picsum.photos/seed/list-${item.id}/800/600`} className="w-full h-full object-cover group-hover/card:scale-105 transition-transform duration-1000" alt="" />
                       
                       {isBoosted && (
-                        <div className="absolute top-4 left-4 bg-amber-400 text-black px-3 py-1.5 rounded-full font-black text-[9px] uppercase tracking-widest shadow-lg flex items-center z-20">
-                          ✨ Priority Boosted
+                        <div className="absolute top-4 left-4 bg-emerald-500 text-abyss px-3 py-1.5 rounded font-mono font-bold text-[9px] uppercase tracking-widest shadow-glow z-20">
+                          PRIORITY_BOOSTED
                         </div>
                       )}
 
                       {item.status === 'sold' && (
-                        <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center z-10">
-                            <span className="border-4 border-white text-white px-6 py-2 font-heading font-black text-2xl uppercase tracking-tighter -rotate-6 shadow-2xl">SOLD</span>
+                        <div className="absolute inset-0 bg-abyss/80 backdrop-blur-[2px] flex items-center justify-center z-10 border-2 border-warm m-2">
+                            <span className="text-snow px-6 py-2 font-mono font-black text-2xl uppercase tracking-tighter -rotate-6 border-2 border-emerald-500 shadow-glow">PROCESSED</span>
                         </div>
                       )}
                       
@@ -617,9 +598,9 @@ export const Profile: React.FC = () => {
                         {activeTab === 'saved' ? (
                           <button 
                             onClick={(e) => handleUnfavorite(item.id!, e)}
-                            className="w-12 h-12 bg-white/95 backdrop-blur rounded-2xl flex items-center justify-center text-coral-500 shadow-xl hover:scale-110 active:scale-90 transition-all border-2 border-white"
+                            className="w-10 h-10 glass rounded flex items-center justify-center text-red-500 shadow-glow transition-all"
                           >
-                            <Heart size={22} fill="currentColor" />
+                            <Heart size={18} fill="currentColor" />
                           </button>
                         ) : (
                           <button 
@@ -628,83 +609,68 @@ export const Profile: React.FC = () => {
                               e.stopPropagation(); 
                               setActiveMenuId(isMenuOpen ? null : item.id); 
                             }}
-                            className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-xl hover:scale-110 active:scale-90 transition-all border-2 ${
-                              isMenuOpen ? 'bg-ocean-700 text-white border-ocean-800' : 'bg-white/95 backdrop-blur text-slate-500 border-white'
+                            className={`w-10 h-10 rounded flex items-center justify-center transition-all border ${
+                              isMenuOpen ? 'bg-emerald-500 text-abyss border-emerald-400' : 'glass text-slate-400 border-warm'
                             }`}
                           >
-                            <MoreVertical size={22} strokeWidth={2.5} />
+                            <MoreVertical size={18} />
                           </button>
                         )}
                       </div>
                     </div>
                   </Link>
 
-                  <div className="p-8 flex flex-col flex-1">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-heading font-black text-xl uppercase tracking-tight truncate flex-1 mr-4 text-slate-900">{item.title}</h3>
-                      <span className="font-heading font-black text-ocean-700 text-lg">₹{item.price?.toLocaleString('en-IN')}</span>
+                  <div className="p-6 flex flex-col flex-1 space-y-6">
+                    <div className="flex justify-between items-start">
+                      <h3 className="font-mono font-bold text-snow text-base uppercase tracking-tight truncate flex-1 mr-4">{item.title}</h3>
+                      <span className="font-heading font-black text-snow text-lg">₹{item.price?.toLocaleString('en-IN')}</span>
                     </div>
-                    <div className="flex items-center justify-between mt-auto pt-6 border-t border-slate-50">
-                       <div className="flex items-center space-x-2 text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                         <MapPin size={10} className="text-ocean-600" />
+                    <div className="flex items-center justify-between mt-auto pt-6 border-t border-warm/30">
+                       <div className="flex items-center space-x-2 text-[9px] font-mono text-slate-600 uppercase tracking-widest">
+                         <MapPin size={10} className="text-emerald-500" />
                          <span>{item.city}</span>
                        </div>
-                       <div className="flex items-center space-x-1.5 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                       <div className="flex items-center space-x-2 text-[9px] font-mono text-slate-600 uppercase tracking-widest">
                          <Eye size={10} />
-                         <span>{item.views_count || 0} Views</span>
+                         <span>{item.views_count || 0} PINGS</span>
                        </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Action Menu Dropdown */}
+                {/* Action Menu Dropdown Terminal */}
                 {isMenuOpen && (
                   <div 
                     ref={menuRef}
-                    className="absolute top-16 right-6 w-64 bg-white rounded-[32px] shadow-2xl border-2 border-slate-100 p-2 z-[60] animate-in zoom-in-95 slide-in-from-top-4 duration-200"
+                    className="absolute top-16 right-4 w-60 bg-abyss rounded border border-emerald-500/50 shadow-elevation-high p-2 z-[60] animate-in zoom-in-95 duration-200"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <div className="space-y-1">
                       <button 
                         onClick={() => navigate(`/post?edit=${item.id}`)}
-                        className="w-full flex items-center space-x-3 p-3.5 hover:bg-slate-50 rounded-2xl transition-colors group text-left"
+                        className="w-full flex items-center space-x-4 p-3 hover:bg-carbon rounded transition-colors group text-left"
                       >
-                        <span className="w-10 h-10 bg-slate-50 text-slate-600 rounded-xl flex items-center justify-center group-hover:bg-white group-hover:shadow-sm transition-all flex-shrink-0">
-                          <Edit3 size={18} strokeWidth={2.5} />
-                        </span>
-                        <div className="flex flex-col">
-                          <span className="text-[11px] font-black uppercase tracking-widest text-slate-900 leading-none">Edit Listing</span>
-                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Update details</span>
-                        </div>
+                        <Edit3 size={16} className="text-emerald-500" />
+                        <span className="text-[10px] font-mono uppercase tracking-widest text-snow">MOD_UNIT</span>
                       </button>
                       
                       {activeTab === 'active' && (
                         <>
                           <button 
                             onClick={(e) => handleMarkAsSold(item.id!, e)}
-                            className="w-full flex items-center space-x-3 p-3.5 hover:bg-emerald-50 rounded-2xl transition-colors group text-left"
+                            className="w-full flex items-center space-x-4 p-3 hover:bg-carbon rounded transition-colors group text-left"
                           >
-                            <span className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center group-hover:bg-white group-hover:shadow-sm transition-all flex-shrink-0">
-                              <CheckCircle size={18} strokeWidth={2.5} />
-                            </span>
-                            <div className="flex flex-col">
-                              <span className="text-[11px] font-black uppercase tracking-widest text-emerald-700 leading-none">Mark as Sold</span>
-                              <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-widest mt-1">End the sale</span>
-                            </div>
+                            <CheckCircle size={16} className="text-emerald-500" />
+                            <span className="text-[10px] font-mono uppercase tracking-widest text-snow">SET_SOLDOUT</span>
                           </button>
 
                           {!isBoosted && (
                             <button 
                               onClick={() => setBoostConfirmationId(item.id!)}
-                              className="w-full flex items-center space-x-3 p-3.5 hover:bg-amber-50 rounded-2xl transition-colors group text-left"
+                              className="w-full flex items-center space-x-4 p-3 hover:bg-carbon rounded transition-colors group text-left"
                             >
-                              <span className="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center group-hover:bg-white group-hover:shadow-sm transition-all flex-shrink-0">
-                                <Rocket size={18} strokeWidth={2.5} />
-                              </span>
-                              <div className="flex flex-col">
-                                <span className="text-[11px] font-black uppercase tracking-widest text-amber-700 leading-none">Boost Ad</span>
-                                <span className="text-[9px] font-bold text-amber-500 uppercase tracking-widest mt-1">Get noticed</span>
-                              </div>
+                              <Rocket size={16} className="text-emerald-500" />
+                              <span className="text-[10px] font-mono uppercase tracking-widest text-snow">BOOST_SIGNAL</span>
                             </button>
                           )}
                         </>
@@ -712,30 +678,20 @@ export const Profile: React.FC = () => {
 
                       <button 
                         onClick={(e) => handleShareListing(item.id!, e)}
-                        className="w-full flex items-center space-x-3 p-3.5 hover:bg-ocean-50 rounded-2xl transition-colors group text-left"
+                        className="w-full flex items-center space-x-4 p-3 hover:bg-carbon rounded transition-colors group text-left"
                       >
-                        <span className="w-10 h-10 bg-ocean-50 text-ocean-700 rounded-xl flex items-center justify-center group-hover:bg-white group-hover:shadow-sm transition-all flex-shrink-0">
-                          <Share2 size={18} strokeWidth={2.5} />
-                        </span>
-                        <div className="flex flex-col">
-                          <span className="text-[11px] font-black uppercase tracking-widest text-ocean-800 leading-none">Share Link</span>
-                          <span className="text-[9px] font-bold text-ocean-400 uppercase tracking-widest mt-1">Copy to clip</span>
-                        </div>
+                        <Share2 size={16} className="text-emerald-500" />
+                        <span className="text-[10px] font-mono uppercase tracking-widest text-snow">FORK_LINK</span>
                       </button>
 
-                      <div className="h-px bg-slate-100 my-1 mx-2"></div>
+                      <div className="h-px bg-warm/30 my-2 mx-2"></div>
 
                       <button 
                         onClick={() => setDeleteConfirmationId(item.id!)}
-                        className="w-full flex items-center space-x-3 p-3.5 hover:bg-coral-50 rounded-2xl transition-colors group text-coral-600 text-left"
+                        className="w-full flex items-center space-x-4 p-3 hover:bg-red-500/10 rounded transition-colors group text-red-500 text-left"
                       >
-                        <span className="w-10 h-10 bg-coral-50 text-coral-500 rounded-xl flex items-center justify-center group-hover:bg-white group-hover:shadow-sm transition-all flex-shrink-0">
-                          <Trash2 size={18} strokeWidth={2.5} />
-                        </span>
-                        <div className="flex flex-col">
-                          <span className="text-[11px] font-black uppercase tracking-widest leading-none">Delete Ad</span>
-                          <span className="text-[9px] font-bold text-coral-400 uppercase tracking-widest mt-1">Remove forever</span>
-                        </div>
+                        <Trash2 size={16} />
+                        <span className="text-[10px] font-mono uppercase tracking-widest">RM_-RF_UNIT</span>
                       </button>
                     </div>
                   </div>

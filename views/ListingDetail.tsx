@@ -161,35 +161,35 @@ export const ListingDetail: React.FC = () => {
   const isOwner = currentUserId === listing.user_id;
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-12 space-y-12 animate-fade-in bg-slate-50">
+    <div className="max-w-7xl mx-auto px-6 py-12 space-y-12 animate-fade-in bg-abyss">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
-        {/* Gallery & Content */}
+        {/* Gallery & Content Terminal */}
         <div className="lg:col-span-2 space-y-12">
           <div className="relative group">
-            <div className="aspect-[4/3] bg-white rounded-[48px] overflow-hidden shadow-premium border border-slate-100">
+            <div className="aspect-[4/3] bg-carbon rounded-lg overflow-hidden shadow-elevation-high border border-warm">
               <img src={mainImage} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" alt={listing.title} loading="eager" />
             </div>
             
-            <button onClick={() => navigate(-1)} className="absolute top-8 left-8 w-14 h-14 glass rounded-2xl flex items-center justify-center shadow-lg active:scale-95 transition-transform z-10 text-slate-950">
-              <ChevronLeft size={32} strokeWidth={2.5} />
+            <button onClick={() => navigate(-1)} className="absolute top-8 left-8 w-12 h-12 glass rounded flex items-center justify-center shadow-glow active:scale-95 transition-transform z-10 text-snow">
+              <ChevronLeft size={24} strokeWidth={2.5} />
             </button>
 
             <div className="absolute top-8 right-8 flex flex-col gap-4">
-              <button onClick={toggleFavorite} className={`w-14 h-14 glass rounded-2xl flex items-center justify-center shadow-lg transition-all z-10 ${isFavorited ? 'text-coral-500 scale-110' : 'text-slate-900/40 hover:text-coral-500'}`}>
-                <Heart fill={isFavorited ? "currentColor" : "none"} size={28} strokeWidth={2.5} />
+              <button onClick={toggleFavorite} className={`w-12 h-12 glass rounded flex items-center justify-center shadow-glow transition-all z-10 ${isFavorited ? 'text-emerald-500 scale-110 border-emerald-500/50' : 'text-slate-500 hover:text-emerald-400'}`}>
+                <Heart fill={isFavorited ? "currentColor" : "none"} size={24} strokeWidth={2.5} />
               </button>
-              <button onClick={handleShare} className="w-14 h-14 glass rounded-2xl flex items-center justify-center shadow-lg text-slate-900/40 hover:text-ocean-600 z-10">
-                <Share2 size={28} strokeWidth={2.5} />
+              <button onClick={handleShare} className="w-12 h-12 glass rounded flex items-center justify-center shadow-glow text-slate-500 hover:text-emerald-400 z-10">
+                <Share2 size={24} strokeWidth={2.5} />
               </button>
             </div>
             
             {images.length > 1 && (
-              <div className="flex gap-4 mt-8 overflow-x-auto pb-4 no-scrollbar">
+              <div className="flex gap-4 mt-6 overflow-x-auto pb-4 no-scrollbar">
                  {images.map((img: any, idx: number) => (
                    <button 
                     key={img.id || idx} 
                     onClick={() => setActiveImage(idx)}
-                    className={`flex-shrink-0 w-24 h-24 rounded-3xl overflow-hidden border-4 transition-all duration-300 ${activeImage === idx ? 'border-ocean-500 scale-95 shadow-md' : 'border-white shadow-sm hover:border-ocean-200'}`}
+                    className={`flex-shrink-0 w-20 h-20 rounded border-2 transition-all duration-300 ${activeImage === idx ? 'border-emerald-500 scale-95 shadow-glow' : 'border-warm hover:border-emerald-500/50'}`}
                    >
                      <img src={img.image_url} className="w-full h-full object-cover" alt="" loading="lazy" />
                    </button>
@@ -198,96 +198,96 @@ export const ListingDetail: React.FC = () => {
             )}
           </div>
 
-          <div className="space-y-12 bg-white rounded-[48px] p-8 md:p-12 shadow-sm border border-slate-100">
-            <div className="space-y-6">
+          <div className="space-y-12 bg-carbon rounded-lg p-8 md:p-12 border border-warm shadow-elevation-low">
+            <div className="space-y-8">
               <div className="flex flex-wrap items-center gap-3">
-                <span className="bg-ocean-50 text-ocean-600 text-[10px] font-black px-6 py-2.5 rounded-2xl uppercase tracking-[0.2em] border border-ocean-100">
-                  {listing.category_id || 'Premium Item'}
+                <span className="bg-abyss text-emerald-500 text-[10px] font-mono px-4 py-1.5 rounded border border-emerald-500/30 uppercase tracking-[0.2em]">
+                  cat /type/{listing.category_id || 'unit'}
                 </span>
-                <span className="bg-coral-50 text-coral-600 text-[10px] font-black px-6 py-2.5 rounded-2xl uppercase tracking-[0.2em] border border-coral-100">
-                  {listing.condition?.replace('_', ' ') || 'Pristine'}
+                <span className="bg-abyss text-slate-400 text-[10px] font-mono px-4 py-1.5 rounded border border-warm uppercase tracking-[0.2em]">
+                  status: {listing.condition?.replace('_', ' ') || 'nominal'}
                 </span>
               </div>
-              <h1 className="text-4xl md:text-6xl font-heading font-black text-slate-950 tracking-tighter leading-[0.9] uppercase">
+              <h1 className="text-4xl md:text-5xl font-heading font-black text-snow tracking-tighter uppercase border-l-8 border-emerald-500 pl-8">
                 {listing.title}
               </h1>
-              <div className="flex flex-col">
-                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-2">Listing Price</span>
-                 <span className="text-5xl md:text-6xl font-heading font-black text-slate-950 tracking-tighter">
+              <div className="flex flex-col bg-abyss p-8 rounded-lg border border-warm/50">
+                 <span className="text-[10px] font-mono text-emerald-500 uppercase tracking-[0.4em] mb-4">valuation::registry</span>
+                 <span className="text-5xl md:text-6xl font-heading font-black text-snow tracking-tighter">
                    ₹ {listing.price.toLocaleString('en-IN')}
                  </span>
               </div>
             </div>
 
-            <div className="h-px bg-slate-100 w-full"></div>
+            <div className="h-px bg-warm/30 w-full"></div>
 
             <div className="space-y-6">
-               <h3 className="text-[10px] font-black text-slate-950 uppercase tracking-[0.3em]">Curated Description</h3>
-               <p className="text-slate-600 font-medium text-xl leading-relaxed max-w-3xl whitespace-pre-wrap">
+               <h3 className="text-[10px] font-mono text-emerald-500 uppercase tracking-[0.4em]">cat description.log</h3>
+               <p className="text-parchment font-medium text-lg leading-relaxed max-w-3xl whitespace-pre-wrap font-sans">
                  {listing.description}
                </p>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {[
-                { label: 'Location', value: listing.city, icon: <MapPin size={14} className="text-ocean-500" /> },
-                { label: 'Neighborhood', value: listing.area || 'Verified Area', icon: <Shield size={14} className="text-ocean-500" /> },
-                { label: 'Market Reach', value: `${listing.views_count || 0} Interactions`, icon: <Sparkles size={14} className="text-ocean-500" /> },
+                { label: 'NODE_LOC', value: listing.city, icon: <MapPin size={14} className="text-emerald-500" /> },
+                { label: 'NET_AREA', value: listing.area || 'GRID_SYNC', icon: <Shield size={14} className="text-emerald-500" /> },
+                { label: 'INTERACT', value: `${listing.views_count || 0}_pings`, icon: <Sparkles size={14} className="text-emerald-500" /> },
               ].map(spec => (
-                <div key={spec.label} className="p-6 bg-slate-50 rounded-[32px] border border-slate-100 flex flex-col space-y-2">
-                   <div className="flex items-center space-x-2">
+                <div key={spec.label} className="p-6 bg-abyss rounded border border-warm flex flex-col space-y-3">
+                   <div className="flex items-center space-x-3 border-b border-warm/30 pb-3">
                       {spec.icon}
-                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">{spec.label}</span>
+                      <span className="text-[9px] font-mono text-slate-500 uppercase tracking-[0.2em]">{spec.label}</span>
                    </div>
-                   <span className="font-black text-slate-950 text-base tracking-tight uppercase">{spec.value}</span>
+                   <span className="font-mono font-bold text-snow text-sm tracking-widest uppercase">{spec.value}</span>
                 </div>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Seller Card */}
+        {/* User Shell Terminal */}
         <div className="lg:sticky lg:top-28 space-y-8">
-          <div className="bg-white rounded-[48px] p-8 shadow-premium border border-slate-100 space-y-10">
+          <div className="bg-carbon rounded-lg p-8 border border-warm shadow-elevation-high space-y-10">
             <div className="flex items-center space-x-6">
-               <div className="w-20 h-20 rounded-[28px] bg-slate-50 border border-slate-100 overflow-hidden shadow-sm">
+               <div className="w-16 h-16 rounded bg-abyss border border-warm overflow-hidden shadow-glow">
                  <img src={seller?.profile_photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${seller?.id || 'User'}`} alt="Seller" className="w-full h-full object-cover" loading="lazy" />
                </div>
-               <div className="space-y-1">
+               <div className="space-y-2">
                   <div className="flex items-center space-x-2">
-                    <h4 className="font-heading font-black text-slate-950 text-xl tracking-tight leading-none uppercase">{seller?.name || 'Verified Seller'}</h4>
-                    {seller?.is_location_verified && <div className="w-5 h-5 bg-ocean-500 text-white rounded-lg flex items-center justify-center text-[10px] shadow-sm shadow-ocean-500/20">✓</div>}
+                    <h4 className="font-mono font-black text-snow text-lg tracking-tight leading-none uppercase">{seller?.name || 'anonymous_node'}</h4>
+                    {seller?.is_location_verified && <div className="w-4 h-4 bg-emerald-500 text-abyss rounded-full flex items-center justify-center text-[8px] shadow-glow">✓</div>}
                   </div>
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Member since {seller?.created_at ? new Date(seller.created_at).getFullYear() : '2024'}</p>
+                  <p className="text-[9px] font-mono text-slate-500 uppercase tracking-[0.2em]">EPOCH_START: {seller?.created_at ? new Date(seller.created_at).getFullYear() : '2024'}</p>
                </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-4 pt-8 border-t border-warm/30">
               {isOwner ? (
-                <Link to={`/post?edit=${listing.id}`} className="w-full bg-slate-950 text-white py-6 rounded-[24px] font-black uppercase text-xs flex items-center justify-center space-x-4 shadow-xl active:scale-95 transition-all">
-                  <Edit3 size={20} /> <span>Modify Listing</span>
+                <Link to={`/post?edit=${listing.id}`} className="w-full btn-ghost py-4 font-mono text-[10px] tracking-[0.2em] flex items-center justify-center space-x-4 active:scale-95 transition-all">
+                  <Edit3 size={16} /> <span>[ MOD_REGISTRY ]</span>
                 </Link>
               ) : (
-                <Link to={`/chats/${id}`} className="w-full btn-premium py-6 rounded-[24px] font-black uppercase text-xs flex items-center justify-center space-x-4 active:scale-95 transition-all">
-                  <MessageSquare size={20} /> <span>Contact Seller</span>
+                <Link to={`/chats/${id}`} className="w-full btn-premium py-4 font-mono text-[10px] tracking-[0.2em] flex items-center justify-center space-x-4 active:scale-95 transition-all">
+                  <MessageSquare size={16} /> <span>[ OPEN_SHELL ]</span>
                 </Link>
               )}
-              <p className="text-center text-[9px] font-black text-slate-400 uppercase tracking-widest">Typical response time: &lt; 2 hours</p>
+              <p className="text-center text-[9px] font-mono text-slate-600 uppercase tracking-widest animate-pulse">LATENCY: &lt; 120ms</p>
             </div>
 
-            <div className="bg-slate-50 rounded-[32px] p-6 border border-slate-100 flex items-center space-x-4">
-               <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-ocean-500 shadow-sm border border-slate-100">
-                  <Shield size={20} />
+            <div className="bg-abyss rounded p-6 border border-emerald-500/20 flex items-center space-x-4">
+               <div className="w-8 h-8 rounded bg-carbon flex items-center justify-center text-emerald-500 border border-warm shadow-glow">
+                  <Shield size={16} />
                </div>
-               <div className="space-y-0.5">
-                  <p className="text-[9px] font-black text-slate-950 uppercase tracking-widest">Buyer Protection</p>
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Verified Local Transaction</p>
+               <div className="space-y-1">
+                  <p className="text-[9px] font-mono text-snow uppercase tracking-widest">Protocol Secured</p>
+                  <p className="text-[8px] font-mono text-slate-500 uppercase tracking-wider">End-to-End Handshake</p>
                </div>
             </div>
           </div>
 
-          <button onClick={() => setIsReportModalOpen(true)} className="w-full py-4 text-[9px] font-black text-slate-300 uppercase tracking-[0.4em] flex items-center justify-center space-x-3 hover:text-coral-500 transition-colors">
-            <AlertCircle size={16} /> <span>Anonymously Report</span>
+          <button onClick={() => setIsReportModalOpen(true)} className="w-full py-4 text-[9px] font-mono text-slate-600 uppercase tracking-[0.4em] flex items-center justify-center space-x-3 hover:text-emerald-500 transition-colors">
+            <AlertCircle size={14} /> <span>REPORT_ANOMALY</span>
           </button>
         </div>
       </div>

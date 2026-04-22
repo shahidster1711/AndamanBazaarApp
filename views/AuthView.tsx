@@ -151,22 +151,22 @@ export const AuthView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-[90vh] flex flex-col items-center justify-center px-4 bg-slate-50 py-12">
-      <div className="w-full max-w-md bg-white rounded-[48px] shadow-2xl overflow-hidden border border-slate-100 ring-1 ring-black/5">
-        <div className="bg-ocean-700 p-10 text-white text-center relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-40 h-40 bg-white rounded-full opacity-10 blur-3xl translate-x-12 -translate-y-12"></div>
-            <div className="absolute bottom-0 left-0 w-24 h-24 bg-coral-500 rounded-full opacity-20 blur-2xl -translate-x-8 translate-y-8"></div>
-            <h2 className="text-4xl font-heading font-black tracking-tight relative z-10">AndamanBazaar</h2>
-            <p className="mt-3 text-ocean-100 font-bold relative z-10 text-sm tracking-wide">Community Trade Platform</p>
+    <div className="min-h-[90vh] flex flex-col items-center justify-center px-4 bg-abyss py-12">
+      <div className="w-full max-w-md bg-carbon rounded-lg shadow-elevation-high overflow-hidden border border-warm">
+        <div className="bg-abyss p-10 text-white text-center relative overflow-hidden border-b border-warm">
+            <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-500/5 rounded-full blur-3xl translate-x-12 -translate-y-12 animate-pulse"></div>
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-emerald-500/5 rounded-full blur-2xl -translate-x-8 translate-y-8 animate-pulse" style={{ animationDelay: '1s' }}></div>
+            <h2 className="text-3xl font-heading font-black tracking-tight relative z-10 uppercase">Andaman<span className="text-emerald-500 logo-glow">Bazaar</span></h2>
+            <p className="mt-4 text-[10px] font-mono text-emerald-500 uppercase tracking-[0.4em] relative z-10 animate-pulse">SYSTEM_ACCESS_PROTOCOL</p>
         </div>
         
         <div className="p-8 md:p-10">
-          <div className="flex bg-slate-100 p-1.5 rounded-2xl mb-10">
+          <div className="flex bg-abyss p-1.5 rounded-lg mb-10 border border-warm">
             {['login', 'signup'].map((m) => (
               <button 
                 key={m}
                 onClick={() => { setMode(m as any); clearState(); }}
-                className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${mode === m ? 'bg-white shadow-lg text-ocean-700' : 'text-slate-400 hover:text-slate-600'}`}
+                className={`flex-1 py-3 text-[10px] font-mono uppercase tracking-[0.2em] rounded transition-all ${mode === m ? 'bg-carbon text-emerald-500 shadow-glow' : 'text-slate-500 hover:text-slate-300'}`}
               >
                 {m}
               </button>
@@ -174,109 +174,109 @@ export const AuthView: React.FC = () => {
           </div>
 
           {error && (
-            <div className="mb-8 p-5 bg-red-50 text-red-600 text-sm font-medium rounded-3xl border border-red-100 flex items-start gap-4 animate-in fade-in slide-in-from-top-4">
-               <AlertCircle size={20} className="shrink-0 mt-0.5" />
-               <div className="leading-relaxed flex-1">{error}</div>
+            <div className="mb-8 p-5 bg-red-500/5 text-red-500 text-xs font-mono rounded border border-red-500/30 flex items-start gap-4 animate-in fade-in slide-in-from-top-4">
+               <AlertCircle size={16} className="shrink-0 mt-0.5" />
+               <div className="leading-loose flex-1 uppercase tracking-widest">{error}</div>
             </div>
           )}
 
           {successMsg && (
-            <div className="mb-8 p-5 bg-emerald-50 text-emerald-700 text-sm font-bold rounded-3xl border border-emerald-100 flex items-start gap-4 animate-in fade-in slide-in-from-top-4">
-                <CheckCircle size={20} className="shrink-0 mt-0.5" />
-                <p className="leading-relaxed">{successMsg}</p>
+            <div className="mb-8 p-5 bg-emerald-500/5 text-emerald-500 text-xs font-mono rounded border border-emerald-500/30 flex items-start gap-4 animate-in fade-in slide-in-from-top-4">
+                <CheckCircle size={16} className="shrink-0 mt-0.5" />
+                <p className="leading-loose uppercase tracking-widest">{successMsg}</p>
             </div>
           )}
 
-          <form onSubmit={handleEmailAuth} className="space-y-5">
+          <form onSubmit={handleEmailAuth} className="space-y-6">
             {mode === 'signup' && (
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Display Name</label>
-                <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} placeholder="e.g. Rahul Sharma" className="w-full p-4 bg-slate-50 border-2 border-transparent focus:border-ocean-500 focus:bg-white rounded-2xl outline-none font-bold transition-all" required />
+                <label className="text-[10px] font-mono text-slate-500 uppercase tracking-[0.3em] ml-1">var display_name</label>
+                <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} placeholder="e.g. USER_01" className="w-full p-4 bg-abyss border border-warm focus:border-emerald-500 rounded outline-none font-mono text-snow text-sm transition-all" required />
               </div>
             )}
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="name@domain.com" className="w-full p-4 bg-slate-50 border-2 border-transparent focus:border-ocean-500 focus:bg-white rounded-2xl outline-none font-bold transition-all" required />
+              <label className="text-[10px] font-mono text-slate-500 uppercase tracking-[0.3em] ml-1">var email_address</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="root@island.net" className="w-full p-4 bg-abyss border border-warm focus:border-emerald-500 rounded outline-none font-mono text-snow text-sm transition-all" required />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Secret Password</label>
-              <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" className="w-full p-4 bg-slate-50 border-2 border-transparent focus:border-ocean-500 focus:bg-white rounded-2xl outline-none font-bold transition-all" required />
+              <label className="text-[10px] font-mono text-slate-500 uppercase tracking-[0.3em] ml-1">var secret_key</label>
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" className="w-full p-4 bg-abyss border border-warm focus:border-emerald-500 rounded outline-none font-mono text-snow text-sm transition-all" required />
             </div>
-            <button type="submit" disabled={loading} className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black uppercase text-xs tracking-[0.2em] hover:bg-black transition-all shadow-xl shadow-slate-900/20 active:scale-[0.98] disabled:opacity-50">
-              {loading ? <Loader2 className="animate-spin mx-auto" size={18} /> : mode === 'login' ? 'Sign In Securely' : 'Create Island Account'}
+            <button type="submit" disabled={loading} className="w-full btn-premium py-5 font-mono text-[10px] tracking-[0.3em] shadow-glow">
+              {loading ? <Loader2 className="animate-spin mx-auto" size={18} /> : mode === 'login' ? 'INITIALIZE_SESSION' : 'GENERATE_IDENTITY'}
             </button>
           </form>
 
           {mode === 'login' && (
-            <div className="mt-4 text-center">
+            <div className="mt-6 text-center">
                <button 
                 onClick={handleResendEmail}
                 disabled={resending || !email}
-                className="text-[10px] font-black text-ocean-700 uppercase tracking-widest hover:underline disabled:opacity-30"
+                className="text-[9px] font-mono text-slate-600 uppercase tracking-widest hover:text-emerald-500 disabled:opacity-30 transition-colors"
                >
-                 {resending ? 'Resending link...' : "Didn't receive verification email?"}
+                 {resending ? 'sending_handshake...' : "PROTOCOL_RECOVERY: RESEND_EMAIL"}
                </button>
             </div>
           )}
 
-          <div className="mt-10">
+          <div className="mt-12">
             <div className="relative mb-8">
-              <div className="absolute inset-0 flex items-center"><div className="w-full border-t-2 border-slate-100"></div></div>
-              <div className="relative flex justify-center text-[10px] uppercase font-black text-slate-300"><span className="bg-white px-6 tracking-[0.3em]">Direct Access</span></div>
+              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-warm"></div></div>
+              <div className="relative flex justify-center text-[9px] uppercase font-mono text-slate-600 tracking-[0.4em]"><span className="bg-carbon px-6">OAuth Handshake</span></div>
             </div>
 
             <button 
               onClick={() => handleOAuthLogin('google')}
               disabled={loading}
-              className="w-full flex items-center justify-center space-x-4 py-5 border-2 border-slate-100 rounded-3xl hover:bg-slate-50 hover:border-slate-200 transition-all active:scale-[0.98] disabled:opacity-50 group"
+              className="w-full flex items-center justify-center space-x-4 py-4 border border-warm rounded hover:border-emerald-500 transition-all active:scale-95 disabled:opacity-50 group bg-abyss"
             >
-              <svg className="w-5 h-5 group-hover:scale-110 transition-transform" viewBox="0 0 24 24">
-                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+              <svg className="w-4 h-4 group-hover:logo-glow transition-all" viewBox="0 0 24 24">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="currentColor" />
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="currentColor" opacity="0.8" />
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="currentColor" opacity="0.6" />
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="currentColor" opacity="0.9" />
               </svg>
-              <span className="font-black text-slate-700 text-xs uppercase tracking-widest">Continue with Google</span>
+              <span className="font-mono text-snow text-[10px] uppercase tracking-[0.2em]">tunnel@google</span>
             </button>
           </div>
 
-          <div className="mt-12 pt-8 border-t-2 border-dashed border-slate-100 space-y-4">
-            <div className="bg-blue-50 p-6 rounded-[32px] space-y-3">
-              <p className="text-[10px] font-black text-blue-700 uppercase tracking-widest flex items-center">
-                <Info size={12} className="mr-2" /> Localhost Link Fix
+          <div className="mt-12 pt-8 border-t border-dashed border-warm space-y-6">
+            <div className="bg-abyss p-6 rounded border border-emerald-500/20 space-y-4 shadow-glow">
+              <p className="text-[10px] font-mono text-emerald-500 uppercase tracking-widest flex items-center">
+                <Info size={12} className="mr-3" /> REDIRECT_CONFIG_NOTICE
               </p>
-              <p className="text-[11px] text-blue-800 leading-relaxed font-semibold">
-                If the email link starts with <code className="bg-white px-1">localhost:3000</code>, you MUST update your <b>Site URL</b> in the Supabase Dashboard to point to your current URL.
+              <p className="text-[11px] text-slate-500 leading-relaxed font-medium font-sans">
+                If the handshake link targets <code className="bg-carbon px-1 text-snow border border-warm">localhost:3000</code>, update your <b>Site URL</b> in the cluster dashboard.
               </p>
             </div>
 
             <button 
               onClick={() => setShowHelp(!showHelp)}
-              className="w-full flex items-center justify-between text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] hover:text-ocean-700 transition-colors py-2"
+              className="w-full flex items-center justify-between text-[10px] font-mono text-slate-600 uppercase tracking-[0.2em] hover:text-emerald-500 transition-colors py-2"
             >
               <div className="flex items-center space-x-3">
-                <HelpCircle size={14} className="text-ocean-500" />
-                <span>Fixing 403 / Redirects</span>
+                <HelpCircle size={14} className="text-emerald-500" />
+                <span>DEBUG_403_ERRORS</span>
               </div>
               {showHelp ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
             </button>
             
             {showHelp && (
-              <div className="mt-2 p-6 bg-slate-50 rounded-[32px] space-y-6 animate-in fade-in slide-in-from-top-4">
-                <div className="space-y-3">
-                  <p className="text-[10px] font-black text-ocean-700 uppercase tracking-widest flex items-center">
-                    <Settings size={12} className="mr-2" /> Site URL Configuration
+              <div className="mt-2 p-6 bg-abyss rounded border border-warm space-y-6 animate-in fade-in slide-in-from-top-4">
+                <div className="space-y-4">
+                  <p className="text-[10px] font-mono text-emerald-500 uppercase tracking-widest flex items-center">
+                    <Settings size={12} className="mr-3" /> SHELL_ORIGIN_SYNC
                   </p>
-                  <p className="text-[11px] text-slate-600 font-medium">Add this origin to your <b>Redirect URIs</b> in Supabase Auth settings:</p>
+                  <p className="text-[11px] text-slate-500 font-medium">Inject this origin into your cluster <b>Redirect URIs</b>:</p>
                   <div className="group relative">
-                    <div className="bg-white border-2 border-slate-200 rounded-2xl p-4 pr-12 text-[10px] font-mono text-slate-500 break-all select-all">
+                    <div className="bg-carbon border border-warm rounded p-4 pr-12 text-[10px] font-mono text-snow break-all select-all">
                       {window.location.origin}
                     </div>
                     <button 
                       onClick={() => copyToClipboard(window.location.origin)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-slate-50 hover:bg-ocean-100 rounded-xl transition-colors text-slate-400 hover:text-ocean-700"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-2 hover:bg-emerald-500/10 rounded transition-colors text-slate-600 hover:text-emerald-500"
                     >
-                      {copied ? <CheckCircle size={14} className="text-green-600" /> : <Copy size={14} />}
+                      {copied ? <CheckCircle size={14} className="text-emerald-500 shadow-glow" /> : <Copy size={14} />}
                     </button>
                   </div>
                 </div>
@@ -286,9 +286,9 @@ export const AuthView: React.FC = () => {
                     href={`https://supabase.com/dashboard/project/${SUPABASE_PROJECT_ID}/auth/url-configuration`} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="flex items-center justify-center space-x-2 w-full py-3 bg-ocean-100 text-ocean-800 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-ocean-200 transition-colors"
+                    className="flex items-center justify-center space-x-3 w-full py-3 bg-carbon text-emerald-500 border border-warm rounded text-[10px] font-mono uppercase tracking-widest hover:border-emerald-500 transition-all shadow-glow"
                   >
-                    <span>Supabase URL Settings</span>
+                    <span>CONFIG_DASHBOARD</span>
                     <ExternalLink size={12} />
                   </a>
                 </div>
@@ -297,7 +297,7 @@ export const AuthView: React.FC = () => {
           </div>
         </div>
       </div>
-      <p className="mt-12 text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Island Verified Technology &copy; 2024</p>
+      <p className="mt-12 text-[10px] font-mono text-slate-700 uppercase tracking-[0.4em] animate-pulse">NODE_VERSION: 1.0.0 :: STABLE</p>
     </div>
   );
 };

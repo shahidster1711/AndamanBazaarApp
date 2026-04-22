@@ -85,12 +85,12 @@ export const Dashboard: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
         <div className="relative">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-ocean-600"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-emerald-500"></div>
           <div className="absolute inset-0 flex items-center justify-center">
-             <div className="w-8 h-8 bg-ocean-50 rounded-full animate-pulse"></div>
+             <div className="w-8 h-8 bg-emerald-500/10 rounded-full animate-pulse"></div>
           </div>
         </div>
-        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 animate-pulse">Syncing Island Metrics...</p>
+        <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-emerald-500 animate-pulse">Initialising_Telemetry_Stream...</p>
       </div>
     );
   }
@@ -98,26 +98,26 @@ export const Dashboard: React.FC = () => {
   if (error) {
     return (
       <div className="max-w-2xl mx-auto px-6 py-24 text-center space-y-8 animate-slide-up">
-        <div className="w-20 h-20 bg-coral-50 text-coral-600 rounded-[28px] flex items-center justify-center mx-auto border border-coral-100 shadow-sm">
+        <div className="w-20 h-20 bg-red-500/10 text-red-500 rounded-lg flex items-center justify-center mx-auto border border-red-500/30 shadow-glow">
            <AlertCircle size={32} />
         </div>
-        <div className="space-y-3">
-          <h2 className="text-3xl font-black text-slate-950 tracking-tighter uppercase">Connection Issue</h2>
-          <p className="text-slate-500 font-medium text-lg max-w-md mx-auto">{error}</p>
+        <div className="space-y-4">
+          <h2 className="text-3xl font-black text-snow tracking-tighter uppercase">Protocol Handshake Failed</h2>
+          <p className="text-slate-500 font-mono text-sm max-w-md mx-auto leading-loose uppercase tracking-widest">{error}</p>
         </div>
         <button 
           onClick={fetchDashboard}
-          className="btn-premium px-10 py-4 text-xs uppercase tracking-widest flex items-center justify-center mx-auto space-x-3"
+          className="btn-premium px-10 py-4 text-[10px] font-mono flex items-center justify-center mx-auto space-x-4"
         >
-          <RefreshCw size={18} />
-          <span>Retry Connection</span>
+          <RefreshCw size={16} />
+          <span>RETRY_CONNECTION</span>
         </button>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-12 space-y-12 animate-fade-in">
+    <div className="max-w-7xl mx-auto px-6 py-12 space-y-12 animate-fade-in bg-abyss">
       <DashboardHero totalViews={metrics.totalViews} activeAlertCount={metrics.activeAlertCount} />
       <KPISection kpis={metrics.kpis} />
       <PrimaryInsightsSection

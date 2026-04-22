@@ -58,50 +58,49 @@ export const Home: React.FC = () => {
   };
 
   return (
-    <div className="space-y-24 pb-24 bg-slate-50 overflow-x-hidden">
-      {/* Immersive Hero Section */}
-      <section className="relative min-h-[80vh] flex items-center justify-center px-4 pt-20 overflow-hidden">
-        {/* Animated Background Orbs */}
-        <div className="absolute top-0 right-0 -translate-y-1/4 translate-x-1/4 w-[600px] h-[600px] bg-ocean-100 rounded-full blur-[120px] opacity-60 animate-pulse"></div>
-        <div className="absolute bottom-0 left-0 translate-y-1/4 -translate-x-1/4 w-[600px] h-[600px] bg-coral-100 rounded-full blur-[120px] opacity-40 animate-pulse" style={{ animationDelay: '2s' }}></div>
+    <div className="space-y-24 pb-24 bg-abyss overflow-x-hidden">
+      {/* High-Powered Hero Section */}
+      <section className="relative min-h-[85vh] flex items-center justify-center px-4 pt-20 overflow-hidden">
+        {/* Decorative Background Grid */}
+        <div className="absolute inset-0 bg-[radial-gradient(#3d3a39_1px,transparent_1px)] [background-size:40px_40px] opacity-20"></div>
+        <div className="absolute top-0 right-0 -translate-y-1/4 translate-x-1/4 w-[600px] h-[600px] bg-emerald-500/5 rounded-full blur-[120px] animate-pulse"></div>
         
         <div className="max-w-6xl mx-auto w-full relative z-10 text-center space-y-12">
-          <div className="space-y-6 animate-slide-up">
-            <div className="inline-flex items-center space-x-2 bg-white/50 backdrop-blur-md border border-white px-4 py-2 rounded-2xl shadow-sm">
-               <Sparkles size={16} className="text-ocean-500" />
-               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">The Islands' #1 Marketplace</span>
+          <div className="space-y-8 animate-slide-up">
+            <div className="inline-flex items-center space-x-3 bg-carbon/50 backdrop-blur-md border border-warm px-4 py-2 rounded-lg shadow-elevation-low">
+               <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></div>
+               <span className="text-[11px] font-mono uppercase tracking-[0.3em] text-emerald-500">Node_Andaman :: ACTIVE</span>
             </div>
-            <h1 className="text-6xl md:text-8xl font-heading font-black tracking-tighter text-slate-950 leading-[0.9]">
-              Trade with <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-ocean-600 to-ocean-400">Paradise.</span>
+            <h1 className="hero-heading font-black text-snow uppercase">
+              The Island <br />
+              <span className="text-emerald-500 logo-glow">Terminal.</span>
             </h1>
-            <p className="text-lg md:text-2xl font-medium text-slate-500 max-w-2xl mx-auto leading-relaxed">
-              Buy, sell, and discover unique items across the Andaman & Nicobar archipelago.
+            <p className="text-lg md:text-xl font-medium text-parchment max-w-2xl mx-auto leading-relaxed">
+              Hyper-local commerce engineered for speed. Zero delays. Absolute connectivity.
             </p>
           </div>
           
           <form onSubmit={handleSearch} className="max-w-3xl mx-auto w-full animate-slide-up" style={{ animationDelay: '0.2s' }}>
             <div className="relative group">
-              <div className="absolute inset-y-0 left-8 flex items-center text-slate-400 group-focus-within:text-ocean-500 transition-colors">
-                <Search size={28} />
+              <div className="absolute inset-y-0 left-8 flex items-center text-slate-500 group-focus-within:text-emerald-500 transition-colors">
+                <Search size={24} />
               </div>
               <input 
                 type="text" 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search for mobiles, cars, or furniture..." 
-                className="w-full py-8 pl-20 pr-48 rounded-[32px] bg-white border border-slate-200 focus:border-ocean-300 focus:ring-[12px] focus:ring-ocean-50/50 transition-all duration-500 outline-none text-xl font-bold text-slate-900 shadow-premium"
+                placeholder="search --target listings" 
+                className="w-full py-7 pl-20 pr-48 rounded-xl bg-carbon border border-warm focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all duration-300 outline-none text-xl font-mono text-snow placeholder:text-slate-600 shadow-elevation-high"
               />
-              <button type="submit" className="absolute right-4 top-1/2 -translate-y-1/2 btn-premium px-10 py-4 text-sm uppercase tracking-widest">
-                Search
+              <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 btn-premium">
+                EXECUTE
               </button>
             </div>
           </form>
 
-          <div className="flex flex-wrap justify-center gap-4 animate-slide-up" style={{ animationDelay: '0.4s' }}>
-             {['Fast Shipping', 'Verified Sellers', 'Local Pickup'].map(tag => (
-               <div key={tag} className="flex items-center space-x-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                  <CheckCircle2 size={14} className="text-ocean-500" />
+          <div className="flex flex-wrap justify-center gap-8 animate-slide-up font-mono text-[10px] text-slate-500 tracking-[0.2em]" style={{ animationDelay: '0.4s' }}>
+             {['[ protocol: LOCAL ]', '[ secure: VERIFIED ]', '[ latency: MINIMAL ]'].map(tag => (
+               <div key={tag} className="flex items-center space-x-2">
                   <span>{tag}</span>
                </div>
              ))}
@@ -109,29 +108,29 @@ export const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* Modern Categories */}
+      {/* Terminal Categories */}
       <section className="max-w-7xl mx-auto px-6">
         <div className="flex flex-col space-y-12">
-          <div className="flex items-end justify-between">
+          <div className="flex items-end justify-between border-b border-warm pb-6">
             <div className="space-y-2">
-              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-ocean-600">Browse by type</p>
-              <h2 className="text-4xl font-heading font-black text-slate-950 tracking-tighter">Popular Categories</h2>
+              <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-emerald-500">cat /categories</p>
+              <h2 className="text-3xl font-heading font-black text-snow uppercase tracking-tighter">System Clusters</h2>
             </div>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
             {categories.map((cat, idx) => (
               <Link 
                 key={cat.slug} 
                 to={`/listings?category=${cat.slug}`}
-                className="group relative flex flex-col items-center p-8 bg-white rounded-[32px] border border-slate-100 hover:border-ocean-200 hover:shadow-premium transition-all duration-500 animate-slide-up"
+                className="group relative flex flex-col items-center p-8 bg-carbon rounded-lg border border-warm hover:border-emerald-500 transition-all duration-500 animate-slide-up"
                 style={{ animationDelay: `${idx * 0.1}s` }}
               >
-                <div className={`w-16 h-16 ${cat.color} rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:-rotate-6 transition-transform duration-500 shadow-sm`}>
+                <div className="text-emerald-500 group-hover:scale-110 transition-transform duration-500 logo-glow">
                   {cat.icon}
                 </div>
-                <span className="mt-6 font-black text-[11px] text-slate-900 uppercase tracking-widest text-center">{cat.name}</span>
-                <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                   <ArrowUpRight size={14} className="text-slate-300" />
+                <span className="mt-6 font-mono text-[10px] text-slate-400 uppercase tracking-widest text-center group-hover:text-emerald-400">{cat.name}</span>
+                <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                   <ArrowUpRight size={12} className="text-emerald-500" />
                 </div>
               </Link>
             ))}
@@ -139,27 +138,27 @@ export const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* Featured Items - Horizontal Scroll on Mobile */}
+      {/* Featured Items Terminal */}
       <section className="max-w-7xl mx-auto px-6 space-y-12">
-        <div className="flex items-end justify-between">
+        <div className="flex items-end justify-between border-b border-warm pb-6">
            <div className="space-y-2">
-              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-coral-600">Staff Picks</p>
-              <h2 className="text-4xl font-heading font-black text-slate-950 tracking-tighter">Featured Listings</h2>
+              <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-emerald-500">ls -la /featured</p>
+              <h2 className="text-3xl font-heading font-black text-snow uppercase tracking-tighter">Priority Units</h2>
            </div>
-           <Link to="/listings" className="group flex items-center space-x-3 text-[10px] font-black text-ocean-600 uppercase tracking-widest bg-white px-6 py-3 rounded-2xl border border-slate-100 hover:shadow-md transition-all">
-            <span>Explore All</span>
-            <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+           <Link to="/listings" className="btn-ghost text-[10px] font-mono uppercase tracking-widest flex items-center space-x-3">
+            <span>view_all --full</span>
+            <ArrowRight size={14} />
           </Link>
         </div>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {loadingItems ? (
             [1, 2, 3, 4].map(n => (
-              <div key={n} className="bg-white rounded-[40px] border border-slate-100 h-[450px] animate-pulse p-4 space-y-6">
-                <div className="aspect-[4/5] bg-slate-50 rounded-[32px]"></div>
+              <div key={n} className="bg-carbon border border-warm rounded-lg h-[400px] animate-pulse p-4 space-y-6">
+                <div className="aspect-[4/5] bg-abyss rounded-md"></div>
                 <div className="space-y-4 px-2">
-                   <div className="h-6 bg-slate-50 rounded-full w-3/4"></div>
-                   <div className="h-10 bg-slate-50 rounded-full w-1/2"></div>
+                   <div className="h-4 bg-abyss rounded w-3/4"></div>
+                   <div className="h-8 bg-abyss rounded w-1/2"></div>
                 </div>
               </div>
             ))
@@ -169,16 +168,16 @@ export const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* Recent Grid */}
+      {/* Recent Registry */}
       <section className="max-w-7xl mx-auto px-6 space-y-12">
         <div className="flex items-center justify-between">
-            <h2 className="text-3xl font-heading font-black text-slate-950 tracking-tighter">New Arrivals</h2>
-            <div className="h-px flex-1 bg-slate-200 mx-8"></div>
+            <h2 className="text-2xl font-heading font-black text-snow uppercase tracking-tighter border-l-4 border-emerald-500 pl-4">Recently Initialized</h2>
+            <div className="h-px flex-1 bg-warm/50 mx-8"></div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {loadingItems ? (
             [1, 2, 3, 4].map(n => (
-              <div key={n} className="bg-white rounded-[32px] border border-slate-100 h-64 animate-pulse"></div>
+              <div key={n} className="bg-carbon border border-warm h-64 animate-pulse rounded-lg"></div>
             ))
           ) : recentListings.map((listing) => (
             <ListingCard key={listing.id} listing={listing} />
@@ -186,19 +185,19 @@ export const Home: React.FC = () => {
         </div>
       </section>
       
-      {/* Call to Action Section */}
+      {/* Call to Action Terminal */}
       <section className="max-w-7xl mx-auto px-6">
-         <div className="relative rounded-[48px] bg-slate-950 p-12 md:p-24 overflow-hidden text-center">
-            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-ocean-900/20 to-transparent"></div>
-            <div className="relative z-10 max-w-2xl mx-auto space-y-8">
-               <h2 className="text-4xl md:text-6xl font-heading font-black text-white tracking-tighter leading-none">
-                  Got something to sell?
+         <div className="relative rounded-lg bg-carbon border-2 border-emerald-500/20 p-12 md:p-24 overflow-hidden text-center shadow-glow">
+            <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,rgba(0,217,146,0.05),transparent)]"></div>
+            <div className="relative z-10 max-w-2xl mx-auto space-y-10">
+               <h2 className="text-4xl md:text-5xl font-heading font-black text-snow tracking-tighter uppercase leading-none">
+                  Ready to stream <br /> your items?
                </h2>
-               <p className="text-lg text-slate-400 font-medium">
-                  Join thousands of islanders trading daily. It takes less than a minute to list your item.
+               <p className="text-lg text-parchment font-medium max-w-md mx-auto">
+                  Deploy your inventory to the cluster. Initialization takes &lt; 60 seconds.
                </p>
-               <Link to="/post" className="inline-flex btn-premium px-12 py-5 text-sm uppercase tracking-[0.2em]">
-                  Start Selling Now
+               <Link to="/post" className="inline-flex btn-premium px-12 py-5 text-xs font-mono">
+                  INITIALIZE_NEW_UNIT
                </Link>
             </div>
          </div>
@@ -206,15 +205,6 @@ export const Home: React.FC = () => {
     </div>
   );
 };
-
-interface ListingCardData {
-  id: string;
-  title: string;
-  price: number;
-  city: string;
-  is_featured: boolean;
-  images: { image_url: string }[];
-}
 
 const ListingCard: React.FC<{ listing: ListingCardData, featured?: boolean }> = ({ listing, featured = false }) => {
   const imageUrl = listing.images && listing.images.length > 0 
@@ -224,39 +214,39 @@ const ListingCard: React.FC<{ listing: ListingCardData, featured?: boolean }> = 
   return (
     <Link 
       to={`/listings/${listing.id}`} 
-      className={`group flex flex-col bg-white overflow-hidden transition-all duration-500 hover:-translate-y-2 ${featured ? 'rounded-[40px] border border-slate-100 p-3 hover:shadow-premium' : 'rounded-[32px] hover:shadow-lg'}`}
+      className={`group flex flex-col bg-carbon border border-warm transition-all duration-300 hover:border-emerald-500 hover:-translate-y-1 ${featured ? 'p-3 rounded-lg' : 'rounded-lg'}`}
     >
-      <div className={`relative overflow-hidden ${featured ? 'aspect-[4/5] rounded-[32px]' : 'aspect-square rounded-t-[32px]'} bg-slate-100`}>
+      <div className={`relative overflow-hidden ${featured ? 'aspect-[4/5] rounded-md' : 'aspect-square rounded-t-lg'} bg-abyss`}>
         <img 
           src={imageUrl} 
           alt={listing.title} 
-          className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+          className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
           loading="lazy"
         />
-        <div className="absolute top-6 left-6 flex flex-col gap-2 z-10">
-          <div className="glass px-4 py-2 rounded-2xl text-[10px] font-black text-slate-900 uppercase tracking-widest shadow-sm flex items-center">
-            <MapPin size={12} className="mr-2 text-ocean-600" /> {listing.city}
+        <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
+          <div className="bg-carbon/80 backdrop-blur-md px-3 py-1.5 rounded border border-warm text-[9px] font-mono text-parchment uppercase tracking-widest shadow-elevation-low flex items-center">
+            <MapPin size={10} className="mr-2 text-emerald-500" /> {listing.city}
           </div>
         </div>
         {listing.is_featured && (
-          <div className="absolute bottom-6 right-6 z-10">
-             <div className="bg-coral-500 text-white p-2 rounded-xl shadow-lg">
-                <Sparkles size={16} />
+          <div className="absolute bottom-4 right-4 z-10">
+             <div className="bg-emerald-500 text-abyss p-2 rounded shadow-glow">
+                <Sparkles size={14} />
              </div>
           </div>
         )}
       </div>
-      <div className={`${featured ? 'p-6 pb-4' : 'p-6'} flex flex-col flex-1 space-y-4`}>
-        <div className="space-y-2">
-          <h3 className="font-black text-slate-900 text-base line-clamp-2 leading-tight group-hover:text-ocean-600 transition-colors uppercase tracking-tight">{listing.title}</h3>
+      <div className={`${featured ? 'p-5 pb-3' : 'p-5'} flex flex-col flex-1 space-y-4`}>
+        <div className="space-y-1">
+          <h3 className="font-bold text-snow text-sm line-clamp-2 leading-tight group-hover:text-emerald-400 transition-colors uppercase font-mono tracking-tight">{listing.title}</h3>
         </div>
-        <div className="mt-auto flex items-center justify-between">
+        <div className="mt-auto flex items-center justify-between border-t border-warm/50 pt-4">
            <div className="flex flex-col">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Asking Price</span>
-              <span className="text-2xl font-heading font-black text-slate-950 tracking-tighter">₹ {listing.price.toLocaleString('en-IN')}</span>
+              <span className="text-[9px] font-mono text-slate-500 uppercase tracking-widest mb-0.5">Value</span>
+              <span className="text-xl font-heading font-black text-snow tracking-tighter">₹ {listing.price.toLocaleString('en-IN')}</span>
            </div>
-           <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-ocean-50 group-hover:text-ocean-500 transition-all">
-              <ArrowRight size={18} />
+           <div className="w-8 h-8 rounded border border-warm flex items-center justify-center text-slate-500 group-hover:border-emerald-500 group-hover:text-emerald-500 transition-all">
+              <ArrowRight size={14} />
            </div>
         </div>
       </div>
