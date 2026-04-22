@@ -1,11 +1,11 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { AlertTriangle } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { AlertsSection, DashboardHero, KPISection, PrimaryInsightsSection, SecondaryPanelsSection } from './dashboard/DashboardSections';
 import { DEFAULT_PROFILE } from './dashboard/types';
 import type { DashboardState } from './dashboard/types';
 import { DASHBOARD_TARGETS, daysAgo } from './dashboard/utils';
 import { useDashboardMetrics } from './dashboard/useDashboardMetrics';
+import { RefreshCw, AlertCircle } from 'lucide-react';
 
 const EMPTY_DASHBOARD_STATE: DashboardState = {
   profile: null,
@@ -19,10 +19,9 @@ export const Dashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<DashboardState>(EMPTY_DASHBOARD_STATE);
 
-  const fetchDashboard = useCallback(async () => {
+  const fetchDashboard = async () => {
     setLoading(true);
     setError(null);
-
     try {
       const {
         data: { user },
@@ -49,14 +48,12 @@ export const Dashboard: React.FC = () => {
         supabase
           .from('chats')
           .select('id, listing_id, seller_unread_count')
-          .eq('seller_id', user.id)
-          .order('last_message_at', { ascending: false }),
+          .eq('seller_id', user.id),
         supabase
           .from('chats')
           .select('created_at')
           .eq('seller_id', user.id)
-          .gte('created_at', recentTrendStart)
-          .order('created_at', { ascending: false }),
+          .gte('created_at', recentTrendStart),
       ]);
 
       if (profileResult.error) throw profileResult.error;
@@ -70,50 +67,57 @@ export const Dashboard: React.FC = () => {
         chats: chatsResult.data || [],
         recentChats: recentChatsResult.data || [],
       });
-    } catch (err) {
+    } catch (err: any) {
       console.error('Dashboard error:', err);
-      setError('Dashboard data could not be loaded. Please try again.');
+      setError(err.message || 'Failed to sync with island network.');
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
   useEffect(() => {
     fetchDashboard();
-  }, [fetchDashboard]);
+  }, []);
 
   const metrics = useDashboardMetrics(data);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-white">
-        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-emerald-600"></div>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
+        <div className="relative">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-ocean-600"></div>
+          <div className="absolute inset-0 flex items-center justify-center">
+             <div className="w-8 h-8 bg-ocean-50 rounded-full animate-pulse"></div>
+          </div>
+        </div>
+        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 animate-pulse">Syncing Island Metrics...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="max-w-3xl mx-auto px-4 py-16">
-        <div className="rounded-[36px] border border-red-200 bg-red-50 p-8 shadow-sm text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-white text-red-600 border border-red-200">
-            <AlertTriangle size={26} />
-          </div>
-          <h1 className="mt-5 text-2xl font-black tracking-tight text-slate-950">Dashboard unavailable</h1>
-          <p className="mt-3 text-sm font-medium text-slate-600">{error}</p>
-          <button
-            onClick={fetchDashboard}
-            className="mt-6 inline-flex items-center justify-center rounded-2xl bg-slate-950 px-6 py-3 text-[11px] font-black uppercase tracking-[0.2em] text-white transition hover:bg-slate-800"
-          >
-            Retry load
-          </button>
+      <div className="max-w-2xl mx-auto px-6 py-24 text-center space-y-8 animate-slide-up">
+        <div className="w-20 h-20 bg-coral-50 text-coral-600 rounded-[28px] flex items-center justify-center mx-auto border border-coral-100 shadow-sm">
+           <AlertCircle size={32} />
         </div>
+        <div className="space-y-3">
+          <h2 className="text-3xl font-black text-slate-950 tracking-tighter uppercase">Connection Issue</h2>
+          <p className="text-slate-500 font-medium text-lg max-w-md mx-auto">{error}</p>
+        </div>
+        <button 
+          onClick={fetchDashboard}
+          className="btn-premium px-10 py-4 text-xs uppercase tracking-widest flex items-center justify-center mx-auto space-x-3"
+        >
+          <RefreshCw size={18} />
+          <span>Retry Connection</span>
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 md:py-10 space-y-8">
+    <div className="max-w-7xl mx-auto px-6 py-12 space-y-12 animate-fade-in">
       <DashboardHero totalViews={metrics.totalViews} activeAlertCount={metrics.activeAlertCount} />
       <KPISection kpis={metrics.kpis} />
       <PrimaryInsightsSection

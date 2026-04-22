@@ -102,35 +102,41 @@ export const Listings: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <div className="mb-12 space-y-8">
-        <form onSubmit={handleSearchSubmit} className="max-w-3xl mx-auto relative group">
-          <input 
-            type="text" 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search in the Islands..." 
-            className="w-full py-6 px-8 pl-14 rounded-[32px] bg-white border-2 border-slate-200 focus:border-ocean-600 focus:ring-4 focus:ring-ocean-50 transition-all duration-300 text-lg font-bold text-slate-900 shadow-md"
-          />
-          <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-ocean-600 transition-colors">
-            <Search size={22} />
-          </div>
-          {searchQuery && (
-            <button onClick={() => {setSearchQuery(''); handleCategorySelect('All');}} type="button" className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-900 transition-colors">
-                <X size={20} />
-            </button>
-          )}
-        </form>
+    <div className="max-w-7xl mx-auto px-6 py-12 space-y-16 animate-fade-in">
+      <div className="space-y-12">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
+           <div className="space-y-2">
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-ocean-600">The Collection</p>
+              <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-slate-950 uppercase">Explorer</h1>
+           </div>
+           <form onSubmit={handleSearchSubmit} className="flex-1 max-w-xl relative group">
+             <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-ocean-600 transition-colors">
+               <Search size={22} />
+             </div>
+             <input 
+               type="text" 
+               value={searchQuery}
+               onChange={(e) => setSearchQuery(e.target.value)}
+               placeholder="Find anything in the Islands..." 
+               className="w-full py-5 pl-16 pr-12 rounded-[24px] bg-white border border-slate-100 focus:border-ocean-300 focus:ring-[8px] focus:ring-ocean-50/50 transition-all duration-300 text-lg font-bold text-slate-950 shadow-sm outline-none"
+             />
+             {searchQuery && (
+               <button onClick={() => {setSearchQuery(''); handleCategorySelect('All');}} type="button" className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-900 transition-colors">
+                   <X size={20} />
+               </button>
+             )}
+           </form>
+        </div>
         
-        <div className="flex items-center justify-center space-x-3 overflow-x-auto pb-4 no-scrollbar">
+        <div className="flex items-center space-x-3 overflow-x-auto pb-6 no-scrollbar mask-fade-right">
           {CATEGORIES.map(cat => (
             <button 
               key={cat}
               onClick={() => handleCategorySelect(cat)}
-              className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all border-2 flex-shrink-0 ${
+              className={`px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all flex-shrink-0 border-2 ${
                 (activeCategory?.toLowerCase() === cat.toLowerCase() || (cat === 'All' && !activeCategory))
-                ? 'bg-slate-900 text-white border-slate-900 shadow-xl scale-105'
-                : 'bg-white text-slate-500 border-slate-100 hover:border-slate-300 hover:text-slate-900'
+                ? 'bg-ocean-600 text-white border-ocean-600 shadow-lg shadow-ocean-600/20 scale-105'
+                : 'bg-white text-slate-400 border-slate-50 hover:border-slate-200 hover:text-slate-900'
               }`}
             >
               {cat}
@@ -139,17 +145,17 @@ export const Listings: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10">
         {loading ? (
           [1, 2, 3, 4, 5, 6, 7, 8].map(n => <ListingSkeleton key={n} />)
         ) : listings.length === 0 ? (
-          <div className="col-span-full py-24 text-center space-y-6 bg-slate-50 rounded-[48px] border-4 border-dashed border-slate-100 animate-in fade-in zoom-in-95">
-            <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mx-auto shadow-sm text-4xl">🏝️</div>
+          <div className="col-span-full py-32 text-center space-y-8 bg-white rounded-[48px] border border-slate-100 animate-slide-up">
+            <div className="w-24 h-24 bg-slate-50 rounded-[32px] flex items-center justify-center mx-auto shadow-sm text-4xl">🏝️</div>
             <div className="space-y-2">
-                <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">No results</h3>
-                <p className="text-slate-400 font-bold text-sm max-w-xs mx-auto">Island network is active, but no items match your search.</p>
+                <h3 className="text-3xl font-black text-slate-950 uppercase tracking-tighter">No items found</h3>
+                <p className="text-slate-400 font-bold text-sm max-w-xs mx-auto uppercase tracking-widest leading-loose">Try adjusting your filters or search terms.</p>
             </div>
-            <button onClick={() => handleCategorySelect('All')} className="bg-ocean-700 text-white px-8 py-3 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl">Reset Filters</button>
+            <button onClick={() => handleCategorySelect('All')} className="btn-premium px-10 py-4 text-[10px] uppercase tracking-widest">Clear Everything</button>
           </div>
         ) : (
           listings.map((listing) => (
@@ -167,57 +173,71 @@ export const Listings: React.FC = () => {
 };
 
 const ListingSkeleton: React.FC = () => (
-  <div className="bg-white border-2 border-slate-100 rounded-[32px] flex flex-col h-96 overflow-hidden p-3 space-y-4">
-    <div className="relative aspect-square bg-slate-100 rounded-[24px] animate-pulse"></div>
-    <div className="p-2 space-y-3">
-      <div className="h-6 w-3/4 bg-slate-100 rounded animate-pulse"></div>
-      <div className="h-4 w-1/2 bg-slate-50 rounded animate-pulse"></div>
-      <div className="mt-4 flex justify-between">
-         <div className="h-4 w-12 bg-slate-50 rounded"></div>
-         <div className="h-4 w-12 bg-slate-50 rounded"></div>
-      </div>
+  <div className="bg-white rounded-[40px] border border-slate-100 h-[450px] p-4 space-y-6 animate-pulse">
+    <div className="aspect-[4/5] bg-slate-50 rounded-[32px]"></div>
+    <div className="space-y-4 px-2">
+       <div className="h-6 bg-slate-50 rounded-full w-3/4"></div>
+       <div className="h-10 bg-slate-50 rounded-full w-1/2"></div>
     </div>
   </div>
 );
 
-// Fix: Changed listing prop type to any to accommodate partial data from query
-const ListingItem: React.FC<{ listing: any, isFavorited: boolean, onToggleFavorite: (e: React.MouseEvent) => void }> = ({ listing, isFavorited, onToggleFavorite }) => {
+interface ListingCardData {
+  id: string;
+  title: string;
+  price: number;
+  city: string;
+  created_at: string;
+  is_featured: boolean;
+  images: { image_url: string }[];
+}
+
+const ListingItem: React.FC<{ listing: ListingCardData, isFavorited: boolean, onToggleFavorite: (e: React.MouseEvent) => void }> = ({ listing, isFavorited, onToggleFavorite }) => {
   const imageUrl = listing.images && listing.images.length > 0 
     ? listing.images[0].image_url 
     : `https://picsum.photos/seed/list-${listing.id}/600/600`;
 
   return (
-    <Link to={`/listings/${listing.id}`} className="bg-white rounded-[32px] border-2 border-slate-100 flex flex-col h-full overflow-hidden group hover:border-ocean-400 hover:shadow-2xl transition-all duration-500 p-2">
-      <div className="relative aspect-square bg-slate-50 rounded-[28px] overflow-hidden">
+    <Link 
+      to={`/listings/${listing.id}`} 
+      className="group flex flex-col bg-white rounded-[40px] border border-slate-100 p-3 hover:shadow-premium hover:-translate-y-2 transition-all duration-500"
+    >
+      <div className="relative aspect-[4/5] bg-slate-50 rounded-[32px] overflow-hidden">
         <img 
           src={imageUrl} 
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+          className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" 
           loading="lazy"
           alt={listing.title} 
         />
         <button 
           onClick={onToggleFavorite}
-          className={`absolute top-4 right-4 w-11 h-11 bg-white/95 backdrop-blur-md rounded-2xl flex items-center justify-center border-2 border-white transition-all duration-300 shadow-lg z-10 ${isFavorited ? 'text-coral-500 scale-110 border-coral-50' : 'text-slate-400 hover:text-slate-600 hover:scale-110'}`}
+          className={`absolute top-4 right-4 w-12 h-12 glass rounded-2xl flex items-center justify-center transition-all duration-300 z-10 ${isFavorited ? 'text-coral-500 scale-110' : 'text-slate-900/40 hover:text-coral-500'}`}
         >
-          <Heart size={22} fill={isFavorited ? "currentColor" : "none"} strokeWidth={2.5} />
+          <Heart size={20} fill={isFavorited ? "currentColor" : "none"} strokeWidth={2.5} />
         </button>
         {listing.is_featured && (
-            <div className="absolute top-4 left-4 bg-ocean-700 text-white px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg border border-ocean-800 flex items-center z-10">
-                <Sparkles size={10} className="mr-1.5" /> Featured
+            <div className="absolute top-4 left-4 bg-ocean-600 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg flex items-center z-10">
+                <Sparkles size={12} className="mr-2" /> Featured
             </div>
         )}
-      </div>
-      <div className="p-4 flex flex-col flex-1">
-        <div className="flex justify-between items-start mb-1">
-          <span className="text-xl font-heading font-black text-slate-900 tracking-tight">₹ {listing.price.toLocaleString('en-IN')}</span>
-        </div>
-        <h3 className="font-bold text-slate-800 line-clamp-2 leading-snug mb-3 text-sm group-hover:text-ocean-700 transition-colors">{listing.title}</h3>
-        <div className="mt-auto flex items-center justify-between">
-           <div className="flex items-center space-x-1.5 text-[9px] font-black text-slate-400 uppercase tracking-widest">
-             <MapPin size={10} className="text-ocean-500" />
-             <span>{listing.city}</span>
+        <div className="absolute bottom-4 left-4 z-10">
+           <div className="glass px-4 py-2 rounded-xl text-[10px] font-black text-slate-900 uppercase tracking-widest shadow-sm flex items-center">
+             <MapPin size={12} className="mr-2 text-ocean-600" /> {listing.city}
            </div>
-           <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest">{new Date(listing.created_at).toLocaleDateString()}</span>
+        </div>
+      </div>
+      <div className="p-5 pb-3 flex flex-col flex-1 space-y-4">
+        <div className="space-y-1">
+          <h3 className="font-black text-slate-950 line-clamp-2 leading-tight text-sm uppercase tracking-tight group-hover:text-ocean-600 transition-colors">{listing.title}</h3>
+        </div>
+        <div className="mt-auto flex items-end justify-between">
+           <div className="flex flex-col">
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Asking Price</span>
+              <span className="text-2xl font-heading font-black text-slate-950 tracking-tighter">₹ {listing.price.toLocaleString('en-IN')}</span>
+           </div>
+           <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-ocean-50 group-hover:text-ocean-600 transition-all">
+              <ArrowRight size={18} strokeWidth={2.5} />
+           </div>
         </div>
       </div>
     </Link>

@@ -66,129 +66,145 @@ export const Layout: React.FC<LayoutProps> = ({ children, user }) => {
   }, [user]);
 
   // High contrast active state
-  const activeTabClass = "text-ocean-700 font-extrabold";
-  const inactiveTabClass = "text-slate-500 font-medium hover:text-slate-900";
+  const activeTabClass = "text-ocean-600 font-black scale-110";
+  const inactiveTabClass = "text-slate-400 font-bold hover:text-ocean-500 transition-all";
 
   return (
-    <div className="min-h-screen flex flex-col bg-white font-sans text-slate-900">
-      {/* Header - Centered Branding */}
-      <header className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled ? 'bg-white/95 backdrop-blur-md border-b-2 border-slate-100 py-3' : 'bg-white py-6 border-b border-transparent'}`}>
-        <div className="max-w-7xl mx-auto px-4 md:px-6 flex items-center justify-between">
-          {/* Left Actions - Hidden on mobile, spaced for center branding on desktop */}
-          <div className="hidden md:flex flex-1 items-center space-x-6">
-            <Link to="/listings" className={`text-sm font-black uppercase tracking-widest transition-all ${location.pathname === '/listings' ? 'text-ocean-700 underline underline-offset-4' : 'text-slate-500 hover:text-slate-900'}`}>Explore</Link>
+    <div className="min-h-screen flex flex-col bg-slate-50 font-sans text-slate-900 selection:bg-ocean-100 selection:text-ocean-900">
+      {/* Header - Glassmorphism */}
+      <header className={`fixed top-0 w-full z-50 transition-all duration-500 ${scrolled ? 'glass py-3 shadow-premium' : 'bg-transparent py-6'}`}>
+        <div className="max-w-7xl mx-auto px-4 md:px-8 flex items-center justify-between">
+          {/* Left Actions */}
+          <div className="hidden md:flex flex-1 items-center space-x-8">
+            <Link to="/listings" className={`text-[10px] font-black uppercase tracking-[0.2em] transition-all ${location.pathname === '/listings' ? 'text-ocean-600' : 'text-slate-500 hover:text-ocean-600'}`}>
+              Browse
+            </Link>
+            <Link to="/post" className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 hover:text-ocean-600 transition-all">
+              Sell Item
+            </Link>
           </div>
 
-          {/* Centered Brand Identity - Upsized */}
-          <Link to="/" className="flex items-center space-x-4 group justify-center">
-            <Logo size={56} className="text-ocean-700 group-hover:scale-105 transition-transform duration-300" />
+          {/* Centered Brand Identity */}
+          <Link to="/" className="flex items-center space-x-3 group transition-transform duration-300 active:scale-95">
+            <Logo size={42} className="text-ocean-600 group-hover:rotate-12 transition-transform duration-500" />
             <div className="flex flex-col">
-              <span className="text-3xl md:text-4xl font-heading font-black tracking-tighter text-slate-950 leading-none">
-                Andaman<span className="text-coral-600">Bazaar</span>
+              <span className="text-2xl md:text-3xl font-heading font-black tracking-tighter text-slate-950 leading-none">
+                Andaman<span className="text-coral-500">Bazaar</span>
               </span>
-              <span className="text-[12px] font-black text-slate-400 uppercase tracking-[0.3em] leading-none mt-1.5 ml-0.5">Local. Trusted.</span>
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.4em] leading-none mt-1 ml-0.5">Premium Marketplace</span>
             </div>
           </Link>
 
-          {/* Right Actions - Desktop Only */}
+          {/* Right Actions */}
           <div className="hidden md:flex flex-1 justify-end items-center space-x-6">
             {user ? (
               <>
-                <Link to="/chats" className="relative text-slate-500 hover:text-ocean-700 transition-colors">
-                  <MessageCircle size={24} />
+                <Link to="/chats" className="relative p-2 text-slate-500 hover:text-ocean-600 transition-colors">
+                  <MessageCircle size={22} />
                   {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[8px] font-black rounded-full flex items-center justify-center border-2 border-white">
+                    <span className="absolute top-1 right-1 w-5 h-5 bg-coral-500 text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-white shadow-sm">
                       {unreadCount}
                     </span>
                   )}
                 </Link>
-                <Link to="/profile" className="w-10 h-10 rounded-full bg-slate-100 items-center justify-center border-2 border-slate-200 overflow-hidden hover:border-ocean-300 transition-colors">
-                  <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`} alt="User" />
+                <Link to="/profile" className="flex items-center space-x-3 group">
+                   <div className="w-10 h-10 rounded-2xl bg-white border border-slate-200 overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300 group-hover:border-ocean-300">
+                      <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`} alt="User" />
+                   </div>
                 </Link>
               </>
             ) : (
-              <Link to="/auth" className="text-xs font-black uppercase tracking-widest text-ocean-700 hover:text-ocean-900 transition-colors">Sign In</Link>
+              <Link to="/auth" className="btn-premium px-6 py-2.5 text-xs">
+                Sign In
+              </Link>
             )}
+          </div>
+
+          {/* Mobile Header Icons */}
+          <div className="flex md:hidden items-center space-x-4">
+             {user && (
+               <Link to="/chats" className="relative p-2 text-slate-700">
+                 <MessageCircle size={24} />
+                 {unreadCount > 0 && (
+                   <span className="absolute top-1 right-1 w-5 h-5 bg-coral-500 text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-white">
+                     {unreadCount}
+                   </span>
+                 )}
+               </Link>
+             )}
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="flex-grow pt-28 pb-28 md:pb-12">
+      <main className="flex-grow pt-24 pb-32 md:pb-20">
         {children}
       </main>
 
-      {/* Bottom Nav - Mobile Only - High Contrast & Explicit Labels */}
-      <nav className="md:hidden fixed bottom-0 left-0 w-full bg-white border-t-2 border-slate-200 flex items-center justify-around h-20 px-2 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] pb-safe">
-        <Link to="/" className={`flex flex-col items-center justify-center w-full h-full ${location.pathname === '/' ? activeTabClass : inactiveTabClass}`}>
-          <Home size={24} strokeWidth={location.pathname === '/' ? 3 : 2} />
-          <span className="text-[10px] mt-1 font-bold">Home</span>
+      {/* Bottom Nav - Mobile Only */}
+      <nav className="md:hidden fixed bottom-6 left-4 right-4 bg-slate-950/90 backdrop-blur-xl border border-white/10 flex items-center justify-around h-18 px-4 z-50 rounded-[28px] shadow-2xl pb-safe">
+        <Link to="/" className={`flex flex-col items-center justify-center w-full h-full transition-all ${location.pathname === '/' ? 'text-white scale-110' : 'text-slate-500'}`}>
+          <Home size={22} strokeWidth={location.pathname === '/' ? 2.5 : 2} />
         </Link>
-        <Link to="/listings" className={`flex flex-col items-center justify-center w-full h-full ${location.pathname === '/listings' ? activeTabClass : inactiveTabClass}`}>
-          <Search size={24} strokeWidth={location.pathname === '/listings' ? 3 : 2} />
-          <span className="text-[10px] mt-1 font-bold">Search</span>
+        <Link to="/listings" className={`flex flex-col items-center justify-center w-full h-full transition-all ${location.pathname === '/listings' ? 'text-white scale-110' : 'text-slate-500'}`}>
+          <Search size={22} strokeWidth={location.pathname === '/listings' ? 2.5 : 2} />
         </Link>
         
-        <Link to="/post" className="relative -top-6">
-          <div className="w-16 h-16 bg-ocean-700 text-white rounded-full flex items-center justify-center shadow-xl shadow-ocean-700/30 border-4 border-white active:scale-95 transition-transform">
-             <PlusCircle size={32} strokeWidth={3} />
+        <Link to="/post" className="relative -top-2">
+          <div className="w-14 h-14 bg-gradient-to-tr from-ocean-500 to-ocean-400 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-ocean-500/30 border border-white/20 active:scale-90 transition-transform">
+             <PlusCircle size={28} strokeWidth={2.5} />
           </div>
-          <span className="absolute -bottom-5 w-full text-center text-[10px] font-black text-ocean-700 uppercase tracking-wide">Sell</span>
         </Link>
 
-        <Link to="/chats" className={`relative flex flex-col items-center justify-center w-full h-full ${location.pathname.startsWith('/chats') ? activeTabClass : inactiveTabClass}`}>
-          <div className="relative">
-            <MessageCircle size={24} strokeWidth={location.pathname.startsWith('/chats') ? 3 : 2} />
-            {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] flex items-center justify-center bg-red-600 text-white text-[8px] font-black rounded-full border border-white">
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </span>
-            )}
-          </div>
-          <span className="text-[10px] mt-1 font-bold">Chats</span>
-        </Link>
-        <Link to="/dashboard" className={`flex flex-col items-center justify-center w-full h-full ${location.pathname === '/dashboard' || location.pathname === '/profile' ? activeTabClass : inactiveTabClass}`}>
-          <UserIcon size={24} strokeWidth={location.pathname === '/dashboard' || location.pathname === '/profile' ? 3 : 2} />
-          <span className="text-[10px] mt-1 font-bold">Profile</span>
+        <Link to="/dashboard" className={`flex flex-col items-center justify-center w-full h-full transition-all ${location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/profile') ? 'text-white scale-110' : 'text-slate-500'}`}>
+          <UserIcon size={22} strokeWidth={location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/profile') ? 2.5 : 2} />
         </Link>
       </nav>
       
       {/* Desktop Footer */}
-      <footer className="hidden md:block py-12 bg-slate-50 border-t border-slate-200 text-slate-900">
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-4 gap-12">
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <Logo size={32} className="text-ocean-700" />
-              <span className="font-heading font-black text-xl">AndamanBazaar</span>
+      <footer className="hidden md:block py-20 bg-white border-t border-slate-100">
+        <div className="max-w-7xl mx-auto px-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-16">
+            <div className="space-y-6">
+              <div className="flex items-center space-x-3">
+                <Logo size={32} className="text-ocean-600" />
+                <span className="font-heading font-black text-2xl tracking-tighter">AndamanBazaar</span>
+              </div>
+              <p className="text-sm text-slate-500 leading-relaxed font-medium">
+                The premier hyperlocal marketplace for the Andaman & Nicobar archipelago. Secure, verified, and community-driven.
+              </p>
             </div>
-            <p className="text-sm text-slate-600 leading-relaxed font-semibold">
-              Hyperlocal marketplace exclusively for the Andaman & Nicobar Islands. Built by islanders, for islanders.
-            </p>
+            <div>
+              <h4 className="font-black text-slate-950 mb-6 text-[10px] uppercase tracking-[0.3em]">Marketplace</h4>
+              <ul className="space-y-4 text-sm font-bold text-slate-400">
+                <li><Link to="/listings" className="hover:text-ocean-600 transition-colors">Explore All Items</Link></li>
+                <li><Link to="/post" className="hover:text-ocean-600 transition-colors">List Your Item</Link></li>
+                <li><Link to="/auth" className="hover:text-ocean-600 transition-colors">Seller Dashboard</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-black text-slate-950 mb-6 text-[10px] uppercase tracking-[0.3em]">Guidelines</h4>
+              <ul className="space-y-4 text-sm font-bold text-slate-400">
+                <li><Link to="/terms" className="hover:text-ocean-600 transition-colors">Safe Trading Guide</Link></li>
+                <li><Link to="/terms" className="hover:text-ocean-600 transition-colors">Terms of Use</Link></li>
+                <li><Link to="/privacy" className="hover:text-ocean-600 transition-colors">Privacy Policy</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-black text-slate-950 mb-6 text-[10px] uppercase tracking-[0.3em]">Coverage</h4>
+              <div className="flex flex-wrap gap-2">
+                {['Port Blair', 'Havelock', 'Neil', 'Diglipur'].map(loc => (
+                  <span key={loc} className="px-3 py-1.5 bg-slate-50 border border-slate-100 rounded-lg text-[10px] font-black text-slate-500 uppercase tracking-wider">{loc}</span>
+                ))}
+              </div>
+            </div>
           </div>
-          <div>
-            <h4 className="font-black text-slate-900 mb-4 text-sm uppercase tracking-widest">Quick Links</h4>
-            <ul className="space-y-2 text-sm font-semibold text-slate-600">
-              <li><Link to="/listings" className="hover:text-ocean-700 hover:underline">Browse Items</Link></li>
-              <li><Link to="/post" className="hover:text-ocean-700 hover:underline">Start Selling</Link></li>
-              <li><Link to="/auth" className="hover:text-ocean-700 hover:underline">Account Login</Link></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-black text-slate-900 mb-4 text-sm uppercase tracking-widest">Support</h4>
-            <ul className="space-y-2 text-sm font-semibold text-slate-600">
-              <li><Link to="/terms" className="hover:text-ocean-700 hover:underline">Trust & Safety</Link></li>
-              <li><Link to="/terms" className="hover:text-ocean-700 hover:underline">Terms of Service</Link></li>
-              <li><Link to="/privacy" className="hover:text-ocean-700 hover:underline">Privacy Policy</Link></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-black text-slate-900 mb-4 text-sm uppercase tracking-widest">Island Locations</h4>
-            <ul className="space-y-2 text-sm font-semibold text-slate-600">
-              <li>Port Blair</li>
-              <li>Havelock (Swaraj Dweep)</li>
-              <li>Neil (Shaheed Dweep)</li>
-              <li>Diglipur</li>
-            </ul>
+          <div className="mt-20 pt-8 border-t border-slate-100 flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
+             <span>© 2026 AndamanBazaar</span>
+             <div className="flex items-center space-x-6">
+                <a href="#" className="hover:text-ocean-600 transition-colors">Twitter</a>
+                <a href="#" className="hover:text-ocean-600 transition-colors">Instagram</a>
+             </div>
           </div>
         </div>
       </footer>

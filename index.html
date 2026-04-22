@@ -13,6 +13,45 @@
         theme: {
           extend: {
             colors: {
+              ocean: {
+                50: '#f0f9ff',
+                100: '#e0f2fe',
+                200: '#bae6fd',
+                300: '#7dd3fc',
+                400: '#38bdf8',
+                500: '#0ea5e9',
+                600: '#0284c7',
+                700: '#0369a1',
+                800: '#075985',
+                900: '#0c4a6e',
+                950: '#082f49',
+              },
+              coral: {
+                50: '#fff1f2',
+                100: '#ffe4e6',
+                200: '#fecdd3',
+                300: '#fda4af',
+                400: '#fb7185',
+                500: '#f43f5e',
+                600: '#e11d48',
+                700: '#be123c',
+                800: '#9f1239',
+                900: '#881337',
+                950: '#4c0519',
+              },
+              sand: {
+                50: '#fdfbf7',
+                100: '#f7f2e9',
+                200: '#eee5d3',
+                300: '#e0d1b3',
+                400: '#ccb68d',
+                500: '#ba9b6b',
+                600: '#a68352',
+                700: '#8b6b45',
+                800: '#71583a',
+                900: '#5e4933',
+                950: '#32261a',
+              },
               rausch: {
                 DEFAULT: '#FF385C',
                 50: '#FFF1F3',
@@ -43,11 +82,14 @@
             },
             borderRadius: {
               'airbnb': '12px',
-              'airbnb-lg': '24px'
+              'airbnb-lg': '24px',
+              'premium': '32px'
             },
             boxShadow: {
               'airbnb': '0 6px 16px rgba(0,0,0,0.12)',
               'airbnb-hover': '0 12px 24px rgba(0,0,0,0.15)',
+              'premium': '0 20px 40px -10px rgba(0,0,0,0.1)',
+              'premium-hover': '0 30px 60px -12px rgba(0,0,0,0.15)',
             }
           }
         }
@@ -62,29 +104,43 @@
         }
         
         .glass {
-          background: rgba(255, 255, 255, 0.95);
-          backdrop-filter: blur(8px);
-          -webkit-backdrop-filter: blur(8px);
+          background: rgba(255, 255, 255, 0.8);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
-        .airbnb-card {
+        .glass-dark {
+          background: rgba(15, 23, 42, 0.8);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .premium-card {
           background: #ffffff;
-          border-radius: 12px;
-          transition: all 0.2s ease-in-out;
-          border: 1px solid #DDDDDD;
+          border-radius: 32px;
+          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+          border: 1px solid #f1f5f9;
         }
-        .airbnb-card:hover {
-          box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+        .premium-card:hover {
+          box-shadow: 0 30px 60px -12px rgba(0,0,0,0.1);
+          transform: translateY(-4px);
         }
 
-        .airbnb-button {
-          background: linear-gradient(to right, #E61E4D 0%, #E31C5F 50%, #D70466 100%);
+        .btn-premium {
+          background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);
           color: white;
-          border-radius: 8px;
-          font-weight: 600;
-          transition: transform 0.1s ease;
+          border-radius: 16px;
+          font-weight: 700;
+          transition: all 0.3s ease;
+          box-shadow: 0 10px 15px -3px rgba(14, 165, 233, 0.3);
         }
-        .airbnb-button:active {
+        .btn-premium:hover {
+          box-shadow: 0 20px 25px -5px rgba(14, 165, 233, 0.4);
+          transform: translateY(-2px);
+        }
+        .btn-premium:active {
           transform: scale(0.96);
         }
 
@@ -96,22 +152,34 @@
           background: linear-gradient(90deg, #F7F7F7 25%, #EBEBEB 50%, #F7F7F7 75%);
           background-size: 200% 100%;
           animation: shimmer 1.5s infinite linear;
-          border-radius: 12px;
+          border-radius: 16px;
         }
 
         .safe-bottom {
           padding-bottom: env(safe-area-inset-bottom);
         }
 
-        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #DDDDDD; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
 
         @keyframes slideUp {
-          from { transform: translateY(12px); opacity: 0; }
+          from { transform: translateY(20px); opacity: 0; }
           to { transform: translateY(0); opacity: 1; }
         }
-        .animate-slide-up { animation: slideUp 0.3s ease-out forwards; }
+        .animate-slide-up { animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        .animate-fade-in { animation: fadeIn 0.8s ease-out forwards; }
+
+        .mask-fade-right {
+          mask-image: linear-gradient(to right, black 80%, transparent 100%);
+          -webkit-mask-image: linear-gradient(to right, black 80%, transparent 100%);
+        }
     </style>
 <link rel="stylesheet" href="/index.css">
 </head>
